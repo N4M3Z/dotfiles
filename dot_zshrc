@@ -1,0 +1,96 @@
+#
+# Interactive shell init.
+#
+
+# Powerlevel10k instant prompt cache (used only when p10k is the active prompt).
+# Re-enable by uncommenting this block AND switching zpreztorc prompt theme back
+# to 'powerlevel10k' AND uncommenting the p10k.zsh load at the bottom of this file.
+# if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+#     source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+# fi
+
+# dotzsh framework (Prezto fork at ~/.zsh/, deployed via .chezmoiexternal.toml).
+# zpreztorc sets the prompt theme to 'off' so Prezto's prompt module is a no-op
+# and starship owns the prompt.
+if [[ -s "${ZDOTDIR:-$HOME}/.zsh/init.zsh" ]]; then
+    source "${ZDOTDIR:-$HOME}/.zsh/init.zsh"
+fi
+
+# Starship prompt (Rust, cross-shell). p10k-classic-darkest visual parity
+# via ~/.config/starship.toml; tokyo-night-adjacent palette.
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init zsh)"
+fi
+
+# Atuin shell history. config.toml sets search_mode_shell_up_key_binding=fulltext
+# so Up arrow does substring search against the SQLite history.
+if command -v atuin >/dev/null 2>&1; then
+    eval "$(atuin init zsh)"
+fi
+
+# iTerm2 integration
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+# LM Studio CLI (lms)
+[ -d "${HOME}/.lmstudio/bin" ] && export PATH="${PATH}:${HOME}/.lmstudio/bin"
+
+# Deno env
+[ -s "${HOME}/.deno/env" ] && . "${HOME}/.deno/env"
+
+# Docker CLI completions
+if [ -d "${HOME}/.docker/completions" ]; then
+    fpath=("${HOME}/.docker/completions" ${fpath})
+    autoload -Uz compinit && compinit
+fi
+
+# Bun completions (PATH set in .zshenv)
+[ -s "${HOME}/.bun/_bun" ] && source "${HOME}/.bun/_bun"
+
+# p10k config saved as fallback. Loaded only when p10k is the active prompt
+# (currently inactive: zpreztorc prompt theme = 'off' and starship init above).
+# Uncomment to switch back to p10k:
+# [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# claude(): inside cmux, use `cmux claude-teams` so agent teams spawn as
+# visible sidebar splits (tmux shim translates to cmux socket API). Outside
+# cmux, wrap a bare `claude` in a tmux session named "claude" so it survives
+# Ghostty restarts. Any args pass through in all paths.
+claude() {
+    if [[ -n "$CMUX_SURFACE_ID" ]]; then
+        command cmux claude-teams "$@"
+    elif [[ $# -eq 0 ]] && [[ -z "$TMUX" ]] \
+         && command -v tmux >/dev/null 2>&1; then
+        tmux new-session -A -s claude "command claude"
+    else
+        command claude "$@"
+    fi
+}
+
+# tuicr(): no args shows staged/working-tree changes when present, otherwise
+# the last commit (HEAD~1..HEAD). `tuicr all` browses the entire repo as a
+# diff against git's empty-tree SHA (4b825dc6...). All other args pass through.
+tuicr() {
+    if [[ $# -eq 0 ]]; then
+        if command git diff --cached --quiet 2>/dev/null && command git diff --quiet 2>/dev/null; then
+            command tuicr -r HEAD~1..HEAD
+        else
+            command tuicr -w
+        fi
+    elif [[ "$1" == "all" ]]; then
+        # libgit2 (tuicr's backend) requires commit-ish on both sides of a
+        # revset, so the bare empty-tree SHA fails ("object is not a
+        # committish"). Wrap it in a dangling commit pointing to the empty
+        # tree, then use that as the base. The dangling commit gets GC'd
+        # by `git gc` on its normal schedule.
+        local empty_base
+        empty_base=$(command git commit-tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m "tuicr empty-base" 2>/dev/null)
+        if [[ -n "$empty_base" ]]; then
+            command tuicr -r "${empty_base}..HEAD"
+        else
+            echo "tuicr all: not in a git repo or commit-tree failed" >&2
+            return 1
+        fi
+    else
+        command tuicr "$@"
+    fi
+}

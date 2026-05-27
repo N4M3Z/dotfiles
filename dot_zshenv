@@ -1,0 +1,26 @@
+#
+# Environment variables. Loaded for ALL shells (login, interactive, non-interactive).
+#
+
+# Ensure non-login non-interactive shells have a sane environment.
+if [[ ( "$SHLVL" -eq 1 && ! -o LOGIN ) && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; then
+    source "${ZDOTDIR:-$HOME}/.zprofile"
+fi
+
+# Force ssh-askpass GUI dialog even when a TTY is present. Required so signed
+# commits + YubiKey FIDO2 PIN entry surface a dialog from non-interactive contexts.
+export SSH_ASKPASS_REQUIRE=force
+
+# OpenSSH's compiled-in default ssh-askpass path resolves to an empty
+# /opt/homebrew/Cellar/openssh/<ver>/libexec/ when brew openssh is installed; the
+# actual binary lives at /opt/homebrew/bin/ssh-askpass instead. Point the var
+# there explicitly so non-interactive subprocesses (Claude Code Bash tool, CI
+# runners, cron) can sign commits without the askpass exec failing.
+export SSH_ASKPASS=/opt/homebrew/bin/ssh-askpass
+
+# Bun runtime
+export BUN_INSTALL="${HOME}/.bun"
+export PATH="${BUN_INSTALL}/bin:${PATH}"
+
+# uv (Python package manager) lives at ~/.local/bin
+[ -d "${HOME}/.local/bin" ] && export PATH="${HOME}/.local/bin:${PATH}"
