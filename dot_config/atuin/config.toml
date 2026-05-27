@@ -1,0 +1,18 @@
+# Atuin shell history config. Default-local (no sync server, no account).
+# Reference: https://docs.atuin.sh/configuration/config
+
+# Ctrl-R uses fuzzy search (full TUI). Up arrow uses fulltext (substring match)
+# in a 1-line popup right above the prompt — closest atuin gets to the inline
+# expansion behavior of zsh-history-substring-search.
+search_mode = "fuzzy"
+search_mode_shell_up_key_binding = "fulltext"
+style = "compact"
+inline_height = 25
+inline_height_shell_up_key_binding = 1
+
+# Up arrow searches the entire SQLite history (any session, any host, any dir).
+# Press Tab inside the search UI to narrow scope when needed.
+filter_mode_shell_up_key_binding = "global"
+
+# No telemetry / update check.
+update_check = false
