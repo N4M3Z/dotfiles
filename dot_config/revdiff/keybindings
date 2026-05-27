@@ -1,0 +1,23 @@
+# revdiff custom keybindings. Chezmoi-managed; canonical source at
+# ~/Developer/N4M3Z/dotfiles/dot_config/revdiff/keybindings, deploys to
+# ~/.config/revdiff/keybindings.
+#
+# Format: `map <key> <action>` adds a mapping, `unmap <key>` removes one.
+# Overrides layer on top of defaults — only divergent mappings need to be
+# listed here. Run `revdiff --dump-keys` for the full default set.
+
+# Lowercase `b` for blame. Upstream binds `B` (Shift+b) because lowercase
+# `b` is the vim "word-back" motion by convention, but revdiff's vim-motion
+# preset doesn't actually claim `b` (only counts, gg, G, zz/zt/zb, ZZ/ZQ).
+# Both `b` and `B` now toggle the blame gutter — no unmap needed.
+map b toggle_blame
+
+# gitui-style numbered view shortcuts. Each number maps to a major visual
+# mode toggle (same actions as the lowercase letter equivalents, kept as
+# additive shortcuts). Caveat: vim-motion's count prefix feature uses
+# numbers (`5j` = down five lines), so these mappings shadow counts.
+# Remove these four lines if you actively use vim counts.
+map 1 toggle_tree
+map 2 toggle_collapsed
+map 3 annot_list
+map 4 toggle_compact

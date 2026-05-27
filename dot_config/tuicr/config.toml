@@ -1,0 +1,79 @@
+# tuicr config. Chezmoi-managed; canonical source at
+# dotfiles/dot_config/tuicr/config.toml, deploys to ~/.config/tuicr/config.toml.
+#
+# tuicr is a Rust Ratatui TUI for code review. Run `tuicr` for the commit
+# selector, `tuicr -w` for working-tree diff, `tuicr -r main..HEAD` for a
+# commit range, `tuicr pr <num>` to review a GitHub PR (and `:submit` to
+# post comments back as a real review). `?` in-session for keybindings.
+#
+# Full config reference: https://github.com/agavra/tuicr/blob/main/docs/CONFIG.md
+# Keybindings reference:  https://github.com/agavra/tuicr/blob/main/docs/KEYBINDINGS.md
+
+# Match the rest of the stack: Ghostty Nord, Starship Nord. Verified themes
+# include: nord-dark, nord-light, catppuccin-(latte|frappe|macchiato|mocha),
+# gruvbox-(dark|light), tokyo-night-storm, github-(dark|light), solarized-dark,
+# dracula, onedark, ayu-(light|mirage), everforest-(dark|light).
+# Run `tuicr --help` for the live list.
+theme = "catppuccin-mocha"
+
+# Unified diff matches gitui's convention. Flip to "side-by-side" for
+# SourceTree-style split-pane review. Toggle in-session with `:diff`.
+diff_view = "unified"
+
+# `appearance` is ignored when `theme` is set explicitly above. If you ever
+# unset `theme`, restore the line:
+# appearance = "system"
+
+# Word-wrap long lines in the diff view. Off means long lines clip at
+# the right margin and need horizontal scrolling (arrow keys or mouse).
+# On means long lines fold within the diff pane width. Toggle at runtime
+# with `:set wrap!`.
+wrap = false
+
+# Open every session in single-file view (`:focus`). Pristine `--all-files`
+# mode forces this on regardless. Toggle at runtime with `:focus` / `:f` /
+# `<leader>f`.
+single_file_view = true
+
+# Second Right press (after the first focused the diff) collapses the
+# file list. Requires a key release between the two presses, so a held
+# Right never dismisses the panel. Works on terminals that support the
+# kitty REPORT_EVENT_TYPES enhancement (Ghostty, kitty, WezTerm).
+# Commented out: not yet in upstream main (pending PR #348).
+# right_arrow_hides_file_list = true
+
+# gitui-style folder navigation: `l` on a collapsed folder expands it,
+# on an expanded folder descends to the first child, on a file jumps
+# to the next folder below. `h` collapses an expanded folder or
+# ascends to the parent. Falls through to plain horizontal scroll
+# when the file list isn't at the boundary. `Enter` / `Space` still
+# toggle folders regardless of this flag.
+arrow_tree_navigation = true
+
+# Vim-style scroll padding. Keeps 5 lines visible above and below the
+# cursor when navigating, so context survives near hunk boundaries.
+scroll_offset = 5
+
+# Mouse on. Useful for scrolling and click-to-position; tmux/Ghostty pass
+# mouse events through fine.
+mouse = true
+
+# Leader key prefix for panel-focus and other sequenced shortcuts. Default
+# `;` is easy on a US layout. Documented leader sequences include:
+#   `<leader>h`  focus file list
+#   `<leader>l`  focus diff
+#   `<leader>j`  focus commit selector
+#   `<leader>k`  focus diff (alternative)
+#   `<leader>e`  toggle file list visibility (auto-hidden below 100 cols)
+#   `<leader>c`  add comment on current line
+leader = ";"
+
+# Comment-type taxonomy. NOTE: tuicr replaces the default taxonomy entirely
+# if any `[[comment_types]]` block is declared here. Leave commented out to
+# keep the built-in ISSUE / SUGGESTION / NOTE / PRAISE set. If you customize,
+# re-declare the defaults you want to keep alongside the additions.
+#
+# [[comment_types]]
+# id = "blocker"
+# color = "red"
+# definition = "must fix before merge"

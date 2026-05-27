@@ -1,0 +1,37 @@
+; ~/.gitconfig — Chezmoi-managed; canonical source at
+; dotfiles/dot_gitconfig, deploys to ~/.gitconfig.
+;
+; Identity and signing config. The forge-provision configure script
+; scripts/configure/git-identity.sh sets the same name/email from .env
+; on a fresh machine; chezmoi takes over once dotfiles is applied. Both
+; targets write the same values, so coexistence is harmless until you
+; want to retire the configure script.
+
+[filter "lfs"]
+    required = true
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+
+[user]
+    name = Martin Zeman
+    email = N4M3Z@users.noreply.github.com
+    signingkey = /Users/N4M3Z/.ssh/yubikey_5c_nano_2026.pub
+
+[gpg]
+    format = ssh
+
+[commit]
+    gpgsign = true
+
+[tag]
+    gpgsign = true
+
+[gpg "ssh"]
+    allowedSignersFile = /Users/N4M3Z/.config/git/allowed_signers
+    ; Wrapper bypasses Apple's launchd ssh-agent (which refuses FIDO2
+    ; sk-ssh-ed25519). Installed by forge-provision/scripts/configure/
+    ; git-ssh-sign.sh from forge-core/skills/VersionControl/scripts/
+    ; git-ssh-sign-macos. See forge-core CommitSigning.md for the
+    ; full diagnosis.
+    program = /Users/N4M3Z/.local/bin/git-ssh-sign-macos

@@ -1,0 +1,63 @@
+# revdiff config. Chezmoi-managed; canonical source at
+# ~/Developer/N4M3Z/dotfiles/dot_config/revdiff/config, deploys to
+# ~/.config/revdiff/config via `chezmoi apply`.
+#
+# Reference: revdiff --dump-config for the full option list.
+
+[Application Options]
+
+# Always include untracked files (new files from Claude sessions show up
+# in the file tree alongside modified tracked files).
+untracked = true
+
+# Tree panel wide enough to read full file names without truncation. Press
+# `t` to fully toggle the tree on/off in-session (gitui-style) when working
+# in a narrow split. `tab` cycles focus; `h`/`l` (or `←`/`→` per the custom
+# keybindings file) move between tree and diff.
+tree-width = 4
+
+# Vim-style motion preset: counts, gg, G, zz/zt/zb. Matches helix/nvim
+# muscle memory.
+vim-motion = true
+
+# Highlight intra-line word changes in paired add/remove lines. Without this,
+# a one-token edit highlights the entire line as add+remove.
+word-diff = true
+
+# Line numbers in the diff gutter. Annotations are line-anchored so seeing
+# the numbers in-context saves a step.
+line-numbers = true
+
+# Blame gutter off by default — the author + commit-age strip is wide and
+# eats horizontal space on every line. Press `B` in-session to toggle on
+# when you need to distinguish AI work from older history, then `B` again
+# to dismiss. There's no narrow-blame option in revdiff; it's all or none.
+blame = false
+
+# `[` / `]` navigate across file boundaries, not just within one file.
+cross-file-hunks = true
+
+# Match the rest of the stack: Ghostty Nord, Starship Nord. The Nord theme
+# also sets `chroma-style = nord` for syntax highlighting, which is muted
+# by design. Override below if you want more vibrant token colors on
+# context lines.
+theme = nord
+
+# Chroma syntax-highlighting palette. The Nord theme sets this to `nord`,
+# which is subtle. Catppuccin Mocha gives more visible token colors while
+# staying in the cool-toned family. Other options: dracula, tokyo-night,
+# monokai, github-dark. Browse with `revdiff` in-session via `T` (theme
+# select) — that only swaps the UI theme, not chroma-style; for chroma
+# experiments, edit here and re-launch.
+chroma-style = catppuccin-mocha
+
+[color options]
+
+# Override Nord's `color-add-bg = #1a3a1a` and `color-remove-bg = #4a1a1a`
+# with way-toned-down values that blend with Nord's polar-night terminal bg
+# (`#2e3440`). Just enough green/red tint to distinguish add from remove
+# lines without flooding the screen on a 100%-new file. Dial up or down by
+# nudging the green/red channel — these are roughly Nord-bg + 8 of green
+# or red.
+color-add-bg = #1f2a1f
+color-remove-bg = #2a1f1f

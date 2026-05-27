@@ -1,0 +1,121 @@
+// cmux config. Chezmoi-managed; canonical source at
+// dotfiles/dot_config/cmux/cmux.json, deploys to ~/.config/cmux/cmux.json.
+//
+// cmux (manaflow-ai/cmux, libghostty-based AI-pane manager) reads:
+//   1. ~/.config/ghostty/config           (visual subset: font, theme, palette)
+//   2. ~/.config/ghostty/config (cmux's)  (override layer; unused here)
+//   3. ~/.config/cmux/cmux.json           (this file — cmux-owned settings)
+// Later wins. Reload via Cmd+Shift+R (we rebind below from default Cmd+Shift+,).
+//
+// Action names: camelCase, NOT Ghostty snake_case. Schema enum at
+// https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux.schema.json
+// Reload-config docs: https://cmux.com/docs/configuration
+
+{
+    "$schema": "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux.schema.json",
+    "schemaVersion": 1,
+
+    "shortcuts": {
+        "bindings": {
+            // Preserve Ghostty muscle memory; cmux default for reload is Cmd+Shift+,.
+            "reloadConfiguration": "cmd+shift+r"
+        }
+    },
+
+    "sidebar": {
+        "showWorkspaceDescription": true,
+        "showBranchDirectory": true,
+        "showPullRequests": true,
+        "makePullRequestsClickable": true,
+        "openPullRequestLinksInCmuxBrowser": false,
+        "openPortLinksInCmuxBrowser": false,
+        "showPorts": true,
+        "showLog": true,
+        "showProgress": true,
+        "showSSH": false,
+        "branchLayout": "vertical",
+        "hideAllDetails": false
+    },
+
+    "sidebarAppearance": {
+        // Sidebar bg follows Ghostty's terminal background (currently Nord
+        // Wave's near-black). Cleanest way to match the rest of the stack.
+        "matchTerminalBackground": true
+    },
+
+    // Moved from sidebarAppearance where they were silently ignored
+    // (sidebarAppearance has additionalProperties: false in the schema).
+    // `leftRail` = thin colored bar on left + subtle tinted bg when active.
+    // `solidFill` = full row painted (more vivid but heavier).
+    // Frost Deep (#5E81AC) = restrained Nord accent for the active-workspace indicator.
+    "workspaceColors": {
+        "indicatorStyle": "leftRail",
+        "selectionColor": "#5E81AC"
+    },
+
+    "notifications": {
+        "dockBadge": true,
+        "showInMenuBar": true,
+        // unreadPaneRing is the primary attention surface — blue ring on the
+        // workspace sidebar entry when a backgrounded session produces output.
+        "unreadPaneRing": true,
+        // paneFlash + sound disabled to reduce notification fatigue when
+        // running 4+ parallel Claude sessions. Re-enable selectively if
+        // you find yourself missing critical agent completions.
+        "paneFlash": false,
+        "sound": "none"
+    },
+
+    "app": {
+        // Cross-workspace search in the Command Palette (Cmd+Shift+P).
+        // Without this, the palette only searches the focused workspace.
+        "commandPaletteSearchesAllSurfaces": true,
+        // Render .md files in cmux's built-in viewer instead of raw text.
+        "openMarkdownInCmuxViewer": true
+    },
+
+    "terminal": {
+        // Suspend idle agent terminals after 30 min of inactivity to free
+        // memory. Caps live terminals at 8; excess are hibernated and wake
+        // on focus. Essential for parallel-session workflows.
+        "agentHibernation": {
+            "enabled": true,
+            "idleSeconds": 1800,
+            "maxLiveTerminals": 8
+        }
+    },
+
+    // Workspace layout templates, invokable from the Command Palette
+    // (Cmd+Shift+P) or the plus-button menu. Each entry creates a named
+    // workspace with a pre-defined pane layout. Think tmuxinator but
+    // declarative JSON instead of YAML. See https://cmux.com/docs/custom-commands
+    "commands": [
+        {
+            // Side-by-side terminals for parallel agent sessions in the
+            // same repo (e.g., review in left pane, implement in right).
+            "name": "Split Workspace",
+            "workspace": {
+                "layout": {
+                    "direction": "horizontal",
+                    "split": 0.5,
+                    "children": [
+                        { "surface": { "type": "terminal" } },
+                        { "surface": { "type": "terminal" } }
+                    ]
+                }
+            }
+        }
+    ]
+
+    // Deferred for later authoring:
+    //   - `vault.agents[]`: register Claude Code for session restore with
+    //     sessionIdSource + resumeCommand. Needs CLI flag verification
+    //     before adding. See cmux docs on agent registration.
+    //   - `automation.portBase` / `portRange`: widen from default 10 to 20
+    //     if running parallel dev servers to avoid port collisions.
+    //   - `actions{}`: nightly feature. Maps stable IDs to builtins, shell
+    //     commands, agent launches, with Command Palette visibility control.
+    //     Defer until the API stabilizes.
+    //   - `browser`: hostsToOpenInEmbeddedBrowser, cookie import, hidden
+    //     tab discarding. Not yet needed for the current workflow.
+}
