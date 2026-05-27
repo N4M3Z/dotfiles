@@ -1,0 +1,186 @@
+# Ghostty config — reference: https://ghostty.org/docs/config/reference
+# Comments must be on their own line. Trailing comments parse as part of the value.
+
+# ---- appearance --------------------------------------------------------
+
+# Nord palette on a darker (#212121) background. Same aurora/frost colours
+# that starship's "nord" palette renders against, just on near-black instead
+# of the lighter #2e3440 default. `+list-themes | grep -i nord` for variants.
+theme = Nord Wave
+
+# MesloLGS Nerd Font Mono — p10k canonical, powerline glyphs.
+font-family = MesloLGS Nerd Font Mono
+font-size = 15
+cursor-style = block
+
+# Minimal stroke thickening firms up text on retina without going bold.
+# Strength 1 = lightest thickening (255 = max).
+font-thicken = true
+font-thicken-strength = 1
+
+# 1px of vertical breathing room between lines. Helps at small font sizes.
+adjust-cell-height = 1
+
+# Blinking eats battery and attention.
+cursor-style-blink = false
+mouse-hide-while-typing = true
+
+# Bright ANSI codes render as bright colors (default false). Conventional
+# terminal behavior; makes p10k brights, `ls --color`, and prompt accents
+# render as their bright variants instead of as bold-of-dim.
+bold-is-bright = true
+
+# ---- window / chrome ---------------------------------------------------
+
+window-padding-x = 8
+window-padding-y = 6
+# Equalise padding when cells don't divide evenly.
+window-padding-balance = true
+# Restore tabs/splits on relaunch.
+window-save-state = always
+# New tab/split inherits cwd + font-size from the active surface.
+window-inherit-working-directory = true
+window-inherit-font-size = true
+# Subtle transparency.
+background-opacity = 0.96
+# macOS-native vibrancy behind the transparency. 0-100.
+background-blur = 20
+unfocused-split-opacity = 0.85
+# Apple Silicon Retina wide-gamut rendering. Nord is defined in sRGB so
+# colors may shift slightly; verify visually and revert to `srgb` if the
+# palette looks off.
+window-colorspace = display-p3
+# Show size hint only after the first drag.
+resize-overlay = after-first
+# Cell-snap window resize on macOS — drag stops snap to character grid
+# instead of pixel-precise. Cleaner-feeling for terminal work; flip back
+# to default (omit the line) if it feels twitchy.
+window-step-resize = true
+# New tabs open at the right edge (browser convention) instead of after
+# the active tab.
+window-new-tab-position = end
+
+# ---- macOS-native ------------------------------------------------------
+
+# Tabs render broken under non-native fullscreen; use transparent instead.
+# Alternative: `hidden` removes the chrome entirely (more screen, no tabs).
+macos-titlebar-style = transparent
+# MBP notch-aware fullscreen (this machine is Mac17,6).
+macos-non-native-fullscreen = padded-notch
+# Left-Option = Meta for tmux/vim; right-Option keeps € ç etc.
+macos-option-as-alt = left
+macos-window-shadow = true
+
+# ---- quick terminal (drop-down, macOS) --------------------------------
+
+# Quake-style global hotkey. Requires System Settings > Privacy & Security >
+# Accessibility > Ghostty (toggle on), then fully quit and relaunch Ghostty —
+# reload-config is not enough for global bindings. cmd+§ is the ISO key
+# above Tab on Czech/UK/EU layouts; unclaimed by macOS, leaves bare § typing
+# intact in other apps.
+keybind = global:cmd+§=toggle_quick_terminal
+quick-terminal-position = top
+# Full width, ~40% height. Tweak after Accessibility is granted.
+quick-terminal-size = 100%,40%
+quick-terminal-screen = mouse
+quick-terminal-animation-duration = 0.12
+quick-terminal-autohide = true
+
+# ---- shell / SSH / Claude Code ----------------------------------------
+
+shell-integration = detect
+# ssh-terminfo installs xterm-ghostty on remotes; ssh-env auto-downgrades
+# TERM to xterm-256color when the remote lacks it. No local override needed.
+shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
+# ~100MB; Claude Code emits a lot. Memory leak under heavy CC output was
+# fixed in 1.3 (this machine is on 1.3.1).
+scrollback-limit = 100000000
+# Shift+click escapes to tmux/vim selection.
+mouse-shift-capture = false
+# URL hover previews only for explicit OSC 8 hyperlinks (gh, modern shells,
+# eza, build tools). Default `true` regex-scans every visible line on cursor
+# move; `osc8` limit cuts the perceived hover cost. Plain text URLs still
+# cmd-clickable, just no hover preview popover.
+link-previews = osc8
+copy-on-select = clipboard
+# Warn on multi-line / control-char paste.
+clipboard-paste-protection = true
+# Bracketed-paste-aware apps (zsh, less, tmux) auto-trusted.
+clipboard-paste-bracketed-safe = true
+
+# macOS notification when a foreground command finishes in an unfocused
+# Ghostty window after the threshold. Useful for long-running tests, builds,
+# tuicr reviews when you've task-switched to another app.
+notify-on-command-finish = unfocused
+notify-on-command-finish-after = 10s
+
+# ---- keybinds (custom only; defaults handle the rest) ------------------
+
+# Ghostty 1.3 defaults already cover splits (cmd+d / cmd+shift+d), split
+# navigation (cmd+alt+arrows), split zoom (cmd+shift+enter), split resize
+# (cmd+ctrl+arrows), equalize (cmd+ctrl+=), tab navigation (cmd+shift+[/]),
+# tab jump (cmd+1..9), prompt jump (cmd+shift+up/down — uses shell-integration),
+# clear (cmd+k), command palette (cmd+shift+p). `+list-keybinds --default`
+# enumerates the full set.
+keybind = cmd+shift+r=reload_config
+# Multi-line input for Claude Code when kitty keyboard negotiation misses
+# (older CC, nested tmux, ssh without extkeys).
+keybind = shift+enter=text:\n
+
+# ---- tmux interop watch-outs (diagnostic, fix if confirmed) -----------
+#
+# Three known Ghostty + tmux trap zones from 2025-2026 discussions.
+# Currently NOT applied. Uncomment if you observe the symptom.
+#
+# 1. Cmd+1-9 routes to Ghostty tabs (default) instead of tmux windows.
+#    Not a conflict per se — tmux's `prefix+N` still works. Only relevant
+#    if you'd rather have `cmd+N` send tmux prefix+N (one keystroke vs two).
+#    Tmux prefix is Ctrl+B = \x02; replace if you change the prefix.
+#    Source: https://github.com/ghostty-org/ghostty/discussions/8756
+#
+# keybind = cmd+one=text:\x021
+# keybind = cmd+two=text:\x022
+# keybind = cmd+three=text:\x023
+# keybind = cmd+four=text:\x024
+# keybind = cmd+five=text:\x025
+# keybind = cmd+six=text:\x026
+# keybind = cmd+seven=text:\x027
+# keybind = cmd+eight=text:\x028
+# keybind = cmd+nine=text:\x029
+#
+# 2. Alt+arrow word-jump regression inside tmux with `extended-keys on` +
+#    `extkeys` terminal-feature. Test: in nvim inside tmux, does Option+Left
+#    move by word? If broken (beeps, inserts garbage), uncomment to disable
+#    Ghostty's Alt+arrow handlers so the keys forward cleanly to nvim.
+#    Source: https://github.com/ghostty-org/ghostty/discussions/2845
+#
+# keybind = alt+left=unbind
+# keybind = alt+right=unbind
+#
+# 3. macos-option-as-alt + extkeys mismatch since Ghostty 1.2.3. tmux emits
+#    xterm `ESC[27;2;13~` while kitty-protocol apps expect `ESC[13;2u`.
+#    If modifier+key combos behave inconsistently inside tmux vs outside,
+#    fix on the tmux side: drop `extkeys` from terminal-features in
+#    tmux.conf, OR `set -s extended-keys always` (xterm format everywhere).
+#    Source: https://github.com/ghostty-org/ghostty/discussions/9340
+
+# window-save-state covers recovery, no need to confirm close.
+confirm-close-surface = false
+
+# ---- machine-local overrides (optional) --------------------------------
+
+# `?` prefix = silently ignored if the file is absent. Use for laptop-vs-desktop
+# tweaks (font-size, background-opacity) without touching the tracked config.
+config-file = ?local.conf
+
+# ---- customization surface notes ---------------------------------------
+
+# Ghostty has no plugin system. The extension points are:
+#   - themes:    ~/.config/ghostty/themes/<name> (same syntax as this file)
+#   - shaders:   custom-shader = /path/to/file.glsl (repeat to stack)
+#                catalogues: 0xhckr/ghostty-shaders, thijskok/ghostty-shaders
+#   - includes:  config-file = path (above)
+#   - keybinds:  chord syntax with `>` separator (e.g. ctrl+a>n=new_tab)
+# Example (off; uncomment to try a CRT look):
+# custom-shader = ~/.config/ghostty/shaders/bettercrt.glsl
+# custom-shader-animation = always
