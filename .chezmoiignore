@@ -1,0 +1,6 @@
+# Repo-internal artifacts that should not deploy to $HOME.
+# Source files now use chezmoi's native dot_* / private_dot_* / dot_config/*
+# conventions; chezmoi handles their deployment without an ignore entry.
+
+README.md
+docs

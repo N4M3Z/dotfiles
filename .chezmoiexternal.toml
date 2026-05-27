@@ -1,0 +1,39 @@
+# External git repos that chezmoi clones/pulls on apply.
+# Reference: https://www.chezmoi.io/reference/special-files-and-directories/chezmoiexternal-format/
+
+# dotzsh — Prezto fork. Cloned to ~/.zsh/ to match the convention used in
+# the legacy stow-managed dotfiles (.zshrc sources ${ZDOTDIR:-$HOME}/.zsh/init.zsh).
+[".zsh"]
+    type = "git-repo"
+    url = "https://github.com/N4M3Z/dotzsh.git"
+    refreshPeriod = "168h"
+    [".zsh".clone]
+        args = ["--recursive"]
+    [".zsh".pull]
+        args = ["--ff-only"]
+
+# tmux plugins sourced directly via run-shell in tmux.conf (no TPM runner).
+# chezmoi handles the git cloning; tmux.conf sources each plugin's *.tmux
+# entry script. To add a new plugin: add a block here, add a run-shell
+# line in dot_config/tmux/tmux.conf, run `chezmoi apply`, reload tmux.
+# See forge-provision ARCH-0015 for the rationale behind dropping TPM.
+
+[".config/tmux/plugins/tmux-resurrect"]
+    type = "git-repo"
+    url = "https://github.com/tmux-plugins/tmux-resurrect.git"
+    refreshPeriod = "168h"
+
+[".config/tmux/plugins/tmux-continuum"]
+    type = "git-repo"
+    url = "https://github.com/tmux-plugins/tmux-continuum.git"
+    refreshPeriod = "168h"
+
+[".config/tmux/plugins/catppuccin"]
+    type = "git-repo"
+    url = "https://github.com/catppuccin/tmux.git"
+    refreshPeriod = "168h"
+
+[".config/tmux/plugins/tmux-fingers"]
+    type = "git-repo"
+    url = "https://github.com/Morantron/tmux-fingers.git"
+    refreshPeriod = "168h"
