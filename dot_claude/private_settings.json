@@ -7,6 +7,11 @@
     "BASH_MAX_TIMEOUT_MS": "900000"
   },
   "permissions": {
+    "allow": [
+      "Read(*/.claude/skills/**)",
+      "Edit(~/.claude/plans/*)",
+      "Write(~/.claude/plans/*)"
+    ],
     "deny": [
       "Read(~/.ssh/**)",
       "Edit(~/.ssh/**)",
@@ -28,7 +33,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-opus-4-7[1m]",
   "enableAllProjectMcpServers": false,
   "hooks": {
     "PreToolUse": [
@@ -48,14 +52,29 @@
     "command": "/Users/N4M3Z/.bun/bin/ccline",
     "padding": 0
   },
+  "enabledPlugins": {
+    "warp@claude-code-warp": false
+  },
+  "extraKnownMarketplaces": {
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    }
+  },
   "advisorModel": "opus",
   "voice": {
     "enabled": true,
     "mode": "hold"
   },
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
   "theme": "dark",
+  "teammateMode": "tmux",
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": true,
-  "maxSkillDescriptionChars": 2048,
-  "teammateMode": "tmux"
+  "maxSkillDescriptionChars": 2048
 }
