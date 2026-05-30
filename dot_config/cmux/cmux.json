@@ -107,10 +107,15 @@
         }
     ]
 
+    // Vault indexes sessions from all registered agents into one searchable
+    // sidebar panel (right-sidebar → vault). Open with `cmux right-sidebar
+    // vault` or click the sidebar icon. cmux includes Claude Code, Codex,
+    // OpenCode, Pi, RovoDev, Grok by default; custom agents go here.
+    // "vault": {
+    //     "agents": []
+    // }
+
     // Deferred for later authoring:
-    //   - `vault.agents[]`: register Claude Code for session restore with
-    //     sessionIdSource + resumeCommand. Needs CLI flag verification
-    //     before adding. See cmux docs on agent registration.
     //   - `automation.portBase` / `portRange`: widen from default 10 to 20
     //     if running parallel dev servers to avoid port collisions.
     //   - `actions{}`: nightly feature. Maps stable IDs to builtins, shell
