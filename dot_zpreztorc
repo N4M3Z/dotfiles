@@ -69,7 +69,7 @@ zplugins=(
   'syntax-highlighting'
   'history-substring-search'
   'autosuggestions'
-  'contrib-prompt'
+  # 'contrib-prompt'    # Disabled: Starship owns the prompt (zstyle ':prezto:module:prompt' theme 'off' below).
   'prompt'
   'completion'  # Loads and configures tab completion and provides additional completions from the zsh-completions project.
   'zoxide'      # Frecency cd via `z <query>` and `zi <query>`. cd stays the zsh builtin.
@@ -120,13 +120,6 @@ zstyle ':prezto:module:editor' dot-expansion 'yes'
 
 # Allow the zsh prompt context to be shown.
 # zstyle ':prezto:module:editor' ps-context 'yes'
-
-#
-# Environment
-#
-
-# You may need to manually set your language environment
-zstyle ':prezto:environment' language 'en_US.UTF-8'
 
 #
 # Git
