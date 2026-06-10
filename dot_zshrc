@@ -34,18 +34,6 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 # LM Studio CLI (lms)
 [ -d "${HOME}/.lmstudio/bin" ] && export PATH="${PATH}:${HOME}/.lmstudio/bin"
 
-# Deno env
-[ -s "${HOME}/.deno/env" ] && . "${HOME}/.deno/env"
-
-# Docker CLI completions
-if [ -d "${HOME}/.docker/completions" ]; then
-    fpath=("${HOME}/.docker/completions" ${fpath})
-    autoload -Uz compinit && compinit
-fi
-
-# Bun completions (PATH set in .zshenv)
-[ -s "${HOME}/.bun/_bun" ] && source "${HOME}/.bun/_bun"
-
 # p10k config saved as fallback. Loaded only when p10k is the active prompt
 # (currently inactive: zpreztorc prompt theme = 'off' and starship init above).
 # Uncomment to switch back to p10k:
