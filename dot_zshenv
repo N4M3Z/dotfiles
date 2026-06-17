@@ -18,9 +18,26 @@ export SSH_ASKPASS_REQUIRE=force
 # runners, cron) can sign commits without the askpass exec failing.
 export SSH_ASKPASS=/opt/homebrew/bin/ssh-askpass
 
+# cmux claude-teams truecolor. Scoped to cmux panes (CMUX_SURFACE_ID is set
+# per pane) so these never leak into remote shells reached via ssh, where
+# they'd be noise. The claude-teams launcher defaults agent panes to
+# TERM=screen-256color, whose tmux-compat surface bands 24-bit color to a
+# 256 palette (cmux #4316); the native libghostty TERM restores truecolor.
+# CLAUDE_CODE_TMUX_TRUECOLOR separately defeats Claude Code's own $TMUX
+# 256-clamp so its markdown emits 24-bit. Both are needed for full-color
+# markdown inside agent-team splits.
+if [[ -n "$CMUX_SURFACE_ID" ]]; then
+    export CMUX_CLAUDE_TEAMS_TERM=xterm-ghostty
+    export CLAUDE_CODE_TMUX_TRUECOLOR=1
+fi
+
 # Bun runtime
 export BUN_INSTALL="${HOME}/.bun"
 export PATH="${BUN_INSTALL}/bin:${PATH}"
 
 # uv (Python package manager) lives at ~/.local/bin
 [ -d "${HOME}/.local/bin" ] && export PATH="${HOME}/.local/bin:${PATH}"
+
+# OpenTelemetry (Claude Code + any OTEL tool). Its own file, not inlined here; see
+# the header in otel.zsh. Mirrored into ~/.claude/settings.json by wire-brain.
+[ -r "${HOME}/.config/zsh/otel.zsh" ] && source "${HOME}/.config/zsh/otel.zsh"

@@ -1,0 +1,19 @@
+# SpecStory CLI config. Codified via chezmoi -> ~/.specstory/cli/config.toml.
+#
+# Local-first capture for the second brain: no cloud, no external analytics, no
+# startup version ping. SpecStory's own OTLP spans feed the local collector (same
+# one Claude Code's telemetry uses). Per-harness output_dir is set by session-sync's
+# --output-dir flag (~/Data/<Harness>/transcripts), not here.
+
+[cloud_sync]
+enabled = false
+
+[analytics]
+enabled = false
+
+[version_check]
+enabled = false
+
+[telemetry]
+endpoint = "localhost:4317"
+prompts = true
