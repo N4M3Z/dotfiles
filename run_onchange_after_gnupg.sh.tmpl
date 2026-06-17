@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Runs after chezmoi writes ~/.gnupg/{gpg-agent.conf,scdaemon.conf}, and re-runs whenever either
+# changes (content hashes below). Disables pinentry-mac's Keychain PIN storage — a Keychain-stored
+# PIN would auto-unlock the card on every insertion, deleting the PIN factor — then reloads the
+# agents so the new config takes effect.
+# Decision: forge-provision docs/decisions/ARCH-0006 Commit signing.md
+#
+# gpg-agent.conf: {{ include "private_dot_gnupg/private_gpg-agent.conf.tmpl" | sha256sum }}
+# scdaemon.conf:  {{ include "private_dot_gnupg/private_scdaemon.conf" | sha256sum }}
+{{ if eq .chezmoi.os "darwin" -}}
+set -euo pipefail
+
+defaults write org.gpgtools.pinentry-mac DisableKeychain -bool YES
+
+if command -v gpgconf >/dev/null 2>&1; then
+    gpgconf --kill gpg-agent scdaemon
+fi
+{{- end }}

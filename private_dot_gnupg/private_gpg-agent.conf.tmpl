@@ -1,0 +1,16 @@
+# ~/.gnupg/gpg-agent.conf — managed by chezmoi (private_dot_gnupg/private_gpg-agent.conf.tmpl).
+# GnuPG conf files do not shell-expand, so the pinentry path is templated at apply time.
+#
+# Cache-TTL governs the card PIN re-prompt cadence: gpg-agent caches the verified PIN for
+# the YubiKey signing slot, so a long TTL means the pinentry dialog rarely reappears. The
+# signature touch policy is Cached (one touch is valid 15 s); with a long PIN cache the
+# touches that fall between PIN prompts surface only as a silent LED blink that is easy to
+# miss — a push once timed out on an unnoticed touch. Capping the cache under the 15 s touch
+# window makes the pinentry dialog reappear together with each needed touch, so the dialog
+# itself is the cue to touch the key.
+# Decision: docs/decisions/ARCH-0006 Commit signing.md (forge-provision)
+
+pinentry-program {{ lookPath "pinentry-mac" }}
+
+default-cache-ttl 12
+max-cache-ttl 15
