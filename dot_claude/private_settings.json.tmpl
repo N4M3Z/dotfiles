@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "skillListingBudgetFraction": 0.03,
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "BASH_DEFAULT_TIMEOUT_MS": "180000",
+    "BASH_MAX_TIMEOUT_MS": "900000",
+    "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB": "1",
+    "OPENAI_BASE_URL": "http://localhost:11434/v1",
+    "OPENAI_API_KEY": "ollama",
+    "DATABASE_URL": "postgresql://localhost:5432/memex",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_TRACES_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative",
+    "OTEL_METRIC_EXPORT_INTERVAL": "10000",
+    "OTEL_LOG_USER_PROMPTS": "1",
+    "OTEL_LOG_TOOL_DETAILS": "1",
+    "OTEL_LOG_TOOL_CONTENT": "1",
+    "OTEL_LOG_RAW_API_BODIES": "file:{{ .chezmoi.homeDir }}/Data/Claude/telemetry"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(mktemp:*)",
+      "Bash(trash:*)",
+      "Bash(/usr/bin/trash:*)",
+      "Read(*/.claude/skills/**)",
+      "Edit(~/.claude/plans/*)",
+      "Write(~/.claude/plans/*)"
+    ],
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Edit(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.git-credentials)",
+      "Read(~/.npmrc)",
+      "Read(~/.pypirc)",
+      "Read(~/.gem/credentials)",
+      "Read(~/Library/Keychains/**)",
+      "Read(~/.password-store/**)",
+      "Edit(~/.bashrc)",
+      "Edit(~/.zshrc)",
+      "Edit(~/.bash_profile)",
+      "Edit(~/.zprofile)",
+      "Edit(~/.profile)"
+    ],
+    "defaultMode": "auto"
+  },
+  "enableAllProjectMcpServers": false,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dcg"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "{{ .chezmoi.homeDir }}/.bun/bin/ccline",
+    "padding": 0
+  },
+  "enabledPlugins": {
+    "warp@claude-code-warp": false,
+    "superwhisper@superwhisper": false
+  },
+  "extraKnownMarketplaces": {
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    },
+    "superwhisper": {
+      "source": {
+        "source": "github",
+        "repo": "superultrainc/superwhisper-claude-code"
+      }
+    }
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "*.github.com",
+        "raw.githubusercontent.com",
+        "objects.githubusercontent.com",
+        "pkg-containers.githubusercontent.com",
+        "registry.npmjs.org",
+        "crates.io",
+        "static.crates.io",
+        "index.crates.io",
+        "formulae.brew.sh",
+        "ghcr.io",
+        "pypi.org",
+        "*.pypi.org",
+        "files.pythonhosted.org",
+        "localhost",
+        "127.0.0.1"
+      ],
+      "allowUnixSockets": [
+        "/tmp/.s.PGSQL.5432"
+      ],
+      "allowLocalBinding": true
+    },
+    "filesystem": {
+      "allowWrite": [
+        "~/.cache/uv",
+        "/tmp/claude",
+        "/var/folders",
+        "~/Agents",
+        "~/Atlas",
+        "~/Developer",
+        "~/.gbrain",
+        "~/.memex",
+        "~/Data/Memex",
+        "~/Data/Claude",
+        "~/Data/Codex",
+        "~/Data/Gemini"
+      ],
+      "denyRead": [
+        "~/.ssh",
+        "~/.aws",
+        "~/.azure",
+        "~/.gnupg",
+        "~/.kube",
+        "~/.config/gh",
+        "~/.config/gcloud",
+        "~/.git-credentials",
+        "~/Library/Keychains",
+        "~/.npmrc",
+        "~/.npm",
+        "~/.pypirc",
+        "~/.gem/credentials",
+        "~/.cargo/credentials.toml",
+        "~/.config/containers",
+        "~/.docker/config.json",
+        "~/.netrc",
+        "~/.config/op"
+      ]
+    },
+    "excludedCommands": [
+      "docker *",
+      "gh *",
+      "rtk gh *",
+      "brew *",
+      "rtk brew *",
+      "container *",
+      "rtk container *",
+      "prlctl *",
+      "rtk prlctl *",
+      "orb *",
+      "rtk orb *",
+      "orbctl *",
+      "rtk orbctl *",
+      "jj *",
+      "rtk jj *",
+      "trash *",
+      "/usr/bin/trash *",
+      "rtk trash *"
+    ]
+  },
+  "effortLevel": "xhigh",
+  "tui": "fullscreen",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
+  "theme": "custom:nord",
+  "verbose": true,
+  "preferredNotifChannel": "auto",
+  "teammateMode": "auto",
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "Pushing an approved feature branch to the trusted github.com/N4M3Z repositories is routine.",
+      "Reading and writing within ~/Developer and ~/Atlas is routine.",
+      "Local operations against Postgres, Ollama, and gbrain are routine."
+    ],
+    "soft_deny": [
+      "$defaults",
+      "Do not commit or push until the staged changes have been explicitly approved; review-before-commit is the default and commits wait for an explicit go-ahead.",
+      "Never force-push, and never push directly to the main or master branch; branch first and open a pull request.",
+      "Never skip git hooks (--no-verify) or bypass commit signing (--no-gpg-sign, -c commit.gpgsign=false).",
+      "Treat history rewrites (rebase, squash, reset --hard, force-push) on already-pushed branches as destructive.",
+      "Do not delete remote branches, releases, or repositories, or run gh/glab delete commands, without an explicit request."
+    ],
+    "hard_deny": [
+      "$defaults",
+      "Never read or exfiltrate credential stores: ~/.ssh, ~/.aws, ~/.gnupg, ~/.config/gh, ~/.git-credentials, ~/Library/Keychains, and similar.",
+      "Never upload repository contents, secrets, or local files to arbitrary or unrecognized external destinations such as pastebins, file-sharing, or unknown endpoints; deliberate, user-initiated review tools are exempt.",
+      "Never write real credentials, API keys, tokens, or personal data into tracked files; use placeholders.",
+      "Never disable or weaken the sandbox (macOS Seatbelt), the destructive-command guard (dcg), or commit signing."
+    ],
+    "environment": [
+      "$defaults",
+      "Source control: github.com/N4M3Z and repositories under it are trusted; GitLab is reached via the glab CLI.",
+      "Trusted local services: Postgres at postgresql://localhost:5432/memex, Ollama at localhost:11434, the gbrain MCP, and localhost / 127.0.0.1.",
+      "Trusted package and toolchain domains: github.com, registry.npmjs.org, crates.io, pypi.org, files.pythonhosted.org, formulae.brew.sh, ghcr.io.",
+      "Normal working trees for reads and writes are ~/Developer and ~/Atlas."
+    ]
+  },
+  "voiceEnabled": true,
+  "maxSkillDescriptionChars": 2048
+}

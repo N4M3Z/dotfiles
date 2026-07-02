@@ -1,0 +1,29 @@
+# Config for the `project` shell function (forge-core InitProject).
+# Personal paths live here so the forge-core function stays generic.
+
+# The workshop: every project lives at <workshop>/<owner>/<slug>.
+workshop: ~/Agents
+owner: N4M3Z
+archive: ~/Agents/archive
+
+# Satellite roots: vault folder-notes (--note / --work), and the ~/Data tree
+# that mirrors the vault domain-path one-for-one (--data).
+vault: ~/Atlas/Domains
+work: ~/Atlas/Work
+data: ~/Data
+
+# Default Domain powering --all, --data, and the atlas shorthand.
+defaults:
+    domain: Technology
+
+# `project init` writes a .claude/settings.json that mounts this dir for reading,
+# minus the excluded subfolders (turned into permissions.deny Read rules).
+mount: ~/Atlas
+exclude:
+    - Assets
+    - Archives
+    - Templates
+    - Templater
+
+# entire/forge protections: `init` copies this .githooks dir and sets core.hooksPath.
+githooks: ~/Developer/N4M3Z/forge-core/.githooks

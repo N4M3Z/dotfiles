@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Runs on chezmoi apply whenever the forge-provision Brewfile changes (content
+# hash below), making `chezmoi apply` the one converge command for packages.
+# brew bundle is idempotent: installed entries are skipped, missing ones added.
+# Decision: workspace docs/Setup Review.md (converge through chezmoi apply).
+#
+# Brewfile: {{ output "shasum" "-a" "256" (joinPath .chezmoi.homeDir "Developer/N4M3Z/forge-provision/manifests/Brewfile") | trim }}
+{{ if eq .chezmoi.os "darwin" -}}
+set -euo pipefail
+
+BREWFILE="$HOME/Developer/N4M3Z/forge-provision/manifests/Brewfile"
+
+if [ ! -f "$BREWFILE" ]; then
+    echo "run_onchange_after_brew: Brewfile not found at $BREWFILE, skipping" >&2
+    exit 0
+fi
+
+if ! command -v brew >/dev/null 2>&1; then
+    echo "run_onchange_after_brew: brew not installed, skipping" >&2
+    exit 0
+fi
+
+brew bundle --file="$BREWFILE"
+{{- end }}

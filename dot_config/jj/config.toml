@@ -1,0 +1,21 @@
+#:schema https://docs.jj-vcs.dev/latest/config-schema.json
+
+[user]
+name = "Martin Zeman"
+email = "N4M3Z@users.noreply.github.com"
+
+[signing]
+backend = "gpg"
+behavior = "drop"
+key = "0x29DD2145CE7A818929459B2649F08103D3DA399E"
+
+[git]
+sign-on-push = true
+
+[aliases]
+push = ["util", "exec", "--", "bash", "-c", "cd \"$(jj workspace root)\" && exec .githooks/jj-push \"$@\"", "jj-push"]
+# Move the nearest ancestor bookmark up to @- , ready to push.
+tug = ["bookmark", "move", "--from", "closest_bookmark(@-)", "--to", "@-"]
+
+[revset-aliases]
+'closest_bookmark(to)' = 'heads(::to & bookmarks())'

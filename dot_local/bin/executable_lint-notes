@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# lint-notes — run the Obsidian Linter over vault notes from the shell.
+#
+# Usage:
+#   lint-notes <vault-relative-or-absolute .md paths...>
+#   lint-notes --changed         # changed .md files per the vault's git status
+#
+# Drives the official Obsidian CLI: opens each note, then executes the Linter
+# plugin's lint-file command. Requirements and caveats:
+#   - Obsidian must be running with the vault open; the script launches it and
+#     retries, because the CLI connection is flaky right after launch.
+#   - The obsidian-linter plugin must be enabled in the vault.
+#   - The CLI talks to the app over a local socket; sandboxed shells that block
+#     it fail with "unable to find Obsidian" — run unsandboxed.
+
+set -euo pipefail
+
+VAULT="${OBSIDIAN_VAULT:-$HOME/Atlas}"
+
+if ! command -v obsidian >/dev/null 2>&1; then
+    echo "lint-notes: obsidian CLI not found" >&2
+    exit 1
+fi
+
+connect() {
+    if obsidian vaults >/dev/null 2>&1; then
+        return 0
+    fi
+    open -a Obsidian
+    local i
+    for i in 1 2 3 4 5 6; do
+        sleep 3
+        obsidian vaults >/dev/null 2>&1 && return 0
+    done
+    echo "lint-notes: cannot reach Obsidian via the CLI (is it running? sandbox?)" >&2
+    return 1
+}
+
+collect() {
+    if [ "${1:-}" = "--changed" ]; then
+        git -C "$VAULT" status --porcelain 2>/dev/null |
+            awk '/\.md$/ { $1=""; sub(/^ /,""); print }'
+    else
+        printf '%s\n' "$@"
+    fi
+}
+
+connect
+
+status=0
+while IFS= read -r note; do
+    [ -n "$note" ] || continue
+    rel=${note#"$VAULT"/}
+    if obsidian open path="$rel" >/dev/null 2>&1 &&
+       obsidian command id=obsidian-linter:lint-file >/dev/null 2>&1; then
+        echo "linted: $rel"
+    else
+        echo "FAILED: $rel" >&2
+        status=1
+    fi
+done < <(collect "$@")
+
+exit $status

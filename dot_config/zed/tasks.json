@@ -1,0 +1,130 @@
+[
+    {
+        // Open the current file in Obsidian via the obsidian:// URI (reliable,
+        // unlike `open -a Obsidian`). zed-run reads $ZED_FILE from the env and
+        // jq @uri-encodes it; path= opens it in whichever vault contains it.
+        // Bound to `space v`.
+        "label": "Open note in Obsidian",
+        "command": "zed-run",
+        "args": ["obsidian"],
+        "reveal": "never",
+        "hide": "always"
+    },
+    {
+        // Render the current note to a sibling PDF via pandoc + typst (PROV-0016).
+        "label": "Export note to PDF",
+        "command": "pandoc",
+        "args": ["$ZED_FILE", "-o", "$ZED_STEM.pdf", "--pdf-engine=typst"],
+        "cwd": "$ZED_DIRNAME",
+        "reveal": "no_focus"
+    },
+    {
+        // Open the current file in tuicr for annotation. zed-run reads $ZED_FILE
+        // from the env and runs `tuicr --file`, so spaces in the path are safe
+        // and --file works on files with no VCS changes. Tag comments, export
+        // with :clip / --stdout. Bound to `space r`; `space r w` does the worktree.
+        "label": "Review current file (tuicr)",
+        "command": "zed-run",
+        "args": ["tuicr-file"],
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "reveal": "always",
+        "use_new_terminal": true,
+        "allow_concurrent_runs": true
+    },
+    {
+        // Review the whole working tree (an agent's full set of uncommitted
+        // edits). Bound to `space w`.
+        "label": "Review working tree (tuicr)",
+        "command": "tuicr",
+        "args": ["-w"],
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "reveal": "always",
+        "use_new_terminal": true,
+        "allow_concurrent_runs": true
+    },
+    {
+        // Review everything since the main branch point.
+        "label": "Review vs main (tuicr)",
+        "command": "tuicr",
+        "args": ["-r", "main..HEAD"],
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "reveal": "always",
+        "use_new_terminal": true,
+        "allow_concurrent_runs": true
+    },
+    {
+        // gitui: full terminal git UI for stage/commit/rebase/stash. Bound to `space t g`.
+        "label": "gitui",
+        "command": "gitui",
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "reveal": "always",
+        "use_new_terminal": true,
+        "allow_concurrent_runs": true
+    },
+    {
+        // sabiql: driver-less Postgres browser TUI (wraps psql). First run
+        // prompts for host/port/db and saves to its own connections.toml;
+        // respects .pgpass and psql config. Bound to `space t d`.
+        "label": "sabiql",
+        "command": "sabiql",
+        "reveal": "always",
+        "use_new_terminal": true,
+        "allow_concurrent_runs": true
+    },
+    {
+        // Lint the current shell script with shellcheck. Bound to `space c`.
+        "label": "Shellcheck current file",
+        "command": "shellcheck",
+        "args": ["$ZED_FILE"],
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "reveal": "always"
+    },
+    {
+        // Scan the working tree for secrets with gitleaks. Bound to `space s`.
+        "label": "Scan for secrets (gitleaks)",
+        "command": "gitleaks",
+        "args": ["dir", "."],
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "reveal": "always"
+    },
+    {
+        // Render the current markdown file in glow's pager. Bound to `space m g`.
+        "label": "Render markdown (glow)",
+        "command": "glow",
+        "args": ["-p", "$ZED_FILE"],
+        "reveal": "always",
+        "use_new_terminal": true,
+        "allow_concurrent_runs": true
+    },
+    {
+        // jjui: gitui-style TUI for Jujutsu (the state Zed can't show). Bound to
+        // `space t j`. lazyjj is installed too but jjui is the preferred one.
+        "label": "jjui",
+        "command": "jjui",
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "reveal": "always",
+        "use_new_terminal": true,
+        "allow_concurrent_runs": true
+    },
+    {
+        // Capture the current selection into the brain. zed-run reads
+        // $ZED_SELECTED_TEXT from the env and pipes it to `memex capture`, safe
+        // for any content. Lands in the gbrain capture source.
+        "label": "Capture selection to memex",
+        "command": "zed-run",
+        "args": ["capture"],
+        "reveal": "no_focus",
+        "hide": "on_success"
+    },
+    {
+        // Recall what the brain knows about the current selection. zed-run reads
+        // $ZED_SELECTED_TEXT from the env and runs `memex query`, so arbitrary
+        // selections (quotes, parens) are never re-parsed by a shell. `space k`.
+        "label": "Recall selection (memex)",
+        "command": "zed-run",
+        "args": ["recall"],
+        "reveal": "always",
+        "use_new_terminal": true,
+        "allow_concurrent_runs": true
+    }
+]

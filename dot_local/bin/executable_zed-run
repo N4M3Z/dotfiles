@@ -1,0 +1,44 @@
+#!/bin/sh
+# zed-run: editor-context helpers for Zed tasks. Reads ZED_* from the
+# environment (Zed exports the task variables) instead of interpolating them
+# into a command string, so paths with spaces and arbitrary selections are
+# never re-parsed by a shell. Invoked as `zed-run <action>` -- the action is the
+# only thing on the command line, so nothing untrusted reaches the shell.
+# Source of truth: chezmoi dot_local/bin/executable_zed-run.
+action="$1"
+case "$action" in
+    tuicr-file)
+        exec tuicr --file "$ZED_FILE"
+        ;;
+    obsidian)
+        exec open "obsidian://open?path=$(printf %s "$ZED_FILE" | jq -sRr @uri)"
+        ;;
+    recall)
+        [ -n "$ZED_SELECTED_TEXT" ] || { echo "zed-run recall: no text selected"; exit 0; }
+        # JSON-escape the selection so any content (tables, code) is safe to
+        # query, and query once so we can both count and format the hits.
+        q=$(printf %s "$ZED_SELECTED_TEXT" | jq -R -s '.')
+        json=$(memex call query "{\"query\":$q,\"source_id\":\"__all__\",\"expand\":false,\"detail\":\"low\",\"limit\":8}" 2>/dev/null)
+        count=$(printf %s "$json" | jq '(if type=="array" then . else .results end) | length' 2>/dev/null)
+        [ -n "$count" ] || count=0
+        unit=notes; [ "$count" = 1 ] && unit=note
+        # Header is the result count only -- echoing the raw selection breaks on
+        # tables / code blocks. Rule width matches the title.
+        title="Memory · $count $unit"
+        rule=$(printf '%*s' "${#title}" '' | tr ' ' '=')
+        printf '%s\n%s\n\n' "$title" "$rule"
+        [ "$count" = 0 ] && { echo "(nothing found)"; exit 0; }
+        # Each hit: "• **title**  [slug]" then an excerpt on its own line with
+        # the duplicated leading title stripped (up to ~220 chars, … if cut),
+        # blank line between hits. Slug shown for talking to the brain directly.
+        printf %s "$json" | jq -r '(if type=="array" then . else .results end) | [.[] | .title as $t | .slug as $s | ((.chunk_text // "") | gsub("[\\n\\t#`>*]+";" ") | gsub("  +";" ") | gsub("^ +";"") | ltrimstr($t) | gsub("^[ :.-]+";"")) as $body | "• **\($t)**   [\($s)]\n  " + (if ($body|length) > 220 then ($body[0:220] + "…") else $body end)] | join("\n\n")'
+        ;;
+    capture)
+        [ -n "$ZED_SELECTED_TEXT" ] || { echo "zed-run capture: no text selected"; exit 0; }
+        printf '%s' "$ZED_SELECTED_TEXT" | memex capture --stdin --quiet
+        ;;
+    *)
+        echo "zed-run: unknown action '$action'" >&2
+        exit 2
+        ;;
+esac

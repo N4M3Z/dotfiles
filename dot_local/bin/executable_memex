@@ -1,0 +1,10 @@
+#!/bin/sh
+# memex: gbrain preconfigured for the local brain. Presets the Ollama embedder
+# route and the memex Postgres so `memex <gbrain-args>` works identically in an
+# interactive shell and in a non-interactive context (a Zed task), where a shell
+# alias would not. Explicitly-set env still wins (e.g. pointing at Supabase).
+# Source of truth: chezmoi dot_local/bin/executable_memex.
+export OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://localhost:11434/v1}"
+export OPENAI_API_KEY="${OPENAI_API_KEY:-ollama}"
+export DATABASE_URL="${DATABASE_URL:-postgresql://localhost:5432/memex}"
+exec "$HOME/.bun/bin/gbrain" "$@"
