@@ -13,6 +13,18 @@
 
 [ -n "$TMUX" ] && [ -n "$TMUX_PANE" ] || exit 0
 
+# Breadcrumb for claude-revive: bind this tmux window to the Claude session
+# id carried in the hook's stdin JSON, so a tmux-resurrect restore can
+# claude --resume the exact session (not just the newest one in the cwd).
+session_id=$(cat 2>/dev/null | grep -o '"session_id":"[^"]*"' | head -1 | sed 's/.*:"//;s/"//')
+if [ -n "$session_id" ]; then
+    key=$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}:#{window_index}' 2>/dev/null | tr '/' '_')
+    if [ -n "$key" ]; then
+        mkdir -p "$HOME/.local/state/claude-tmux"
+        printf '%s\n' "$session_id" > "$HOME/.local/state/claude-tmux/$key"
+    fi
+fi
+
 state=$1
 if [ "$state" = "attention" ]; then
     visible=$(tmux display-message -p -t "$TMUX_PANE" \
