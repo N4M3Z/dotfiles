@@ -7,9 +7,10 @@
 # back to the default. #8f68c9 is a darkened derivative of the #af87fc
 # sampled from the reference screenshots.
 #
-# Four bar segments are clickable (MouseDown1Status dispatch lives in
-# tmux.conf, keyed on the range=user names below): host block -> sesh,
-# git branch -> gitui, clock -> cal, CPU/MEM -> btop.
+# Clickable bar segments (MouseDown1Status dispatch lives in tmux.conf, keyed
+# on the range=user names below): host block -> sesh, git branch -> gitui,
+# clock -> cal, CPU/MEM -> btop, per-window ✕ -> kill that window, trailing
+# [+] -> new window.
 {{- $accents := dict "Nexus" "#8f68c9" }}
 set -g @accent '{{ index $accents .chezmoi.hostname | default "#8f68c9" }}'
 
@@ -22,7 +23,7 @@ run-shell '~/.config/tmux/plugins/catppuccin/catppuccin.tmux'
 set -g status-interval 5
 set -g status-style 'bg=#1d1d1d,fg=#8a8a8a'
 set -g status-left-length 60
-set -g status-right-length 130
+set -g status-right-length 160
 
 # Left: prefix indicator (only while the prefix is held) + clickable host
 # block (-> sesh) + dim session name.
@@ -31,13 +32,16 @@ set -g status-left "#{?client_prefix,#[fg=#1d1d1d#,bg=#f9e2af#,bold] ⌘ #[defau
 # Windows: index:name, active in the accent. The leading conditional renders
 # the claude-tmux-status agent flag: ◉ (yellow) = agent needs you, ● (blue)
 # = agent working, nothing = no agent.
-setw -g window-status-format '#[fg=#8a8a8a] #{?#{==:#{@agent},attention},#[fg=#f9e2af bold]◉ #[fg=#8a8a8a nobold],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#8a8a8a],}}#I:#W '
-setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},attention},#[fg=#f9e2af]◉ #[fg=#{@accent}],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#{@accent}],}}#I:#W '
+# The trailing ✕ (range=user|kill<window_id>) closes that window; the [+]
+# after the last window (window_end_flag) opens a new one.
+setw -g window-status-format '#[fg=#8a8a8a] #{?#{==:#{@agent},attention},#[fg=#f9e2af bold]◉ #[fg=#8a8a8a nobold],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#8a8a8a],}}#I:#W #[range=user|kill#{window_id}]#[fg=#585b70]✕#[norange] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
+setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},attention},#[fg=#f9e2af]◉ #[fg=#{@accent}],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#{@accent}],}}#I:#W #[range=user|kill#{window_id}]#[fg=#6c7086]✕#[norange] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
 
-# Right: clickable git branch+dirty (-> gitui) · dim cwd basename · clickable
-# clock (-> cal) · clickable CPU/MEM accent block (-> btop). tmux-cpu rewrites
-# the CPU/MEM placeholders, so it is sourced AFTER status-right is set.
+# Right: clickable git branch+dirty (-> gitui) · dim cwd basename · battery ·
+# clickable date+clock (-> cal) · clickable CPU/MEM accent block (-> btop).
+# tmux-cpu rewrites the CPU/MEM placeholders, so it is sourced AFTER
+# status-right is set.
 set -g @cpu_percentage_format '%2.0f%%'
 set -g @ram_percentage_format '%2.0f%%'
-set -g status-right "#[range=user|gitui]#[fg=#a6adc8]#(~/.local/bin/tmux-git '#{pane_current_path}')#[norange]  #[fg=#6f6f6f]#{b:pane_current_path}  #[range=user|cal]#[fg=#8a8a8a]%H:%M#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] CPU #{cpu_percentage} · MEM #{ram_percentage} #[norange]"
+set -g status-right "#[range=user|gitui]#[fg=#a6adc8]#(~/.local/bin/tmux-git '#{pane_current_path}')#[norange]  #[fg=#6f6f6f]#{b:pane_current_path}  #[fg=#8a8a8a]#(~/.local/bin/tmux-battery)  #[range=user|cal]#[fg=#8a8a8a]%b %-d %H:%M#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] CPU #{cpu_percentage} · MEM #{ram_percentage} #[norange]"
 run-shell '~/.config/tmux/plugins/tmux-cpu/cpu.tmux'
