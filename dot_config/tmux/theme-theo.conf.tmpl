@@ -8,11 +8,13 @@
 # sampled from the reference screenshots.
 #
 # Clickable bar segments (MouseDown1Status dispatch lives in tmux.conf, keyed
-# on the range=user names below): host block -> sesh, git branch -> gitui/
-# jjui, clock -> cal, CPU/MEM -> btop. Window-list clicks can't carry a
-# user range (tmux wraps each cell in its own range=window), so window
-# management stays on the native gestures wired in tmux.conf: left-click
-# selects, drag reorders, right-click opens the kill/rename menu.
+# on the range=user names below): host block -> sesh, jj segment -> jjui,
+# git segment -> gitui, clock -> cal, CPU/MEM -> btop. Window-list clicks
+# can't carry a user range (tmux wraps each cell in its own range=window),
+# so window management stays on native gestures wired in tmux.conf:
+# left-click selects, drag reorders, right-click opens the kill/rename menu.
+# The trailing [+] is the exception — it renders past the last window's cell,
+# so its range=user|neww does register (-> new window).
 {{- $accents := dict "Nexus" "#8f68c9" }}
 set -g @accent '{{ index $accents .chezmoi.hostname | default "#8f68c9" }}'
 
@@ -34,14 +36,18 @@ set -g status-left "#{?client_prefix,#[fg=#1d1d1d#,bg=#f9e2af#,bold] ⌘ #[defau
 # Windows: index:name, active in the accent. The leading conditional renders
 # the claude-tmux-status agent flag: ◉ (yellow) = agent needs you, ● (blue)
 # = agent working, nothing = no agent.
-setw -g window-status-format '#[fg=#8a8a8a] #{?#{==:#{@agent},attention},#[fg=#f9e2af bold]◉ #[fg=#8a8a8a nobold],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#8a8a8a],}}#I:#W '
-setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},attention},#[fg=#f9e2af]◉ #[fg=#{@accent}],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#{@accent}],}}#I:#W '
+# The trailing [+] (after the last window, via window_end_flag) opens a new
+# window. It works because it renders past the per-window range=window cell,
+# so its range=user|neww registers — unlike a per-window ✕, which tmux would
+# absorb into the window cell's own range.
+setw -g window-status-format '#[fg=#8a8a8a] #{?#{==:#{@agent},attention},#[fg=#f9e2af bold]◉ #[fg=#8a8a8a nobold],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#8a8a8a],}}#I:#W #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
+setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},attention},#[fg=#f9e2af]◉ #[fg=#{@accent}],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#{@accent}],}}#I:#W #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
 
-# Right: clickable git branch+dirty (-> gitui) · dim cwd basename · battery ·
-# clickable date+clock (-> cal) · clickable CPU/MEM accent block (-> btop).
-# tmux-cpu rewrites the CPU/MEM placeholders, so it is sourced AFTER
-# status-right is set.
+# Right: clickable jj change/bookmark (-> jjui) · clickable git branch/sha
+# (-> gitui) · dim cwd basename · battery · clickable date+clock (-> cal) ·
+# clickable CPU/MEM accent block (-> btop). tmux-cpu rewrites the CPU/MEM
+# placeholders, so it is sourced AFTER status-right is set.
 set -g @cpu_percentage_format '%2.0f%%'
 set -g @ram_percentage_format '%2.0f%%'
-set -g status-right "#[range=user|gitui]#[fg=#a6adc8]#(~/.local/bin/tmux-git '#{pane_current_path}')#[norange]  #[fg=#6f6f6f]#{b:pane_current_path}  #[fg=#8a8a8a]#(~/.local/bin/tmux-battery)  #[range=user|cal]#[fg=#8a8a8a]%b %-d %H:%M#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] CPU #{cpu_percentage} · MEM #{ram_percentage} #[norange]"
+set -g status-right "#[range=user|jjui]#[fg=#a6adc8]#(~/.local/bin/tmux-jj '#{pane_current_path}')#[norange] #[range=user|gitui]#[fg=#7f849c]#(~/.local/bin/tmux-git '#{pane_current_path}')#[norange]  #[fg=#6f6f6f]#{b:pane_current_path}  #[fg=#8a8a8a]#(~/.local/bin/tmux-battery)  #[range=user|cal]#[fg=#8a8a8a]%b %-d %H:%M#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] CPU #{cpu_percentage} · MEM #{ram_percentage} #[norange]"
 run-shell '~/.config/tmux/plugins/tmux-cpu/cpu.tmux'

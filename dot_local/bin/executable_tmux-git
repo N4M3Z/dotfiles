@@ -1,14 +1,17 @@
 #!/bin/sh
-# Status-bar git segment: "branch ✗" when dirty, "branch" when clean, nothing
-# outside a repo. Arg is the directory (the pane's cwd). One git call path,
-# cheap enough for status-interval.
+# Status-bar git segment: "git <branch>" (or short SHA when HEAD is detached,
+# as jj-colocated repos leave it), with a ✗ when the worktree is dirty.
+# In a jj repo the dirty check is skipped: git HEAD lags jj's @, so a ✗ there
+# would be permanent noise — the jj segment owns dirty state instead.
 
 dir=${1:-$PWD}
-branch=$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null) || exit 0
-[ -n "$branch" ] || exit 0
+ref=$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null)
+[ -n "$ref" ] || ref=$(git -C "$dir" rev-parse --short HEAD 2>/dev/null) || exit 0
 
-if [ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]; then
-    printf ' %s ✗' "$branch"
+if jj -R "$dir" root >/dev/null 2>&1; then
+    printf 'git %s' "$ref"
+elif [ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]; then
+    printf 'git %s ✗' "$ref"
 else
-    printf ' %s' "$branch"
+    printf 'git %s' "$ref"
 fi
