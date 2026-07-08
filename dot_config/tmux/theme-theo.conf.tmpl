@@ -9,8 +9,9 @@
 #
 # Clickable bar segments (MouseDown1Status dispatch lives in tmux.conf, keyed
 # on the range=user names below): host block -> sesh, git branch -> gitui,
-# clock -> cal, CPU/MEM -> btop, per-window ✕ -> kill that window, trailing
-# [+] -> new window.
+# clock -> cal, CPU/MEM -> btop, per-window ✕ -> kill the clicked window,
+# trailing [+] -> new window. The git click opens jjui in a jj repo, gitui
+# otherwise (via tmux-vcs).
 {{- $accents := dict "Nexus" "#8f68c9" }}
 set -g @accent '{{ index $accents .chezmoi.hostname | default "#8f68c9" }}'
 
@@ -34,8 +35,8 @@ set -g status-left "#{?client_prefix,#[fg=#1d1d1d#,bg=#f9e2af#,bold] ⌘ #[defau
 # = agent working, nothing = no agent.
 # The trailing ✕ (range=user|kill<window_id>) closes that window; the [+]
 # after the last window (window_end_flag) opens a new one.
-setw -g window-status-format '#[fg=#8a8a8a] #{?#{==:#{@agent},attention},#[fg=#f9e2af bold]◉ #[fg=#8a8a8a nobold],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#8a8a8a],}}#I:#W #[range=user|kill#{window_id}]#[fg=#585b70]✕#[norange] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
-setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},attention},#[fg=#f9e2af]◉ #[fg=#{@accent}],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#{@accent}],}}#I:#W #[range=user|kill#{window_id}]#[fg=#6c7086]✕#[norange] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
+setw -g window-status-format '#[fg=#8a8a8a] #{?#{==:#{@agent},attention},#[fg=#f9e2af bold]◉ #[fg=#8a8a8a nobold],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#8a8a8a],}}#I:#W #[range=user|kill]#[fg=#585b70]✕#[norange] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
+setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},attention},#[fg=#f9e2af]◉ #[fg=#{@accent}],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#{@accent}],}}#I:#W #[range=user|kill]#[fg=#6c7086]✕#[norange] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
 
 # Right: clickable git branch+dirty (-> gitui) · dim cwd basename · battery ·
 # clickable date+clock (-> cal) · clickable CPU/MEM accent block (-> btop).
