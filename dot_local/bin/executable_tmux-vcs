@@ -1,0 +1,10 @@
+#!/bin/sh
+# Open the right VCS TUI for the current directory: jjui in a Jujutsu repo
+# (colocated or not), gitui otherwise. Launched by the tmux status-bar VCS
+# segments (both the jj and git state segments), which set the popup's cwd
+# via display-popup -d.
+
+if jj root >/dev/null 2>&1; then
+    exec jjui
+fi
+exec gitui
