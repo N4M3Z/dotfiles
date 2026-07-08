@@ -19,17 +19,25 @@ export SSH_ASKPASS_REQUIRE=force
 export SSH_ASKPASS=/opt/homebrew/bin/ssh-askpass
 
 # cmux claude-teams truecolor. Scoped to cmux panes (CMUX_SURFACE_ID is set
-# per pane) so these never leak into remote shells reached via ssh, where
-# they'd be noise. The claude-teams launcher defaults agent panes to
+# per pane) so this never leaks into remote shells reached via ssh, where
+# it'd be noise. The claude-teams launcher defaults agent panes to
 # TERM=screen-256color, whose tmux-compat surface bands 24-bit color to a
 # 256 palette (cmux #4316); the native libghostty TERM restores truecolor.
-# CLAUDE_CODE_TMUX_TRUECOLOR separately defeats Claude Code's own $TMUX
-# 256-clamp so its markdown emits 24-bit. Both are needed for full-color
-# markdown inside agent-team splits.
 if [[ -n "$CMUX_SURFACE_ID" ]]; then
     export CMUX_CLAUDE_TEAMS_TERM=xterm-ghostty
-    export CLAUDE_CODE_TMUX_TRUECOLOR=1
 fi
+
+# Claude Code clamps itself to 256 colors whenever $TMUX is set (issue
+# #60788), which quantizes its dark background to a green-tinted palette
+# gray inside tmux panes. tmux itself advertises real RGB (terminal-features
+# in tmux.conf), so the clamp is pure loss — lift it unconditionally; Claude
+# only consults this variable when $TMUX is present.
+export CLAUDE_CODE_TMUX_TRUECOLOR=1
+
+# Zed as the editor for git commit messages, jj describe, and anything that
+# spawns $EDITOR; --wait blocks until the buffer closes so the caller sees the
+# saved file. Falls back untouched in environments without the zed CLI.
+export EDITOR="zed --wait"
 
 # Bun runtime
 export BUN_INSTALL="${HOME}/.bun"

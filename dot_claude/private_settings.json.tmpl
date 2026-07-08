@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "claude-fable-5[1m]",
   "skillListingBudgetFraction": 0.03,
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
@@ -58,6 +59,15 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "EnterWorktree",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d \"$root/.jj\" ] && { echo 'jj-colocated repo: git worktrees conflict with jj. Use jj workspace add/forget instead (VersionControl/Jujutsu.md, JujutsuToolkit).' >&2; exit 2; }; exit 0"
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -86,12 +96,46 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status working"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "{{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync"
+          },
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status clear"
           }
         ]
       }
@@ -139,11 +183,14 @@
         "pypi.org",
         "*.pypi.org",
         "files.pythonhosted.org",
+        "semgrep.dev",
+        "*.semgrep.dev",
         "localhost",
         "127.0.0.1"
       ],
       "allowUnixSockets": [
-        "/tmp/.s.PGSQL.5432"
+        "/tmp/.s.PGSQL.5432",
+        "~/.obsidian-cli.sock"
       ],
       "allowLocalBinding": true
     },
@@ -157,10 +204,20 @@
         "~/Developer",
         "~/.gbrain",
         "~/.memex",
+        "~/.semgrep",
+        "~/Library/Caches/",
         "~/Data/Memex",
         "~/Data/Claude",
         "~/Data/Codex",
         "~/Data/Gemini"
+      ],
+      "denyWrite": [
+        "~/Library/Caches/at.obdev.littlesnitch",
+        "~/Library/Caches/at.obdev.littlesnitch.softwareupdate",
+        "~/Library/Caches/Proton AG",
+        "~/Library/Caches/PassKit",
+        "~/Library/Caches/CloudKit",
+        "~/Library/Caches/Steam"
       ],
       "denyRead": [
         "~/.ssh",
@@ -180,7 +237,8 @@
         "~/.config/containers",
         "~/.docker/config.json",
         "~/.netrc",
-        "~/.config/op"
+        "~/.config/op",
+        "~/.password-store"
       ]
     },
     "excludedCommands": [
@@ -204,7 +262,7 @@
       "rtk trash *"
     ]
   },
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
   "tui": "fullscreen",
   "voice": {
     "enabled": true,

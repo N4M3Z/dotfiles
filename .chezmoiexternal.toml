@@ -37,3 +37,8 @@
     type = "git-repo"
     url = "https://github.com/Morantron/tmux-fingers.git"
     refreshPeriod = "168h"
+
+[".config/tmux/plugins/tmux-cpu"]
+    type = "git-repo"
+    url = "https://github.com/tmux-plugins/tmux-cpu.git"
+    refreshPeriod = "168h"

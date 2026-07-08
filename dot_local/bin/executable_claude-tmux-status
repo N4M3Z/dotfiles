@@ -1,0 +1,28 @@
+#!/bin/sh
+# Claude Code hook -> agent-state flag on the hosting tmux window.
+#
+# Usage: claude-tmux-status working|attention|clear
+# Wired in ~/.claude/settings.json: UserPromptSubmit -> working,
+# Stop and Notification -> attention, SessionEnd -> clear.
+#
+# Sets the window-scoped @agent option, which both status-bar themes render
+# as an icon (see ~/.config/tmux/theme-*.conf) and tmux-agents lists. A Stop
+# in the window currently on screen clears instead of flagging: the flag
+# means "an agent somewhere ELSE needs you". No-op outside tmux. Always
+# exits 0 -- Claude Code treats a non-zero hook exit as a hook failure.
+
+[ -n "$TMUX" ] && [ -n "$TMUX_PANE" ] || exit 0
+
+state=$1
+if [ "$state" = "attention" ]; then
+    visible=$(tmux display-message -p -t "$TMUX_PANE" \
+        '#{?#{&&:#{window_active},#{session_attached}},yes,no}' 2>/dev/null)
+    [ "$visible" = "yes" ] && state=clear
+fi
+
+case "$state" in
+    working)   tmux set-option -w -t "$TMUX_PANE" @agent working 2>/dev/null ;;
+    attention) tmux set-option -w -t "$TMUX_PANE" @agent attention 2>/dev/null ;;
+    clear)     tmux set-option -w -t "$TMUX_PANE" -u @agent 2>/dev/null ;;
+esac
+exit 0

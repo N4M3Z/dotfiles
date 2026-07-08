@@ -1,0 +1,15 @@
+#!/bin/sh
+# fzf picker over tmux windows flagged by claude-tmux-status; Enter jumps.
+# Windows needing input (attention) sort above ones still working. Bound to
+# prefix+u as a popup in tmux.conf.
+
+list=$(tmux list-windows -a -F '#{?#{==:#{@agent},attention},0,#{?#{==:#{@agent},working},1,9}} #{session_name}:#{window_index} #{?#{==:#{@agent},attention},needs-you,working} #{window_name}' \
+    | grep -v '^9 ' | sort)
+if [ -z "$list" ]; then
+    tmux display-message "no active agents"
+    exit 0
+fi
+target=$(printf '%s\n' "$list" | cut -d' ' -f2- \
+    | fzf --reverse --header 'agent windows') || exit 0
+tmux switch-client -t "${target%% *}"
+exit 0
