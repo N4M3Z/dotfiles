@@ -1,33 +1,43 @@
 # Flat status bar in the style of Theo (t3.gg): solid host block, dim
-# session, index:name windows with the active one in the accent, and a
-# CPU/MEM block on the right. Selected from tmux.conf's "status bar theme"
-# block — switch there, not here.
+# session, index:name windows, and an info-dense right side. Selected from
+# tmux.conf's "status bar theme" block — switch there, not here.
 #
-# Colors are sampled from Theo's own bar. The accent is color-coded per
-# machine (his pattern: zbook purple, bb-1 orange) via the chezmoi hostname
-# map below; unknown hosts fall back to the purple.
-{{- $accents := dict "Nexus" "#af87fc" }}
-set -g @accent '{{ index $accents .chezmoi.hostname | default "#af87fc" }}'
+# The accent is a darker purple, color-coded per machine (Theo's pattern:
+# distinct color per host) via the chezmoi hostname map; unknown hosts fall
+# back to the default. #8f68c9 is a darkened derivative of the #af87fc
+# sampled from the reference screenshots.
+#
+# Four bar segments are clickable (MouseDown1Status dispatch lives in
+# tmux.conf, keyed on the range=user names below): host block -> sesh,
+# git branch -> gitui, clock -> cal, CPU/MEM -> btop.
+{{- $accents := dict "Nexus" "#8f68c9" }}
+set -g @accent '{{ index $accents .chezmoi.hostname | default "#8f68c9" }}'
 
-# Catppuccin still runs as the palette provider (@thm_* colors); 'none'
-# keeps its hands off the window formats so the flat styling owns the look.
+# Catppuccin runs as the palette provider (@thm_* colors); 'none' keeps its
+# hands off the window formats so the flat styling owns the look.
 set -g @catppuccin_flavor 'mocha'
 set -g @catppuccin_window_status_style 'none'
 run-shell '~/.config/tmux/plugins/catppuccin/catppuccin.tmux'
 
 set -g status-interval 5
 set -g status-style 'bg=#1d1d1d,fg=#8a8a8a'
-set -g status-left-length 40
-set -g status-right-length 40
-set -g status-left '#[fg=#1d1d1d,bg=#{@accent},bold] #h #[default]  #[fg=#6f6f6f]#S  '
-# The leading conditional renders the claude-tmux-status agent flag:
-# ◉ (yellow) = agent needs you, ● (blue) = agent working, nothing = no agent.
+set -g status-left-length 60
+set -g status-right-length 130
+
+# Left: prefix indicator (only while the prefix is held) + clickable host
+# block (-> sesh) + dim session name.
+set -g status-left "#{?client_prefix,#[fg=#1d1d1d#,bg=#f9e2af#,bold] ⌘ #[default],}#[range=user|sesh]#[fg=#1d1d1d,bg=#{@accent},bold] #h #[norange]#[default]  #[fg=#6f6f6f]#S  "
+
+# Windows: index:name, active in the accent. The leading conditional renders
+# the claude-tmux-status agent flag: ◉ (yellow) = agent needs you, ● (blue)
+# = agent working, nothing = no agent.
 setw -g window-status-format '#[fg=#8a8a8a] #{?#{==:#{@agent},attention},#[fg=#f9e2af bold]◉ #[fg=#8a8a8a nobold],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#8a8a8a],}}#I:#W '
 setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},attention},#[fg=#f9e2af]◉ #[fg=#{@accent}],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#{@accent}],}}#I:#W '
 
-# tmux-cpu supplies the CPU/MEM values by rewriting the placeholders below
-# into script calls, so it must run AFTER status-right is set.
+# Right: clickable git branch+dirty (-> gitui) · dim cwd basename · clickable
+# clock (-> cal) · clickable CPU/MEM accent block (-> btop). tmux-cpu rewrites
+# the CPU/MEM placeholders, so it is sourced AFTER status-right is set.
 set -g @cpu_percentage_format '%2.0f%%'
 set -g @ram_percentage_format '%2.0f%%'
-set -g status-right '#[fg=#1d1d1d,bg=#{@accent},bold] CPU #{cpu_percentage} · MEM #{ram_percentage} '
+set -g status-right "#[range=user|gitui]#[fg=#a6adc8]#(~/.local/bin/tmux-git '#{pane_current_path}')#[norange]  #[fg=#6f6f6f]#{b:pane_current_path}  #[range=user|cal]#[fg=#8a8a8a]%H:%M#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] CPU #{cpu_percentage} · MEM #{ram_percentage} #[norange]"
 run-shell '~/.config/tmux/plugins/tmux-cpu/cpu.tmux'

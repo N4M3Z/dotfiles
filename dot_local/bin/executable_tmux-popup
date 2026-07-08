@@ -1,0 +1,19 @@
+#!/bin/sh
+# Popup bodies for clickable status-bar segments, dispatched from tmux.conf's
+# MouseDown1Status handler. Kept out of tmux.conf so the quoting stays sane.
+
+case "$1" in
+    sesh)
+        sel=$(sesh list 2>/dev/null | fzf --reverse --prompt 'session ') || exit 0
+        [ -n "$sel" ] && exec sesh connect "$sel"
+        ;;
+    cal)
+        cal -3
+        printf '\n  [any key to close]'
+        read -r _
+        ;;
+    *)
+        echo "tmux-popup: unknown target '$1'" >&2
+        exit 1
+        ;;
+esac

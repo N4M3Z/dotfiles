@@ -1,0 +1,14 @@
+#!/bin/sh
+# Status-bar git segment: "branch ✗" when dirty, "branch" when clean, nothing
+# outside a repo. Arg is the directory (the pane's cwd). One git call path,
+# cheap enough for status-interval.
+
+dir=${1:-$PWD}
+branch=$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null) || exit 0
+[ -n "$branch" ] || exit 0
+
+if [ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]; then
+    printf ' %s ✗' "$branch"
+else
+    printf ' %s' "$branch"
+fi
