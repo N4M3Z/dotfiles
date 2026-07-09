@@ -1,9 +1,16 @@
 #!/bin/sh
 # atuin shell-history search in a tmux popup (prefix+r). $1 is the pane that
-# opened the popup; the selected command is typed into it (send-keys -l, so
-# it lands at the prompt unexecuted for review). atuin's interactive UI draws
-# to the tty and prints the chosen command to stdout, like fzf.
+# opened the popup; the chosen command is typed into it (send-keys -l, so it
+# lands at the prompt unexecuted for review).
+#
+# atuin needs its own fd swap (3>&1 1>&2 2>&3) to hand back the selected
+# command while its UI stays on screen — a plain 2>/dev/null blanks the
+# popup. On accept atuin prefixes the result with __atuin_accept__: (run) or
+# __atuin_return__: (edit); both are stripped. This mirrors `atuin init`.
 
 pane=$1
-sel=$(atuin search -i 2>/dev/null) || exit 0
-[ -n "$sel" ] && [ -n "$pane" ] && tmux send-keys -t "$pane" -l "$sel"
+sel=$(ATUIN_SHELL=sh ATUIN_LOG=error atuin search -i 3>&1 1>&2 2>&3)
+[ -n "$sel" ] || exit 0
+sel=${sel#__atuin_accept__:}
+sel=${sel#__atuin_return__:}
+[ -n "$pane" ] && tmux send-keys -t "$pane" -l "$sel"
