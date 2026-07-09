@@ -1,0 +1,33 @@
+#!/bin/sh
+# Print the tmux session name a directory belongs to. Resolution order:
+#   1. the most recently active live session whose session_path is the dir
+#      (so topic sessions like terminal/tmux or LBG/GM2026 win over creating
+#      a parallel canonical session)
+#   2. owner/slug for workshop projects (~/Agents/<owner>/<slug>/...)
+#   3. the directory basename
+# Used by Zed's terminal_init_command: forge launch claude --tmux=$(tmux-session-name)
+# Paths with spaces would break the awk split; workshop paths have none.
+
+dir=${1:-$PWD}
+
+if command -v tmux >/dev/null 2>&1; then
+    live=$(tmux list-sessions -F '#{session_activity} #{session_path} #{session_name}' 2>/dev/null \
+        | awk -v d="$dir" '$2 == d {sub($1 FS $2 FS, ""); print $0 "\t" $1}' \
+        | sort -t"$(printf '\t')" -k2 -rn | head -1 | cut -f1)
+    if [ -n "$live" ]; then
+        printf '%s\n' "$live"
+        exit 0
+    fi
+fi
+
+workshop=${FORGE_WORKSHOP:-$HOME/Agents}
+case "$dir" in
+    "$workshop"/*/*)
+        rel=${dir#"$workshop"/}
+        owner=${rel%%/*}
+        rest=${rel#*/}
+        printf '%s/%s\n' "$owner" "${rest%%/*}"
+        exit 0
+        ;;
+esac
+basename "$dir"
