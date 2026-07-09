@@ -1,0 +1,11 @@
+#!/bin/sh
+# Capture a one-line thought into the gbrain brain from a tmux popup
+# (prefix+N). Inline mode: gbrain capture "text".
+
+printf 'capture > '
+IFS= read -r thought
+[ -n "$thought" ] || exit 0
+
+gbrain capture "$thought" 2>&1 | tail -2
+printf '  [any key to close]'
+read -r _

@@ -1,0 +1,9 @@
+#!/bin/sh
+# atuin shell-history search in a tmux popup (prefix+r). $1 is the pane that
+# opened the popup; the selected command is typed into it (send-keys -l, so
+# it lands at the prompt unexecuted for review). atuin's interactive UI draws
+# to the tty and prints the chosen command to stdout, like fzf.
+
+pane=$1
+sel=$(atuin search -i 2>/dev/null) || exit 0
+[ -n "$sel" ] && [ -n "$pane" ] && tmux send-keys -t "$pane" -l "$sel"

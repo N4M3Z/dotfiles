@@ -1,0 +1,9 @@
+#!/bin/sh
+# Preview the current directory's README with glow's pager; if there is none,
+# open glow's TUI markdown browser for the directory. Launched by clicking
+# the path segment in the status bar (cwd set via display-popup -d).
+
+for f in README.md readme.md README.markdown docs/README.md; do
+    [ -f "$f" ] && exec glow -p "$f"
+done
+exec glow -t .

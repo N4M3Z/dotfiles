@@ -9,9 +9,9 @@
 #
 # Clickable bar segments (MouseDown1Status dispatch lives in tmux.conf, keyed
 # on the range=user names below): host block -> sesh, jj + git segments both
-# -> tmux-vcs (jjui in a jj repo, gitui otherwise), clock -> cal, CPU/MEM ->
-# btop. Both VCS segments are shown for state but share one launcher; the
-# window-list clicks
+# -> tmux-vcs (jjui in a jj repo, gitui otherwise), path -> glow (README
+# preview), clock -> cal, CPU/MEM -> btop. Both VCS segments are shown for
+# state but share one launcher; the window-list clicks
 # can't carry a user range (tmux wraps each cell in its own range=window),
 # so window management stays on native gestures wired in tmux.conf:
 # left-click selects, middle-click closes (the ✕ is the cue; a per-window ✕
@@ -53,5 +53,5 @@ setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},at
 # placeholders, so it is sourced AFTER status-right is set.
 set -g @cpu_percentage_format '%2.0f%%'
 set -g @ram_percentage_format '%2.0f%%'
-set -g status-right "#[range=user|vcs]#[fg=#a6adc8]#(~/.local/bin/tmux-jj '#{pane_current_path}')#[norange] #[range=user|vcs]#[fg=#7f849c]#(~/.local/bin/tmux-git '#{pane_current_path}')#[norange]  #[fg=#6f6f6f]#{b:pane_current_path}  #[fg=#8a8a8a]#(~/.local/bin/tmux-battery)  #[range=user|cal]#[fg=#8a8a8a]%b %-d %H:%M#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] CPU #{cpu_percentage} · MEM #{ram_percentage} #[norange]"
+set -g status-right "#[range=user|vcs]#[fg=#a6adc8]#(~/.local/bin/tmux-jj '#{pane_current_path}')#[norange] #[range=user|vcs]#[fg=#7f849c]#(~/.local/bin/tmux-git '#{pane_current_path}')#[norange]  #[range=user|glow]#[fg=#6f6f6f]#{b:pane_current_path}#[norange]  #[fg=#8a8a8a]#(~/.local/bin/tmux-battery)  #[range=user|cal]#[fg=#8a8a8a]%b %-d %H:%M#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] CPU #{cpu_percentage} · MEM #{ram_percentage} #[norange]"
 run-shell '~/.config/tmux/plugins/tmux-cpu/cpu.tmux'
