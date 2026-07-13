@@ -2,7 +2,7 @@
 # Executes commands at login pre-zshrc.
 #
 # Authors:
-#   Martin Zeman <N4M3Z@users.noreply.github.com>
+#   Martin Zeman
 #
 
 #
@@ -42,7 +42,11 @@ typeset -gU cdpath fpath mailpath path
 # )
 
 # Set the list of directories that Zsh searches for programs.
+# ~/.local/bin leads so user-local builds (cargo install --root ~/.local)
+# shadow their Homebrew counterparts — e.g. a tuicr/forge fork build wins
+# over the brew bottle.
 path=(
+  $HOME/.local/bin(N)
   $HOME/{,s}bin(N)
   /opt/{homebrew,local}/{,s}bin(N)
   /usr/local/{,s}bin(N)

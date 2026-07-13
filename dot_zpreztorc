@@ -4,7 +4,7 @@
 # Sets Prezto options.
 #
 # Authors:
-#   Martin Zeman <N4M3Z@users.noreply.github.com>
+#   Martin Zeman
 #
 
 ##
@@ -31,6 +31,10 @@ zstyle ':prezto:module:*' bindings 'yes'
 
 # Set the Zsh functions to load (man zshcontrib).
 # zstyle ':prezto:load' zfunction 'zargs' 'zmv'
+
+# Autoload every function file from these directories (drop a file in, it
+# becomes a command next shell).
+zstyle ':prezto:load' zfunction-dir "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/functions"
 
 # Set the Prezto modules to load (browse modules).
 # The order matters.
