@@ -13,7 +13,7 @@ key = "0x29DD2145CE7A818929459B2649F08103D3DA399E"
 sign-on-push = true
 
 [aliases]
-push = ["util", "exec", "--", "bash", "-c", "cd \"$(jj workspace root)\" && exec .githooks/jj-push \"$@\"", "jj-push"]
+push = ["util", "exec", "--", "bash", "-c", "cd \"$(jj workspace root)\" && if [ -x .githooks/jj-push ]; then exec .githooks/jj-push \"$@\"; else exec jj git push \"$@\"; fi", "jj-push"]
 # Move the nearest ancestor bookmark up to @- , ready to push.
 tug = ["bookmark", "move", "--from", "closest_bookmark(@-)", "--to", "@-"]
 
