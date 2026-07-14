@@ -14,3 +14,9 @@ pinentry-program {{ lookPath "pinentry-mac" }}
 
 default-cache-ttl 12
 max-cache-ttl 15
+
+# gpg-agent doubles as the SSH agent: the YubiKey's authentication key is
+# served automatically (smartcard keys need no sshcontrol entry), so SSH
+# prompts through the same pinentry + touch flow as signing. The prezto gpg
+# module exports SSH_AUTH_SOCK to this agent's socket when this line is on.
+enable-ssh-support

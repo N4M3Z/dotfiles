@@ -57,7 +57,6 @@ zplugins=(
   # "composure"
   # "dircycle"
   'git'
-  # 'gpg'    # Disabled: GPG not yet set up (deferred to Phase 2 / drduh-grade YubiKey OpenPGP setup).
   'homebrew'
   # "pygmentize"
   # "ruby"
@@ -66,6 +65,10 @@ zplugins=(
   'osx'
   'rsync'
   'ssh'
+  # gpg loads after ssh so its SSH_AUTH_SOCK export (gpg-agent's SSH socket,
+  # requires enable-ssh-support in gpg-agent.conf) wins over the ssh module's
+  # standalone agent; SSH auth then prompts via pinentry + YubiKey touch.
+  'gpg'
   'tmux'
   # "wordchar"
   # 'todo-txt'
