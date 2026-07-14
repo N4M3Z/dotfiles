@@ -1,0 +1,113 @@
+#!/bin/bash
+# Rebuild the personal Zed build from the fork and install it as
+# ~/Applications/Zed Dev.app: fetch upstream, base on the CURRENT PREVIEW
+# branch (the weekly stabilization cut, i.e. what Zed Preview ships), lay the
+# two patch branches on top as duplicates, bundle in release mode with ad-hoc
+# signing, install. The patches are duplicated rather than merged so the
+# integration carries preview + patches only, not the patches' main base.
+# The PR branches themselves stay on main, untouched.
+# The Dev channel identity (dev.zed.Zed-Dev) keeps the app apart from Zed and
+# Zed Preview; all three share ~/.config/zed.
+
+set -euo pipefail
+
+FORK="${HOME}/Developer/N4M3Z/zed"
+DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
+# The patch set riding on top of preview. The features are a single linear
+# stack on main (soft-wrap → markdown → terminal → review-annotations), so
+# only the stack HEAD is listed: `::review-annotations` pulls the whole chain.
+# To add a patch, commit it on top of the stack and move the head bookmark up
+# (or add a new head bookmark and list it here instead). Each layer stays an
+# independent PR against the layer below.
+# This file's chezmoi source is canonical; check `chezmoi diff` and the
+# fork's `jj op log` before editing (multiple sessions share this machinery).
+BRANCHES=(review-annotations)
+MERGE_MESSAGE="local: dev build integration"
+
+cd "${FORK}"
+
+echo "==> fetching upstream"
+jj git fetch --remote upstream
+
+echo "==> resolving the current preview branch"
+preview_branch=$(git ls-remote upstream 'refs/heads/v*.x' \
+    | awk -F'refs/heads/' '{print $2}' | sort -V | tail -1)
+tip=$(git rev-parse "upstream/${preview_branch}")
+echo "    ${preview_branch} (${tip:0:12})"
+
+echo "==> materializing blobs for the preview tip"
+blob_worktree=$(mktemp -d)
+git worktree add --detach "${blob_worktree}" "${tip}" >/dev/null
+git worktree remove --force "${blob_worktree}"
+
+echo "==> recreating the integration (preview + patch duplicates)"
+# The previous round hangs off the dev-build bookmark; abandon its changes
+# (old duplicates + integration) wherever the preview tip has moved since.
+# Anchoring on the bookmark instead of description-matching keeps this exact.
+branch_union=$(printf '%s | ' "${BRANCHES[@]}")
+branch_union=${branch_union% | }
+if jj bookmark list dev-build | grep -q '^dev-build'; then
+    jj abandon -r "::dev-build ~ ::(${branch_union}) ~ immutable()"
+    jj bookmark delete dev-build
+fi
+# Duplicate each branch's full local chain (a bare bookmark name would take
+# only the head commit and silently drop the rest of a multi-commit branch).
+for branch in "${BRANCHES[@]}"; do
+    jj duplicate "::${branch} ~ immutable()" -d "${tip}"
+done
+# Merge the duplicated chain heads (children() would grab chain roots).
+jj new "heads(descendants(${tip}) & mutable())" -m "${MERGE_MESSAGE}"
+jj bookmark set dev-build -r @
+
+# Preview branches carry RELEASE_CHANNEL=preview, which would bundle a
+# colliding "Zed Preview.app"; this build stays on the dev channel.
+printf 'dev\n' > crates/zed/RELEASE_CHANNEL
+
+conflicts=$(jj st | grep -c "conflict" || true)
+if [[ "${conflicts}" != "0" ]]; then
+    echo "zed-dev-rebuild: integration has conflicts; resolve in ${FORK} and re-run" >&2
+    exit 1
+fi
+
+echo "==> bundling (release; this takes a while)"
+# Homebrew rust has no rustup; bundle-mac only runs `rustup target add` for
+# the host triple, which Homebrew rustc already provides. Stub it, and put
+# ~/.cargo/bin on PATH for the cargo-bundle subcommand.
+shim_dir=$(mktemp -d)
+printf '#!/bin/bash\nexit 0\n' > "${shim_dir}/rustup"
+chmod +x "${shim_dir}/rustup"
+PATH="${shim_dir}:${HOME}/.cargo/bin:${PATH}" \
+    DEVELOPER_DIR="${DEVELOPER_DIR}" ./script/bundle-mac
+
+# Release mode packs the app into a DMG and removes the loose bundle;
+# debug mode leaves the bundle under target/*/release|debug/bundle/osx.
+app_path=""
+for candidate in target/*/*/bundle/osx/*.app; do
+    [[ -d "${candidate}" ]] && app_path="${candidate}" && break
+done
+
+volume=""
+if [[ -z "${app_path}" ]]; then
+    dmg_path=""
+    for candidate in target/*/release/Zed-*.dmg; do
+        [[ -f "${candidate}" ]] && dmg_path="${candidate}" && break
+    done
+    if [[ -z "${dmg_path}" ]]; then
+        echo "zed-dev-rebuild: no app bundle or DMG found under target/" >&2
+        exit 1
+    fi
+    volume=$(hdiutil attach -nobrowse -readonly "${dmg_path}" | tail -1 | grep -oE '/Volumes/.*$')
+    for candidate in "${volume}"/*.app; do
+        [[ -d "${candidate}" ]] && app_path="${candidate}" && break
+    done
+fi
+
+bundle_name=$(basename "${app_path}")
+echo "==> installing ${bundle_name} to ~/Applications"
+mkdir -p "${HOME}/Applications"
+# trash, not rm: recoverable, and ditto must not merge over a stale bundle.
+[[ -d "${HOME}/Applications/${bundle_name}" ]] && /usr/bin/trash "${HOME}/Applications/${bundle_name}"
+ditto "${app_path}" "${HOME}/Applications/${bundle_name}"
+[[ -n "${volume}" ]] && hdiutil detach "${volume}" -quiet
+
+echo "ok: ${HOME}/Applications/${bundle_name}"
