@@ -2,7 +2,8 @@
 
 [user]
 name = "Martin Zeman"
-email = "N4M3Z@users.noreply.github.com"
+# Must stay a UID on the signing key or GitHub marks commits bad_email.
+email = "martin.zeman@pm.me"
 
 [signing]
 backend = "gpg"

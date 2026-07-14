@@ -14,7 +14,10 @@
 
 [user]
     name = Martin Zeman
-    email = N4M3Z@users.noreply.github.com
+    ; The address is a UID on the signing key, which GitHub publishes at
+    ; github.com/N4M3Z.gpg anyway — a noreply committer would hide nothing
+    ; and shows Unverified (bad_email) because it is not a key UID.
+    email = martin.zeman@pm.me
     signingkey = 0x29DD2145CE7A818929459B2649F08103D3DA399E
 
 [gpg]
