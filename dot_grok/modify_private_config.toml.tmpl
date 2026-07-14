@@ -1,0 +1,26 @@
+#!/bin/bash
+# chezmoi modify_ script for ~/.grok/config.toml.
+#
+# How chezmoi runs this: the CURRENT live file arrives on stdin, and whatever
+# this script prints to stdout becomes the file's new contents on every
+# `chezmoi apply`. That makes the file partially managed: the policy fields
+# declared in .harness-settings/grok.json are enforced, while everything the
+# app writes itself (model, auth, plugins, UI state) passes through untouched.
+#
+# The config is TOML but the policy is JSON, so the pipeline converts
+# TOML -> JSON, deep-merges the policy with jq, and converts back.
+# The {{ include }} directive embeds the policy at template render time.
+# Source: https://github.com/N4M3Z/dotfiles
+set -o pipefail
+umask 077
+
+policy=$(mktemp "${TMPDIR:-/tmp}/grok-policy.XXXXXX") || exit 1
+trap 'command rm -f "$policy"' EXIT
+
+cat > "$policy" <<'FORGE_POLICY'
+{{ include ".harness-settings/grok.json" }}
+FORGE_POLICY
+
+yq -p=toml -o=json '.' \
+    | jq --slurpfile policy "$policy" '. * $policy[0]' \
+    | yq -p=json -o=toml '.'

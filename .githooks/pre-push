@@ -1,19 +1,62 @@
 #!/bin/sh
-# Entire CLI hooks
-# Pre-push hook: refuse session-transcript refs, then push session logs
-# alongside the user's push. $1 is the remote name (e.g., "origin").
-_refs="$(cat)"
+# Push gate: block unfinished or unattributed harness commits, then hand off
+# to Entire's own pre-push stage.
+#
+# Git calls this hook with one line per ref being pushed on stdin:
+#     <local ref> <local sha> <remote ref> <remote sha>
+# An all-zeros sha is git's "no commit here" marker: local all-zeros means the
+# push deletes a remote branch (nothing to scan), remote all-zeros means the
+# branch is new on the remote (scan everything the remote does not have yet).
 
-# Session transcripts under entire/* carry raw prompts and never leave this
-# machine. Deletions of remote entire/* refs stay allowed.
-if printf '%s\n' "${_refs}" | awk '$1 != "(delete)" && $3 ~ /^refs\/heads\/entire\// { found=1 } END { exit !found }'; then
-    echo "pre-push: refusing to push entire/* session-transcript refs (raw prompts)" >&2
-    exit 1
-fi
+remote_name="$1"
+zero_sha=0000000000000000000000000000000000000000
 
-if command -v entire >/dev/null 2>&1; then printf '%s\n' "${_refs}" | entire hooks git pre-push "$1" || true; else :; fi
-# Chain: run pre-existing hook
-_entire_hook_dir="$(dirname "$0")"
-if [ -x "$_entire_hook_dir/pre-push.pre-entire" ]; then
-    printf '%s\n' "${_refs}" | "$_entire_hook_dir/pre-push.pre-entire" "$@"
+refs_file=$(mktemp "${TMPDIR:-/tmp}/pre-push-refs.XXXXXX") || exit 1
+trap 'rm -f "$refs_file"' EXIT HUP INT TERM
+cat > "$refs_file"
+
+failures=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ -n "$local_ref" ] || continue
+    : "$remote_ref"
+
+    # Deleting a remote branch pushes no commits; nothing to check.
+    [ "$local_sha" = "$zero_sha" ] && continue
+
+    if [ "$remote_sha" = "$zero_sha" ]; then
+        # New remote branch: check every commit the remote does not already have.
+        revisions=$(git rev-list "$local_sha" --not --remotes="$remote_name")
+    else
+        # Existing branch: check only the commits this push adds.
+        revisions=$(git rev-list "${remote_sha}..${local_sha}")
+    fi
+
+    for revision in $revisions; do
+        message=$(git log -1 --format=%B "$revision")
+
+        # harness-run describes an agent's in-progress change as "WIP: <Harness>
+        # session ..." and only renames it once the session finishes cleanly.
+        # A surviving WIP description means the session crashed or was never
+        # finalized; refuse to publish it.
+        if printf '%s\n' "$message" \
+            | grep -Eq '^WIP: (Claude Code|Codex|Antigravity|Grok|OpenCode) session '; then
+            echo "pre-push: refusing WIP harness revision $revision" >&2
+            failures=$((failures + 1))
+        fi
+
+        # Automated harness runs export the co-author trailer they stamp on
+        # commits. If a pushed commit lacks it, attribution was lost.
+        if [ -n "${HARNESS_EXPECTED_COAUTHOR:-}" ] \
+            && ! printf '%s\n' "$message" \
+                | grep -Fxq "$HARNESS_EXPECTED_COAUTHOR"; then
+            echo "pre-push: $revision is missing expected harness coauthor trailer" >&2
+            failures=$((failures + 1))
+        fi
+    done
+done < "$refs_file"
+
+[ "$failures" -eq 0 ] || exit 1
+
+if command -v entire >/dev/null 2>&1; then
+    entire hooks git pre-push "$remote_name" < "$refs_file"
 fi

@@ -1,0 +1,137 @@
+{
+  "enableAllProjectMcpServers": false,
+  "permissions": {
+    "defaultMode": "auto",
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Edit(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.azure/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.netrc)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.git-credentials)",
+      "Read(~/.npmrc)",
+      "Read(~/.pypirc)",
+      "Read(~/.gem/credentials)",
+      "Read(~/Library/Keychains/**)",
+      "Read(~/.password-store/**)",
+      "Edit(~/.bashrc)",
+      "Edit(~/.zshrc)",
+      "Edit(~/.bash_profile)",
+      "Edit(~/.zprofile)",
+      "Edit(~/.profile)"
+    ]
+  },
+  "autoMode": {
+    "hard_deny": [
+      "$defaults",
+      "Never drive Finder. Browser automation and GUI scripting (osascript) are allowed only for a specific task the user explicitly requested.",
+      "Never read or exfiltrate credential stores: ~/.ssh, ~/.aws, ~/.gnupg, ~/.config/gh, ~/.git-credentials, ~/Library/Keychains, and similar.",
+      "Never upload repository contents, secrets, or local files to arbitrary or unrecognized external destinations such as pastebins, file-sharing, or unknown endpoints; deliberate, user-initiated review tools are exempt.",
+      "Never write real credentials, API keys, tokens, or personal data into tracked files; use placeholders.",
+      "Never disable or weaken the sandbox (macOS Seatbelt), the destructive-command guard (dcg), or commit signing."
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "*.github.com",
+        "raw.githubusercontent.com",
+        "objects.githubusercontent.com",
+        "pkg-containers.githubusercontent.com",
+        "registry.npmjs.org",
+        "crates.io",
+        "static.crates.io",
+        "index.crates.io",
+        "formulae.brew.sh",
+        "ghcr.io",
+        "pypi.org",
+        "*.pypi.org",
+        "files.pythonhosted.org",
+        "semgrep.dev",
+        "*.semgrep.dev",
+        "localhost",
+        "127.0.0.1"
+      ],
+      "allowUnixSockets": [
+        "/tmp/.s.PGSQL.5432",
+        "~/.obsidian-cli.sock"
+      ],
+      "allowLocalBinding": true
+    },
+    "filesystem": {
+      "allowWrite": [
+        "~/.cache/uv",
+        "/tmp/claude",
+        "/var/folders",
+        "~/Agents",
+        "~/Atlas",
+        "~/Developer",
+        "~/.gbrain",
+        "~/.memex",
+        "~/.semgrep",
+        "~/Library/Caches/",
+        "~/Data/Memex",
+        "~/Data/Claude",
+        "~/Data/Codex",
+        "~/Data/Gemini"
+      ],
+      "denyWrite": [
+        "~/Library/Caches/at.obdev.littlesnitch",
+        "~/Library/Caches/at.obdev.littlesnitch.softwareupdate",
+        "~/Library/Caches/Proton AG",
+        "~/Library/Caches/PassKit",
+        "~/Library/Caches/CloudKit",
+        "~/Library/Caches/Steam"
+      ],
+      "denyRead": [
+        "~/.ssh",
+        "~/.aws",
+        "~/.azure",
+        "~/.gnupg",
+        "~/.kube",
+        "~/.config/gh",
+        "~/.config/gcloud",
+        "~/.git-credentials",
+        "~/Library/Keychains",
+        "~/.npmrc",
+        "~/.npm",
+        "~/.pypirc",
+        "~/.gem/credentials",
+        "~/.cargo/credentials.toml",
+        "~/.config/containers",
+        "~/.docker/config.json",
+        "~/.netrc",
+        "~/.config/op",
+        "~/.password-store"
+      ]
+    },
+    "excludedCommands": [
+      "docker *",
+      "gh *",
+      "rtk gh *",
+      "brew *",
+      "rtk brew *",
+      "container *",
+      "rtk container *",
+      "prlctl *",
+      "rtk prlctl *",
+      "orb *",
+      "rtk orb *",
+      "orbctl *",
+      "rtk orbctl *",
+      "jj *",
+      "rtk jj *",
+      "trash *",
+      "/usr/bin/trash *",
+      "rtk trash *"
+    ]
+  }
+}
