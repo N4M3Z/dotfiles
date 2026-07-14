@@ -3,6 +3,8 @@
   // tweaks, capture with: chezmoi re-add. Baseline for fresh machines:
   // forge-provision manifests/zed/ (seeded by scripts/configure/zed.sh)
   // Zed parses JSONC; keep jq away from this file or strip comments first.
+  "markdown_preview_font_size": 16.0,
+  "agent_ui_font_size": 16.0,
   "bottom_dock_layout": "right_aligned",
   "soft_wrap": "editor_width",
   "allow_rewrap": "in_comments",
@@ -31,10 +33,17 @@
   "proxy": "",
   "agent": {
     "dock": "right",
+    // Terminal threads run claude in an attach-or-create tmux session, so a
+    // Zed restart reattaches instead of closing. tmux-session-name resolves
+    // the session a directory belongs to: a live session rooted there wins
+    // (terminal/tmux, LBG/GM2026), else workshop owner/slug, else basename.
+    "terminal_init_command": "forge launch claude --tmux=$(tmux-session-name)",
     "sidebar_side": "right",
+    // Use the full panel width; the default caps content at 850px centered.
+    "limit_content_width": false,
     "default_model": { "provider": "ollama", "model": "qwen2.5-coder:7b" },
     "inline_assistant_model": {
-      "provider": "oMLX",
+      "provider": "omlx",
       "model": "Qwen3-Coder-Next-MLX-4bit",
     },
     "favorite_models": [],
@@ -48,11 +57,12 @@
       "api_url": "http://localhost:11434",
       "context_window": 32768,
     },
-    // Local oMLX (MLX) provider on :8000. The API key goes in the Agent
-    // Panel provider UI (Zed reads it from the OMLX_API_KEY env var), never
-    // here. `name` must match oMLX's model id exactly (GET :8000/v1/models).
+    // Local MLX provider on :8000. The provider id is lowercase so Zed's
+    // derived key env var is OMLX_API_KEY — Zed uppercases <id>_API_KEY with
+    // word-boundary splitting, so an "oMLX" id would look for O_MLX_API_KEY.
+    // `name` must match a served model id exactly (GET :8000/v1/models).
     "openai_compatible": {
-      "oMLX": {
+      "omlx": {
         "api_url": "http://localhost:8000/v1",
         "available_models": [
           {
@@ -133,6 +143,18 @@
     },
   },
 
+  // REPL kernels for `space m r` (repl::Run on fenced blocks). Plain Jupyter
+  // kernelspecs on the machine, not Zed extensions; refresh with
+  // `repl: refresh kernelspecs` after changes.
+  "jupyter": {
+    "kernel_selections": {
+      "python": "zed-python",
+      "typescript": "deno",
+      "bash": "bash",
+      "shell script": "bash"
+    }
+  },
+
   "cli_default_open_behavior": "existing_window",
   "autosave": "on_focus_change",
 
@@ -145,17 +167,11 @@
   },
 
   // Predictions ride the default provider (Zeta); they activate after
-  // the one-time Zed sign-in. Data collection stays declined.
+  // the one-time Zed sign-in. Data collection stays declined. A local FIM
+  // provider ("open_ai_compatible_api" + prompt_format against oMLX
+  // /v1/completions) is possible but multi-second on Apple Silicon.
   "edit_predictions": {
-    "open_ai_compatible_api": {
-      "model": "",
-      "api_url": "",
-    },
     "provider": "zed",
-    "ollama": {
-      "api_url": "http://localhost:11434",
-      "model": "qwen2.5-coder:7b",
-    },
     "allow_data_collection": "no",
   },
 
@@ -180,6 +196,7 @@
     "Catppuccin Latte": {
       "terminal.ansi.red": "#d20f39",
       "terminal.ansi.bright_red": "#e64553",
+      "terminal.bright_foreground": "#d20f39",
       "syntax": {
         "emphasis.strong": { "color": "#d20f39", "font_weight": 700 },
         "emphasis": { "color": "#8839ef", "font_style": "italic" },
@@ -202,6 +219,7 @@
       "terminal.background": "#202024",
       "terminal.ansi.red": "#ff5555",
       "terminal.ansi.bright_red": "#ff5555",
+      "terminal.bright_foreground": "#ff5555",
       "syntax": {
         "emphasis.strong": { "color": "#ff5555", "font_weight": 700 },
         "emphasis": { "color": "#cba6f7", "font_style": "italic" },
@@ -233,6 +251,9 @@
       "type": "registry",
     },
     "claude-acp": {
+      "default_config_options": {
+        "mode": "auto"
+      },
       "type": "registry",
     },
     "pi-acp": {
@@ -248,9 +269,9 @@
 
   // gbrain (local knowledge brain) as an MCP context server, so the Zed
   // agent can search the vault. Reaches the Zed-native agent and, via ACP
-  // forwarding, Zed-hosted Claude Code. The standalone cmux Claude Code has
-  // its own MCP config. Env mirrors the gbrain serve command (Ollama embedder
-  // + local Postgres). Daily driver is cmux, so this lane is for parity.
+  // forwarding, Zed-hosted Claude Code. Terminal threads and the standalone
+  // cmux fallback use Claude Code's own MCP config instead. Env mirrors the
+  // gbrain serve command (Ollama embedder + local Postgres).
   "context_servers": {
     "gbrain": {
       "command": "/Users/N4M3Z/.bun/bin/gbrain",
@@ -266,8 +287,15 @@
 
   // Nerd font so prompt glyphs render in the built-in terminal.
   // Mono variant to match Ghostty (p10k canonical, single-cell glyphs).
+  // draw_bold_text_with_bright_colors (fork patch): bold cells with no
+  // explicit color render in terminal.bright_foreground — this is what makes
+  // Claude Code's markdown bold red in terminal threads.
   "terminal": {
+    "font_size": 15.0,
     "copy_on_select": true,
+    "draw_bold_text_with_bright_colors": true,
+    // minimum_contrast 0: the contrast pass would shift bright_foreground's red.
+    "minimum_contrast": 0,
     "scrollbar": {
       "show": "system",
     },
@@ -300,11 +328,12 @@
     "sql": true,
     "env": true,
     "markdown-oxide": true,
+    // Harper (harper-ls): offline grammar/style checking alongside oxide.
+    "harper": true,
     "git-firefly": true,
     "csv": true,
     "lua": true,
     "basher": true,
-    "harper": true,
   },
   "languages": {
     "Markdown": {

@@ -24,12 +24,23 @@ dailynote = "%Y-%m-%d"
 # do not collide with forge's lowercase template/ dirs. Requires a recent oxide.
 excluded_folders = ["Archives", "Assets", "Templater", "Templates", ".trash"]
 
-# Tunables left at their defaults, surfaced here as the menu for later edits:
-#   hover = true                    # backlinks/preview on mouse hover (Zed: set false if noisy)
-#   block_transclusion = true       # render ![[embed]] as inlay hints
-#   unresolved_diagnostics = true   # flag broken [[wikilinks]] (high value across renamed ADRs)
-#   case_matching = "Smart"         # fuzzy-match case handling
-#   link_filenames_only = false     # complete by heading but insert a filename-only link (Zettelkasten)
-#   heading_slug = false            # GitHub-style dashed heading anchors in completions
-#   daily_notes_folder = ""         # blank imports from Obsidian (Atlas: Journal/Daily)
-#   new_file_folder_path = ""       # blank imports from Obsidian "new note location"
+# Tunables left at their defaults, surfaced here as the menu for later edits
+# (full inventory, verified against markdown-oxide src/config.rs):
+#   hover = true                       # backlinks/preview on mouse hover (Zed: set false if noisy)
+#   block_transclusion = true          # render ![[embed]] as inlay hints
+#   block_transclusion_length = "Full" # or a partial length to truncate embeds
+#   inlay_hints = true                 # master switch for the transclusion hints
+#   unresolved_diagnostics = true      # flag broken [[wikilinks]] (high value across renamed ADRs)
+#   heading_completions = true         # [[note#heading]] completion targets
+#   title_headings = true              # treat the H1 as the note title in completions
+#   callout_completions = true         # > [!callout] type completions
+#   semantic_tokens = true             # wikilink highlighting (auto-off where unsupported)
+#   case_matching = "Smart"            # fuzzy-match case handling ("Ignore" | "Respect")
+#   link_filenames_only = false        # complete by heading but insert a filename-only link (Zettelkasten)
+#   heading_slug = false               # GitHub-style dashed heading anchors in completions
+#   tags_in_codeblocks = false         # index #tags inside fenced blocks (noise in code)
+#   references_in_codeblocks = false   # index [[links]] inside fenced blocks (noise in code)
+#   include_md_extension_md_link = false   # append .md inside [](file) links
+#   include_md_extension_wikilink = false  # append .md inside [[wikilinks]]
+#   daily_notes_folder = ""            # blank imports from Obsidian (Atlas: Journal/Daily)
+#   new_file_folder_path = ""          # blank imports from Obsidian "new note location"
