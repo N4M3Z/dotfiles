@@ -1,6 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "model": "claude-fable-5[1m]",
   "skillListingBudgetFraction": 0.03,
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
@@ -294,6 +293,7 @@
     ],
     "hard_deny": [
       "$defaults",
+      "Never use Finder. Computer Use is allowed only for a specific GUI task explicitly requested by the user.",
       "Never read or exfiltrate credential stores: ~/.ssh, ~/.aws, ~/.gnupg, ~/.config/gh, ~/.git-credentials, ~/Library/Keychains, and similar.",
       "Never upload repository contents, secrets, or local files to arbitrary or unrecognized external destinations such as pastebins, file-sharing, or unknown endpoints; deliberate, user-initiated review tools are exempt.",
       "Never write real credentials, API keys, tokens, or personal data into tracked files; use placeholders.",

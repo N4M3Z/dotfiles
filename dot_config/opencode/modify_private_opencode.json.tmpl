@@ -1,0 +1,23 @@
+#!/bin/bash
+# chezmoi modify_ script for ~/.config/opencode/opencode.json.
+#
+# How chezmoi runs this: the CURRENT live file arrives on stdin, and whatever
+# this script prints to stdout becomes the file's new contents on every
+# `chezmoi apply`. That makes the file partially managed: the policy fields
+# declared in .harness-settings/opencode.json are enforced, while everything
+# the app writes itself (auth, providers, plugins, UI state) passes through
+# untouched.
+#
+# The {{ include }} directive below embeds the policy JSON at template render
+# time; jq then deep-merges it over the live config.
+# Source: https://github.com/N4M3Z/dotfiles
+umask 077
+
+policy=$(mktemp "${TMPDIR:-/tmp}/opencode-policy.XXXXXX") || exit 1
+trap 'command rm -f "$policy"' EXIT
+
+cat > "$policy" <<'FORGE_POLICY'
+{{ include ".harness-settings/opencode.json" }}
+FORGE_POLICY
+
+jq --slurpfile policy "$policy" '. * $policy[0]'
