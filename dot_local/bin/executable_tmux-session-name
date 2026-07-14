@@ -1,15 +1,27 @@
 #!/bin/sh
 # Print the tmux session name a directory belongs to. Resolution order:
-#   1. the most recently active live session whose session_path is the dir
-#      (so topic sessions like terminal/tmux or LBG/GM2026 win over creating
-#      a parallel canonical session)
-#   2. owner/slug for workshop projects (~/Agents/<owner>/<slug>/...)
-#   3. the directory basename
-# Used by Zed's terminal_init_command: forge launch claude --tmux=$(tmux-session-name)
-# Paths with spaces would break the awk split; workshop paths have none.
+#   1. a live session already rooted at the dir wins, so a manually-named
+#      context session (<repo>/<spec>, e.g. forge-provision/browsers) reattaches
+#      instead of spawning a parallel canonical session
+#   2. flat roots: anywhere inside maps to one session (a PKM vault is one session)
+#   3. ~/Developer/<owner>/<repo> -> <owner>/<repo>, always owner-qualified:
+#      clones live under owner dirs and repo names recur across owners (runedeck)
+#   4. ~/Agents/<owner>/<slug> workshop -> <slug> for your own work
+#      (owner == SELF_OWNER), else <owner>/<slug> for client work (LBG/policy)
+#   5. the directory basename
+# The <spec> in a name like <repo>/<spec> is a manual context label, never
+# derived from a subdirectory. Consumed by Zed's terminal_init_command:
+#   tmux new-session -A -s "$(tmux-session-name)"
+# Paths with spaces would break the awk split; the tracked roots have none.
 
 dir=${1:-$PWD}
+self_owner=${SELF_OWNER:-N4M3Z}
+workshop=${FORGE_WORKSHOP:-$HOME/Agents}
+develop=${FORGE_DEVELOP:-$HOME/Developer}
+# Flat roots: space-separated "path=name" pairs; anywhere inside <path> -> <name>.
+flat_roots="$HOME/Atlas=atlas"
 
+# 1. Live session already rooted here wins.
 if command -v tmux >/dev/null 2>&1; then
     live=$(tmux list-sessions -F '#{session_activity} #{session_path} #{session_name}' 2>/dev/null \
         | awk -v d="$dir" '$2 == d {sub($1 FS $2 FS, ""); print $0 "\t" $1}' \
@@ -20,14 +32,44 @@ if command -v tmux >/dev/null 2>&1; then
     fi
 fi
 
-workshop=${FORGE_WORKSHOP:-$HOME/Agents}
+# 2. Flat roots.
+for pair in $flat_roots; do
+    root=${pair%=*}
+    name=${pair#*=}
+    case "$dir" in
+        "$root" | "$root"/*)
+            printf '%s\n' "$name"
+            exit 0
+            ;;
+    esac
+done
+
+# 3. Developer clones: <owner>/<repo>, always owner-qualified.
 case "$dir" in
-    "$workshop"/*/*)
-        rel=${dir#"$workshop"/}
+    "$develop"/*/*)
+        rel=${dir#"$develop"/}
         owner=${rel%%/*}
         rest=${rel#*/}
         printf '%s/%s\n' "$owner" "${rest%%/*}"
         exit 0
         ;;
 esac
+
+# 4. Workshop: bare <slug> for your own work, else <owner>/<slug>.
+case "$dir" in
+    "$workshop"/*/*)
+        rel=${dir#"$workshop"/}
+        owner=${rel%%/*}
+        rest=${rel#*/}
+        slug=${rest%%/*}
+        if [ "$owner" = "$self_owner" ]; then
+            printf '%s\n' "$slug"
+        else
+            printf '%s/%s\n' "$owner" "$slug"
+        fi
+        exit 0
+        ;;
+esac
+
+# 5. Fallback.
 basename "$dir"

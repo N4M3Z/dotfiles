@@ -19,6 +19,20 @@
             "space m t": "editor::ToggleSoftWrap",
             "space a a": "agent::ToggleFocus",
             "space a s": "agent::AddSelectionToThread",
+            "space a t": "multi_workspace::ToggleWorkspaceSidebar",
+            "space a n": "agent::NewTerminalThread",
+            "space a r": "editor::SendReviewToAgent",
+            "space a c": "editor::ToggleReviewCommentsExpanded",
+            // Review annotations: m opens the marker popup, y clips all
+            // markers as tuicr markdown, p shows them all in project search.
+            "space a m": "editor::AddReviewComment",
+            "space a y": ["task::Spawn", { "task_name": "Clip review comments" }],
+            "space a p": ["pane::DeploySearch", { "query": "\\[(NOTE|SUGGESTION|ISSUE|PRAISE)\\] ", "regex": true }],
+            "space n t": "agent::NewTerminalThread",
+            "space n c": ["agent::NewExternalAgentThread", { "agent": "claude-acp" }],
+            "space n x": ["agent::NewExternalAgentThread", { "agent": "codex-acp" }],
+            "space n o": ["agent::NewExternalAgentThread", { "agent": "opencode" }],
+            "space n m": "agent::ToggleNewThreadMenu",
             "space r": ["task::Spawn", { "task_name": "Review current file (tuicr)", "reveal_target": "center" }],
             "space r w": ["task::Spawn", { "task_name": "Review working tree (tuicr)", "reveal_target": "center" }],
             "space t g": ["task::Spawn", { "task_name": "gitui", "reveal_target": "center" }],
@@ -28,6 +42,45 @@
             "space s g": ["task::Spawn", { "task_name": "Scan for secrets (gitleaks)" }],
             "space m g": ["task::Spawn", { "task_name": "Render markdown (glow)", "reveal_target": "center" }],
             "space k": ["task::Spawn", { "task_name": "Recall selection (memex)", "reveal_target": "center" }]
+        }
+    },
+    {
+        // Threads Sidebar on a plain-cmd chord, completing the j-family
+        // (cmd-j bottom dock, cmd-alt-j sidebar). Workspace covers panels;
+        // the Editor entry shadows JoinLines, which vim's J already covers.
+        "context": "Workspace",
+        "bindings": {
+            "cmd-shift-j": "multi_workspace::ToggleWorkspaceSidebar",
+            // New Terminal Thread directly — cmd-n reuses the last-used thread
+            // type, and the type picker (cmd-alt-shift-n) is easy to miss.
+            // ProjectPanel keeps its own cmd-alt-n (NewDirectory).
+            "cmd-alt-n": "agent::NewTerminalThread"
+        }
+    },
+    {
+        "context": "Editor",
+        "bindings": {
+            "cmd-shift-j": "multi_workspace::ToggleWorkspaceSidebar",
+            // Review annotation popup on any buffer: cmd-k is Zed's chord prefix.
+            "cmd-k c": "editor::AddReviewComment"
+        }
+    },
+    {
+        // Cycle agent threads without opening the sidebar. Brackets are the
+        // prev/next convention; cmd-alt is the threads layer (cmd-alt-j =
+        // sidebar). The Editor entry shadows Fold/UnfoldLines, which vim's
+        // z-fold commands already cover.
+        "context": "Workspace",
+        "bindings": {
+            "cmd-alt-[": "multi_workspace::PreviousThread",
+            "cmd-alt-]": "multi_workspace::NextThread"
+        }
+    },
+    {
+        "context": "Editor",
+        "bindings": {
+            "cmd-alt-[": "multi_workspace::PreviousThread",
+            "cmd-alt-]": "multi_workspace::NextThread"
         }
     }
 ]
