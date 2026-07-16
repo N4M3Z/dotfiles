@@ -9,7 +9,7 @@
 #
 # The config is TOML but the policy is JSON, so the pipeline converts
 # TOML -> JSON, deep-merges the policy with jq, and converts back.
-# The {{ include }} directive embeds the policy at template render time.
+# The chezmoi include directive embeds the policy at template render time.
 # Source: https://github.com/N4M3Z/dotfiles
 set -o pipefail
 umask 077
@@ -21,6 +21,6 @@ cat > "$policy" <<'FORGE_POLICY'
 {{ include ".harness-settings/grok.json" }}
 FORGE_POLICY
 
-yq -p=toml -o=json '.' \
-    | jq --slurpfile policy "$policy" '. * $policy[0]' \
-    | yq -p=json -o=toml '.'
+yq -p=toml -o=json '.' - \
+    | jq --slurpfile policy "$policy" '(. // {}) * $policy[0]' \
+    | yq -p=json -o=toml '.' -

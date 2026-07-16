@@ -7,7 +7,7 @@
 # declared in .harness-settings/antigravity.json are enforced, while
 # everything the app writes itself stays untouched.
 #
-# The {{ include }} directive below embeds the policy JSON at template render
+# The chezmoi include directive below embeds the policy JSON at template render
 # time; jq then deep-merges it over the live config.
 # Source: https://github.com/N4M3Z/dotfiles
 umask 077
@@ -19,4 +19,4 @@ cat > "$policy" <<'FORGE_POLICY'
 {{ include ".harness-settings/antigravity.json" }}
 FORGE_POLICY
 
-jq --slurpfile policy "$policy" '. * $policy[0]'
+jq -n --slurpfile policy "$policy" '((try input) // {}) * $policy[0]'
