@@ -1,0 +1,25 @@
+name: validate-templates
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+jobs:
+    validate:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: stable
+
+            - name: Install chezmoi and yq
+              run: |
+                  go install github.com/twpayne/chezmoi/v2@latest
+                  go install github.com/mikefarah/yq/v4@latest
+                  echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+            - name: Validate templates
+              run: bash tests/validate-templates.sh
