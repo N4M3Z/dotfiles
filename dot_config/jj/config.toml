@@ -6,6 +6,10 @@ email = "N4M3Z@users.noreply.github.com"
 
 [signing]
 backend = "gpg"
+# "drop" keeps jj from signing every working-copy snapshot, which is especially
+# inconvenient when the private key is stored on a YubiKey; git.sign-on-push
+# below signs the pushed commits in one batch instead. This reduces everything
+# to one touch per push, and pushed commits are still marked as "verified".
 behavior = "drop"
 key = "0x29DD2145CE7A818929459B2649F08103D3DA399E"
 
