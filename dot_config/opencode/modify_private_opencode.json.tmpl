@@ -8,8 +8,8 @@
 # the app writes itself (auth, providers, plugins, UI state) passes through
 # untouched.
 #
-# The {{ include }} directive below embeds the policy JSON at template render
-# time; jq then deep-merges it over the live config.
+# The chezmoi include directive below embeds the policy JSON at template
+# render time; jq then deep-merges it over the live config.
 # Source: https://github.com/N4M3Z/dotfiles
 umask 077
 

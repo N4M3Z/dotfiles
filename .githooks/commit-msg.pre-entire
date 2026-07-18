@@ -1,0 +1,14 @@
+#!/bin/sh
+# Entire session capture, commit-msg stage.
+#
+# Entire links each commit to the agent session that produced it by adding
+# a trailer to the commit message. This stage strips that trailer again when
+# the commit carries no user content, so aborting an empty commit still works.
+
+if ! command -v entire >/dev/null 2>&1; then
+    echo '[entire] Entire CLI is enabled but not installed or not on PATH.' >&2
+    echo '[entire] Skipping this hook. Install: https://docs.entire.io/cli/installation' >&2
+    exit 0
+fi
+
+entire hooks git commit-msg "$1" || true

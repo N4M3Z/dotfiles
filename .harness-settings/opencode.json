@@ -1,4 +1,5 @@
 {
+  "instructions": ["/Users/N4M3Z/.opencode/rules/*.md"],
   "permission": {
     "*": "ask",
     "read": {
