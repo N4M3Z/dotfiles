@@ -5,21 +5,29 @@ on:
         branches: [main]
     pull_request:
 
+# chezmoi cannot be installed with `go install` (its go.mod contains exclude
+# directives, which go refuses for named packages), so install the pinned
+# release binary and verify its checksum. jq and yq ship with the runner image.
+env:
+    CHEZMOI_VERSION: 2.71.0
+    CHEZMOI_SHA256: 6ea2040ecc0e82d3dac604289e100b0157afefcd94ebb818e5f6e31655156d34
+
 jobs:
     validate:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
 
-            - uses: actions/setup-go@v5
-              with:
-                  go-version: stable
-
-            - name: Install chezmoi and yq
+            - name: Install chezmoi
               run: |
-                  go install github.com/twpayne/chezmoi/v2@latest
-                  go install github.com/mikefarah/yq/v4@latest
-                  echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+                  curl -fsSL -o /tmp/chezmoi.tar.gz \
+                      "https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_linux_amd64.tar.gz"
+                  actual=$(sha256sum /tmp/chezmoi.tar.gz)
+                  actual=${actual%% *}
+                  [ "$actual" = "$CHEZMOI_SHA256" ] || { echo "chezmoi checksum mismatch: $actual"; exit 1; }
+                  tar -C /tmp -xzf /tmp/chezmoi.tar.gz chezmoi
+                  sudo install -m 755 /tmp/chezmoi /usr/local/bin/chezmoi
+                  chezmoi --version
 
             - name: Validate templates
               run: bash tests/validate-templates.sh
