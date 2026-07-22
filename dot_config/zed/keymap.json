@@ -2,6 +2,7 @@
     {
         // Space-leader bindings, vim-style. VimControl scopes them to
         // normal/visual modes; !menu keeps space usable in completions.
+        "use_key_equivalents": true,
         "context": "VimControl && !menu",
         "bindings": {
             "space space": "file_finder::Toggle",
@@ -48,9 +49,14 @@
         // Threads Sidebar on a plain-cmd chord, completing the j-family
         // (cmd-j bottom dock, cmd-alt-j sidebar). Workspace covers panels;
         // the Editor entry shadows JoinLines, which vim's J already covers.
+        "use_key_equivalents": true,
         "context": "Workspace",
         "bindings": {
             "cmd-shift-j": "multi_workspace::ToggleWorkspaceSidebar",
+            // Terminal toggle on cmd-` (macOS assigns it to app window cycling
+            // by default; inside Zed this binding wins, and window cycling
+            // stays on the Window menu). ctrl-` remains Zed's default.
+            "cmd-`": "terminal_panel::Toggle",
             // New Terminal Thread directly — cmd-n reuses the last-used thread
             // type, and the type picker (cmd-alt-shift-n) is easy to miss.
             // ProjectPanel keeps its own cmd-alt-n (NewDirectory).
@@ -58,6 +64,20 @@
         }
     },
     {
+        // Any-quote/any-bracket text objects (ciq, cib, and cs variants):
+        // lowercase = traditional innermost-first matching, uppercase =
+        // mini.ai current-line-first with tree-sitter awareness.
+        "use_key_equivalents": true,
+        "context": "vim_operator == a || vim_operator == i || vim_operator == cs",
+        "bindings": {
+            "q": "vim::AnyQuotes",
+            "b": "vim::AnyBrackets",
+            "Q": "vim::MiniQuotes",
+            "B": "vim::MiniBrackets"
+        }
+    },
+    {
+        "use_key_equivalents": true,
         "context": "Editor",
         "bindings": {
             "cmd-shift-j": "multi_workspace::ToggleWorkspaceSidebar",
@@ -70,6 +90,7 @@
         // prev/next convention; cmd-alt is the threads layer (cmd-alt-j =
         // sidebar). The Editor entry shadows Fold/UnfoldLines, which vim's
         // z-fold commands already cover.
+        "use_key_equivalents": true,
         "context": "Workspace",
         "bindings": {
             "cmd-alt-[": "multi_workspace::PreviousThread",
@@ -77,6 +98,7 @@
         }
     },
     {
+        "use_key_equivalents": true,
         "context": "Editor",
         "bindings": {
             "cmd-alt-[": "multi_workspace::PreviousThread",
