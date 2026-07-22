@@ -1,0 +1,77 @@
+#!/bin/bash
+# Mint a GitHub App installation token for the N4M3Z app (the agents' PR
+# identity, rendered as N4M3Z[bot]) and print it for use as GH_TOKEN.
+#
+# Auth chain: sign a short-lived RS256 JWT with the app's private key (read
+# from pass at mint time, so the key never sits on disk unencrypted),
+# discover the installation, exchange for an installation access token
+# (1 hour, scoped to the repos the installation covers). Tokens are cached
+# in ~/.cache with 0600 perms and reused until 5 minutes before expiry, so
+# repeated calls within a session cost nothing and the YubiKey-backed pass
+# decrypt happens at most once per hour (gpg-agent caching applies).
+#
+# App = agent identity (one per agent), private key = machine credential
+# (one per machine, individually revocable). Decision: docs/decisions/DOT-0002.
+#
+#   GH_TOKEN=$(gh-app-token) gh pr create ...
+#
+# Env overrides: GH_APP_ID, GH_APP_PASS_ENTRY, GH_APP_CACHE_DIR.
+
+set -euo pipefail
+
+app_id=${GH_APP_ID:-4369275}
+pass_entry=${GH_APP_PASS_ENTRY:-personal/keys/github.com/n4m3z}
+cache_dir=${GH_APP_CACHE_DIR:-"${XDG_CACHE_HOME:-$HOME/.cache}/gh-app-token"}
+cache_file="${cache_dir}/${app_id}.json"
+api=https://api.github.com
+
+now=$(date +%s)
+
+# Serve from cache while more than 5 minutes of validity remain.
+if [[ -f "$cache_file" ]]; then
+    cached_exp=$(sed -n 's/.*"exp_epoch": *\([0-9]*\).*/\1/p' "$cache_file")
+    if [[ -n "$cached_exp" ]] && (( cached_exp - now > 300 )); then
+        sed -n 's/.*"token": *"\([^"]*\)".*/\1/p' "$cache_file"
+        exit 0
+    fi
+fi
+
+b64url() {
+    openssl base64 -A | tr '+/' '-_' | tr -d '='
+}
+
+header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
+payload=$(printf '{"iat":%d,"exp":%d,"iss":%d}' "$((now - 60))" "$((now + 540))" "$app_id" | b64url)
+signature=$(printf '%s.%s' "$header" "$payload" \
+    | openssl dgst -sha256 -sign <(pass show "$pass_entry") -binary \
+    | b64url)
+jwt="${header}.${payload}.${signature}"
+
+# Default: first installation (the personal account). For an org
+# installation, set GH_APP_INSTALLATION_ID; each installation's tokens
+# cover only its own repos.
+installation_id=${GH_APP_INSTALLATION_ID:-$(curl -fsS -H "Authorization: Bearer $jwt" \
+    -H "Accept: application/vnd.github+json" \
+    "$api/app/installations" | sed -n 's/^    "id": *\([0-9]*\),.*/\1/p' | head -1)}
+if [[ -z "$installation_id" ]]; then
+    echo "gh-app-token: no installation found for app $app_id" >&2
+    exit 1
+fi
+
+response=$(curl -fsS -X POST -H "Authorization: Bearer $jwt" \
+    -H "Accept: application/vnd.github+json" \
+    "$api/app/installations/$installation_id/access_tokens")
+token=$(printf '%s' "$response" | sed -n 's/.*"token": *"\([^"]*\)".*/\1/p')
+expires_at=$(printf '%s' "$response" | sed -n 's/.*"expires_at": *"\([^"]*\)".*/\1/p')
+if [[ -z "$token" ]]; then
+    echo "gh-app-token: token exchange failed" >&2
+    exit 1
+fi
+
+exp_epoch=$(date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$expires_at" +%s 2>/dev/null || echo $((now + 3600)))
+
+mkdir -p "$cache_dir"
+umask 077
+printf '{"token": "%s", "exp_epoch": %s}\n' "$token" "$exp_epoch" > "$cache_file"
+
+printf '%s\n' "$token"
