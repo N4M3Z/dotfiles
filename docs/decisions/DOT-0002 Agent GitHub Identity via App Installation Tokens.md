@@ -59,4 +59,5 @@ Chosen option: **GitHub App installation tokens**. The model: **app = agent iden
 
 - Helper: `dot_local/bin/executable_gh-app-token`; wiring: `configure_github_identity` in `sd/agent/executable_run` (invoked `sd agent run`).
 - Key custody follows the pass store conventions; entry `personal/keys/github.com/n4m3z` on this machine.
-- Per-agent identities later: register sibling apps and select per provider in `harness-run`.
+- Commit publication: `sd github push` replays an agent bookmark's commits through GraphQL `createCommitOnBranch` with the app token, so GitHub creates each commit server-side — attributed `n4m3z[bot]` and GitHub-signed (Verified). Local commits keep the per-model identity for `jj log`; the platform identity is the app. A signing-key approach was rejected: verification requires an account-verified committer email, and an email mapped to the human account makes GitHub display the human, erasing the agent from the UI.
+- Per-agent identities later: register sibling apps and select per provider in `sd agent run`.
