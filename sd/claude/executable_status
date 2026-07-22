@@ -1,0 +1,40 @@
+#!/bin/sh
+# Claude Code hook -> agent-state flag on the hosting tmux window.
+#
+# Usage: sd claude status working|attention|clear
+# Wired in ~/.claude/settings.json (via the claude-tmux-status forwarder): UserPromptSubmit -> working,
+# Stop and Notification -> attention, SessionEnd -> clear.
+#
+# Sets the window-scoped @agent option, which both status-bar themes render
+# as an icon (see ~/.config/tmux/theme-*.conf) and tmux-agents lists. A Stop
+# in the window currently on screen clears instead of flagging: the flag
+# means "an agent somewhere ELSE needs you". No-op outside tmux. Always
+# exits 0 -- Claude Code treats a non-zero hook exit as a hook failure.
+
+[ -n "$TMUX" ] && [ -n "$TMUX_PANE" ] || exit 0
+
+# Breadcrumb for sd claude resume: bind this tmux window to the Claude session
+# id carried in the hook's stdin JSON, so a tmux-resurrect restore can
+# claude --resume the exact session (not just the newest one in the cwd).
+session_id=$(cat 2>/dev/null | grep -o '"session_id":"[^"]*"' | head -1 | sed 's/.*:"//;s/"//')
+if [ -n "$session_id" ]; then
+    key=$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}:#{window_index}' 2>/dev/null | tr '/' '_')
+    if [ -n "$key" ]; then
+        mkdir -p "$HOME/.local/state/claude-tmux"
+        printf '%s\n' "$session_id" > "$HOME/.local/state/claude-tmux/$key"
+    fi
+fi
+
+state=$1
+if [ "$state" = "attention" ]; then
+    visible=$(tmux display-message -p -t "$TMUX_PANE" \
+        '#{?#{&&:#{window_active},#{session_attached}},yes,no}' 2>/dev/null)
+    [ "$visible" = "yes" ] && state=clear
+fi
+
+case "$state" in
+    working)   tmux set-option -w -t "$TMUX_PANE" @agent working 2>/dev/null ;;
+    attention) tmux set-option -w -t "$TMUX_PANE" @agent attention 2>/dev/null ;;
+    clear)     tmux set-option -w -t "$TMUX_PANE" -u @agent 2>/dev/null ;;
+esac
+exit 0

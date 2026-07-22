@@ -38,7 +38,7 @@ set -g status-right-length 160
 set -g status-left "#{?client_prefix,#[fg=#1d1d1d#,bg=#f9e2af#,bold] ⌘ #[default],}#[range=user|sesh]#[fg=#1d1d1d,bg=#{@accent},bold] #h #[norange]#[default]  #[fg=#6f6f6f]#S  "
 
 # Windows: index:name, active in the accent. The leading conditional renders
-# the claude-tmux-status agent flag: ◉ (yellow) = agent needs you, ● (blue)
+# the sd claude status agent flag: ◉ (yellow) = agent needs you, ● (blue)
 # = agent working, nothing = no agent.
 # The trailing [+] (after the last window, via window_end_flag) opens a new
 # window. It works because it renders past the per-window range=window cell,

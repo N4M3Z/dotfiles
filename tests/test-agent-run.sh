@@ -3,7 +3,7 @@
 # Source: https://github.com/N4M3Z/dotfiles
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
-RUNNER="${ROOT}/dot_local/bin/executable_harness-run"
+RUNNER="${ROOT}/sd/agent/executable_run"
 failures=0
 
 pass() { echo "PASS: $1"; }
@@ -64,7 +64,7 @@ run_harness() {
     fi
 }
 
-tmp="$(mktemp -d "${TMPDIR:-/tmp}/harness-run-tests.XXXXXX")"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/agent-run-tests.XXXXXX")"
 trap 'command rm -rf "$tmp"' EXIT
 fake_bin="${tmp}/bin"
 session_sync="${tmp}/session-sync"
@@ -208,4 +208,4 @@ if (( failures > 0 )); then
     exit 1
 fi
 
-echo 'All harness-run tests passed'
+echo 'All agent-run tests passed'

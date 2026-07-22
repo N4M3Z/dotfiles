@@ -1,2 +1,2 @@
 #!/bin/bash
-exec "$(dirname "$0")/harness-run" opencode "$@"
+exec "$(dirname "$0")/sd" agent run opencode "$@"

@@ -1,5 +1,5 @@
 #!/bin/sh
-# fzf picker over tmux windows flagged by claude-tmux-status; Enter jumps.
+# fzf picker over tmux windows flagged by sd claude status; Enter jumps.
 # Windows needing input (attention) sort above ones still working. Bound to
 # prefix+u as a popup in tmux.conf.
 

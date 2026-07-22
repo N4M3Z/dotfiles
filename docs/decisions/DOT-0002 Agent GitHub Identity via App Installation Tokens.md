@@ -57,6 +57,6 @@ Chosen option: **GitHub App installation tokens**. The model: **app = agent iden
 
 ## More Information
 
-- Helper: `dot_local/bin/executable_gh-app-token`; wiring: `configure_github_identity` in `dot_local/bin/executable_harness-run`.
+- Helper: `dot_local/bin/executable_gh-app-token`; wiring: `configure_github_identity` in `sd/agent/executable_run` (invoked `sd agent run`).
 - Key custody follows the pass store conventions; entry `personal/keys/github.com/n4m3z` on this machine.
 - Per-agent identities later: register sibling apps and select per provider in `harness-run`.
