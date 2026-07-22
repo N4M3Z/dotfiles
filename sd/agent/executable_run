@@ -1,0 +1,345 @@
+#!/bin/bash
+# Launch an agent CLI wrapped with policy, attribution, and session capture.
+#
+# Invoked as `sd agent run <provider> [args...]`; the claude/codex/agy/grok/
+# opencode PATH wrappers all dispatch here.
+#
+# Three jobs, none of which any harness does for all five on its own:
+#
+#   1. Session capture. Grok, Antigravity, and OpenCode expose no session
+#      hooks, so the only reliable capture point is after the process exits:
+#      run session-sync, and record a debt file when capture fails so
+#      `verify --strict` goes red instead of silently losing the session.
+#
+#   2. Automated runs (HARNESS_AUTOMATED=1, councils and review jobs): pin the
+#      model, force the provider's read-only/no-approval flags, and stamp any
+#      commits with a jj co-author trailer naming the harness and requested
+#      model, so `jj log` answers "which agent wrote this".
+#
+#   3. Interactive runs pass through unchanged, apart from provider-native
+#      sandbox flags for grok and antigravity.
+#
+# Source: https://github.com/N4M3Z/dotfiles
+
+usage() {
+    cat <<'USAGE'
+Usage: sd agent run <claude|codex|antigravity|grok|opencode> [arguments...]
+
+Interactive runs preserve provider model defaults. Set HARNESS_AUTOMATED=1 for
+review automation; those runs pin the provider model and a non-interactive
+read-only policy where the provider supports it.
+USAGE
+}
+
+has_arg() {
+    local expected="$1"
+    shift
+    local arg
+
+    for arg in "$@"; do
+        [[ "$arg" == "$expected" || "$arg" == "${expected}="* ]] && return 0
+    done
+    return 1
+}
+
+resolve_installed_binary() {
+    local command_name="$1"
+    local candidate
+    local newest_claude_version
+
+    case "$command_name" in
+        claude)
+            # shellcheck disable=SC2012 # installer-owned dir of plain version-number files
+            newest_claude_version=$(ls -t "${HOME}/.local/share/claude/versions" \
+                2>/dev/null | head -1)
+            candidate="${HOME}/.local/share/claude/versions/${newest_claude_version}"
+            [[ -n "$newest_claude_version" && -x "$candidate" ]] && echo "$candidate"
+            ;;
+        codex)
+            candidate="${HOME}/.codex/packages/standalone/current/bin/codex"
+            [[ -x "$candidate" ]] && echo "$candidate"
+            ;;
+        grok)
+            candidate="${HOME}/.grok/bin/grok"
+            [[ -x "$candidate" ]] && echo "$candidate"
+            ;;
+    esac
+}
+
+resolve_real_binary() {
+    local command_name="$1"
+    local wrapper_dir
+    local clean_path=''
+    local directory
+    local installed_binary
+    local old_ifs="$IFS"
+
+    if [[ -n "${HARNESS_REAL_BIN_DIR:-}" \
+        && -x "${HARNESS_REAL_BIN_DIR}/${command_name}" ]]; then
+        echo "${HARNESS_REAL_BIN_DIR}/${command_name}"
+        return 0
+    fi
+
+    wrapper_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    IFS=':'
+    for directory in $PATH; do
+        [[ -n "$directory" ]] || continue
+        [[ "$directory" == "$wrapper_dir" ]] && continue
+        [[ "$directory" == "${HOME}/.local/bin" ]] && continue
+        if [[ -z "$clean_path" ]]; then
+            clean_path="$directory"
+        else
+            clean_path="${clean_path}:${directory}"
+        fi
+    done
+    IFS="$old_ifs"
+
+    if PATH="$clean_path" command -v "$command_name"; then
+        return 0
+    fi
+
+    installed_binary=$(resolve_installed_binary "$command_name")
+    [[ -n "$installed_binary" ]] && echo "$installed_binary"
+}
+
+record_capture_debt() {
+    local provider="$1"
+    local provider_status="$2"
+    local debt_root="${HARNESS_CAPTURE_DEBT_DIR:-${HOME}/.local/state/harness-run/capture-debt}"
+    local debt_file
+    local timestamp
+
+    umask 077
+    mkdir -p "$debt_root" 2>/dev/null || return 0
+    timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+    debt_file="${debt_root}/${provider}-${timestamp}-$$.json"
+    jq -n \
+        --arg provider "$provider" \
+        --arg cwd "$PWD" \
+        --argjson provider_status "$provider_status" \
+        '{
+            provider: $provider,
+            cwd: $cwd,
+            provider_status: $provider_status,
+            capture_status: "failed"
+        }' > "$debt_file" 2>/dev/null || true
+    chmod 600 "$debt_file" 2>/dev/null || true
+}
+
+clear_capture_debt() {
+    local provider="$1"
+    local debt_root="${HARNESS_CAPTURE_DEBT_DIR:-${HOME}/.local/state/harness-run/capture-debt}"
+
+    [[ -d "$debt_root" ]] || return 0
+    find "$debt_root" -type f -name "${provider}-*.json" -exec rm -f {} + 2>/dev/null || true
+}
+
+provider_label() {
+    case "$1" in
+        claude) echo 'Claude Code' ;;
+        codex) echo 'Codex' ;;
+        antigravity) echo 'Antigravity' ;;
+        grok) echo 'Grok' ;;
+        opencode) echo 'OpenCode' ;;
+    esac
+}
+
+# Agent GitHub identity: gh and API calls made by the harness post as the
+# N4M3Z[bot] GitHub App when an installation token can be minted (cached by
+# gh-app-token; pass may prompt once per hour). On any failure the export is
+# skipped and the harness silently falls back to the user's own gh auth.
+configure_github_identity() {
+    local token
+    if command -v gh-app-token >/dev/null 2>&1 \
+        && token=$(gh-app-token 2>/dev/null) && [[ -n "$token" ]]; then
+        export GH_TOKEN="$token"
+    fi
+}
+
+configure_jj_attribution() {
+    local provider="$1"
+    local requested_model="$2"
+    local label
+    local trailer
+    local base_config="${XDG_CONFIG_HOME:-${HOME}/.config}/jj/config.toml"
+
+    label=$(provider_label "$provider")
+    if [[ "$requested_model" == *$'\n'* \
+        || "$requested_model" == *$'\r'* \
+        || "$requested_model" == *'"'* \
+        || "$requested_model" == *\\* \
+        || "$requested_model" == *"'''"* ]]; then
+        echo 'sd agent run: requested model contains unsupported attribution characters' >&2
+        return 1
+    fi
+
+    trailer="Co-authored-by: ${label} / ${requested_model} <N4M3Z@users.noreply.github.com>"
+    jj_overlay=$(mktemp "${TMPDIR:-/tmp}/harness-jj-config.XXXXXX") || return 1
+    chmod 600 "$jj_overlay"
+    printf '%s\n' \
+        '[templates]' \
+        "commit_trailers = '''\"${trailer}\"'''" \
+        > "$jj_overlay"
+
+    if [[ -f "$base_config" ]]; then
+        export JJ_CONFIG="${base_config}:${jj_overlay}"
+    else
+        export JJ_CONFIG="$jj_overlay"
+    fi
+    export HARNESS_EXPECTED_COAUTHOR="$trailer"
+}
+
+begin_jj_change() {
+    local provider="$1"
+    local claimable
+    local description
+
+    command -v jj >/dev/null 2>&1 || return 0
+    jj root >/dev/null 2>&1 || return 0
+    claimable=$(jj log -r @ --no-graph -T 'if(empty && description == "", "yes", "no")' \
+        2>/dev/null) || return 1
+    if [[ "$claimable" != 'yes' ]]; then
+        jj new >/dev/null || return 1
+    fi
+    description="WIP: $(provider_label "$provider") session $(date -u +%Y%m%dT%H%M%SZ)-$$"
+    jj describe -m "$description" >/dev/null || return 1
+    jj_claimed_change=$(jj log -r @ --no-graph -T 'change_id.short()' 2>/dev/null) || return 1
+}
+
+finish_jj_change() {
+    local provider="$1"
+    local is_empty
+    local current_change
+
+    [[ -n "${jj_claimed_change:-}" ]] || return 0
+    if ! is_empty=$(jj log -r "$jj_claimed_change" --no-graph -T 'if(empty, "yes", "no")' \
+        2>/dev/null); then
+        echo "sd agent run: could not inspect claimed jj change ${jj_claimed_change}; WIP push gate remains active" >&2
+        return 1
+    fi
+    if [[ "$is_empty" == 'yes' ]]; then
+        jj abandon "$jj_claimed_change" >/dev/null || return 1
+        return 0
+    fi
+    jj describe -r "$jj_claimed_change" \
+        -m "chore: $(provider_label "$provider") automated session" >/dev/null || return 1
+    current_change=$(jj log -r @ --no-graph -T 'change_id.short()' 2>/dev/null) || return 1
+    if [[ "$current_change" == "$jj_claimed_change" ]]; then
+        jj new >/dev/null || return 1
+    fi
+}
+
+# shellcheck disable=SC2329 # Invoked by the EXIT trap.
+cleanup_runner() {
+    if [[ -n "${jj_overlay:-}" ]]; then
+        command rm -f "$jj_overlay"
+    fi
+}
+
+jj_overlay=''
+jj_claimed_change=''
+trap cleanup_runner EXIT
+
+provider="${1:-}"
+[[ -n "$provider" ]] && shift
+
+case "$provider" in
+    claude|codex|grok|opencode) command_name="$provider" ;;
+    antigravity) command_name='agy' ;;
+    -h|--help|'') usage; exit 0 ;;
+    *)
+        echo "sd agent run: unknown provider: ${provider}" >&2
+        usage >&2
+        exit 2
+        ;;
+esac
+
+real_binary=$(resolve_real_binary "$command_name")
+if [[ -z "$real_binary" || ! -x "$real_binary" ]]; then
+    echo "sd agent run: ${command_name} is not installed outside the wrapper directory" >&2
+    exit 127
+fi
+
+arguments=("$@")
+automated="${HARNESS_AUTOMATED:-0}"
+requested_model=''
+
+if [[ "$automated" == '1' ]]; then
+    case "$provider" in
+        claude)
+            requested_model="${HARNESS_MODEL:-claude-fable-5[1m]}"
+            has_arg --model "${arguments[@]}" \
+                || arguments=(--model "$requested_model" "${arguments[@]}")
+            ;;
+        codex)
+            requested_model="${HARNESS_MODEL:-gpt-5.5}"
+            has_arg --model "${arguments[@]}" \
+                || arguments=(--model "$requested_model" "${arguments[@]}")
+            has_arg --sandbox "${arguments[@]}" \
+                || arguments=(--sandbox read-only "${arguments[@]}")
+            has_arg --ask-for-approval "${arguments[@]}" \
+                || arguments=(--ask-for-approval never "${arguments[@]}")
+            ;;
+        antigravity)
+            requested_model="${HARNESS_MODEL:-Gemini 3.5 Flash (High)}"
+            has_arg --sandbox "${arguments[@]}" || arguments=(--sandbox "${arguments[@]}")
+            has_arg --model "${arguments[@]}" \
+                || arguments=(--model "$requested_model" "${arguments[@]}")
+            ;;
+        grok)
+            requested_model="${HARNESS_MODEL:-grok-composer-2.5-fast}"
+            has_arg --sandbox "${arguments[@]}" \
+                || arguments=(--sandbox read-only "${arguments[@]}")
+            has_arg --permission-mode "${arguments[@]}" \
+                || arguments=(--permission-mode dontAsk "${arguments[@]}")
+            has_arg --model "${arguments[@]}" \
+                || arguments=(--model "$requested_model" "${arguments[@]}")
+            ;;
+        opencode)
+            requested_model="${HARNESS_MODEL:-proton-lumo/lumo-max}"
+            has_arg --model "${arguments[@]}" \
+                || arguments=(--model "$requested_model" "${arguments[@]}")
+            export OPENCODE_PERMISSION="${OPENCODE_PERMISSION:-{\"*\":\"deny\",\"read\":\"allow\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"skill\":\"allow\"}}"
+            ;;
+    esac
+    configure_jj_attribution "$provider" "$requested_model" || exit 1
+    configure_github_identity
+    if ! begin_jj_change "$provider"; then
+        echo 'sd agent run: could not claim an isolated jj change' >&2
+        exit 1
+    fi
+else
+    case "$provider" in
+        antigravity)
+            has_arg --sandbox "${arguments[@]}" || arguments=(--sandbox "${arguments[@]}")
+            ;;
+        grok)
+            has_arg --sandbox "${arguments[@]}" \
+                || arguments=(--sandbox workspace "${arguments[@]}")
+            ;;
+    esac
+fi
+
+"$real_binary" "${arguments[@]}"
+provider_status=$?
+
+if [[ "$automated" == '1' ]] && ! finish_jj_change "$provider"; then
+    printf '%s\n' \
+        'WARNING: the harness finished, but its jj change could not be finalized.' \
+        '         A WIP description remains and the push gate will reject it.' >&2
+fi
+
+session_sync="${SESSION_SYNC:-${HOME}/Developer/N4M3Z/forge-data/scripts/session-sync}"
+if [[ -x "$session_sync" ]]; then
+    if "$session_sync" --provider "$provider" --source wrapper </dev/null; then
+        clear_capture_debt "$provider"
+    else
+        printf '%s\n' \
+            "WARNING: ${provider} finished, but session capture failed." \
+            "         The original exit status (${provider_status}) is preserved; verification will fail until capture debt is recovered." \
+            >&2
+        record_capture_debt "$provider" "$provider_status"
+    fi
+fi
+
+exit "$provider_status"
