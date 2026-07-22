@@ -145,7 +145,7 @@ provider_label() {
 }
 
 # Agent GitHub identity: gh and API calls made by the harness post as the
-# N4M3Z[bot] GitHub App when an installation token can be minted (cached by
+# runewright[bot] GitHub App when an installation token can be minted (cached by
 # gh-app-token; pass may prompt once per hour). On any failure the export is
 # skipped and the harness silently falls back to the user's own gh auth.
 configure_github_identity() {

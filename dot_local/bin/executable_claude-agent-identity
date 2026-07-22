@@ -6,7 +6,7 @@
 #
 # The address is non-routable by design; local history names the model
 # exactly. On GitHub, agent branches publish via `sd github push`, which
-# replays commits through the API as the N4M3Z app — bot-attributed and
+# replays commits through the API as the runewright app — bot-attributed and
 # GitHub-signed — so platform identity comes from the app, not this email.
 
 model=$(jq -r '.model // empty' 2>/dev/null | tr -cd 'a-z0-9.-')

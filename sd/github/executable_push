@@ -1,7 +1,7 @@
 #!/bin/bash
 # Publish a jj bookmark by replaying its commits through the GitHub API, so
-# each commit is created server-side: attributed to the N4M3Z app (renders
-# as n4m3z[bot]) and signed by GitHub (renders Verified). This is how agent
+# each commit is created server-side: attributed to the runewright app (renders
+# as runewright[bot]) and signed by GitHub (renders Verified). This is how agent
 # branches publish; human branches keep plain `jj git push`.
 #
 # Usage: sd github push <bookmark> [--base <ref>]
@@ -44,23 +44,25 @@ api() {
         -H "Accept: application/vnd.github+json" "$@"
 }
 
-commits=$(jj log -r "${base}@origin..${bookmark}" --no-graph --reversed \
-    -T 'commit_id ++ "\n"')
-[[ -n "$commits" ]] || { echo "sd github push: nothing to push" >&2; exit 0; }
-
-base_oid=$(api "https://api.github.com/repos/${repo}/commits/${base}" \
-    | jq -r '.sha')
-
 head_oid=$(api "https://api.github.com/repos/${repo}/git/ref/heads/${bookmark}" \
     2>/dev/null | jq -r '.object.sha' || true)
 if [[ -z "$head_oid" || "$head_oid" == "null" ]]; then
+    base_oid=$(api "https://api.github.com/repos/${repo}/commits/${base}" \
+        | jq -r '.sha')
     jq -n --arg ref "refs/heads/${bookmark}" --arg sha "$base_oid" \
         '{ref: $ref, sha: $sha}' \
         | api -X POST "https://api.github.com/repos/${repo}/git/refs" \
             --data-binary @- | jq -r '.ref' >/dev/null
     head_oid=$base_oid
+    range_base="${base}@origin"
     echo "created refs/heads/${bookmark} at ${base_oid:0:12}"
+else
+    range_base="${bookmark}@origin"
 fi
+
+commits=$(jj log -r "${range_base}..${bookmark}" --no-graph --reversed \
+    -T 'commit_id ++ "\n"')
+[[ -n "$commits" ]] || { echo "sd github push: nothing to push" >&2; exit 0; }
 
 while IFS= read -r commit; do
     [[ -n "$commit" ]] || continue
