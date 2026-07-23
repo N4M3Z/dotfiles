@@ -200,6 +200,10 @@
       "terminal.ansi.red": "#d20f39",
       "terminal.ansi.bright_red": "#e64553",
       "terminal.bright_foreground": "#d20f39",
+      // Codebook rides info severity; mute the vivid teal (#179299) to a soft
+      // teal-gray so its spelling squiggles sit near markdown-oxide's hint
+      // (#acb0be gray) in prominence while staying a distinct hue.
+      "info": "#6d9691",
       "syntax": {
         "emphasis.strong": { "color": "#d20f39", "font_weight": 700 },
         "emphasis": { "color": "#8839ef", "font_style": "italic" },
@@ -223,6 +227,10 @@
       "terminal.ansi.red": "#ff5555",
       "terminal.ansi.bright_red": "#ff5555",
       "terminal.bright_foreground": "#ff5555",
+      // Codebook rides info severity; mute the vivid teal (#94e2d5) to a soft
+      // teal-gray so its spelling squiggles sit near markdown-oxide's hint
+      // (#585b70 gray) in prominence while staying a distinct hue.
+      "info": "#6c8d87",
       "syntax": {
         "emphasis.strong": { "color": "#ff5555", "font_weight": 700 },
         "emphasis": { "color": "#cba6f7", "font_style": "italic" },
@@ -273,17 +281,17 @@
   // gbrain (local knowledge brain) as an MCP context server, so the Zed
   // agent can search the vault. Reaches the Zed-native agent and, via ACP
   // forwarding, Zed-hosted Claude Code. Terminal threads and the standalone
-  // cmux fallback use Claude Code's own MCP config instead. Env mirrors the
-  // gbrain serve command (Ollama embedder + local Postgres).
+  // cmux fallback use Claude Code's own MCP config instead. The embedder route
+  // comes from gbrain's own config; setting OPENAI_BASE_URL here would override
+  // it, because process env wins over config in build-gateway-config.
   "context_servers": {
     "gbrain": {
-      "command": "/Users/N4M3Z/.bun/bin/gbrain",
+      "command": "{{ .chezmoi.homeDir }}/.bun/bin/gbrain",
       "args": ["serve"],
       "env": {
-        "OPENAI_BASE_URL": "http://localhost:11434/v1",
-        "OPENAI_API_KEY": "ollama",
         "DATABASE_URL": "postgresql://localhost:5432/memex",
-        "GBRAIN_STDIO_SOURCE": "atlas",
+        "GBRAIN_STDIO_SOURCE": "__all__",
+        "GBRAIN_MCP_PROFILE": "recall",
       },
     },
   },
@@ -354,6 +362,21 @@
     "Markdown": {
       "indent_guides": {
         "enabled": false,
+      },
+    },
+  },
+
+  "lsp": {
+    // Harper: the deck standard is sentence-case headings, so the
+    // title-case rule stays off.
+    "harper-ls": {
+      "settings": {
+        "harper-ls": {
+          "dialect": "American",
+          "linters": {
+            "UseTitleCase": false,
+          },
+        },
       },
     },
   },

@@ -1,5 +1,5 @@
 ; ~/.gitconfig — Chezmoi-managed; canonical source at
-; dotfiles/dot_gitconfig, deploys to ~/.gitconfig.
+; dotfiles/dot_gitconfig.tmpl, deploys to ~/.gitconfig.
 ;
 ; Identity and signing config. Commits sign with the GPG signing subkey
 ; (on the YubiKey); the email matches the key's UID so GitHub shows
@@ -27,13 +27,13 @@
     gpgsign = true
 
 [gpg "ssh"]
-    allowedSignersFile = /Users/N4M3Z/.config/git/allowed_signers
+    allowedSignersFile = {{ .chezmoi.homeDir }}/.config/git/allowed_signers
     ; Wrapper bypasses Apple's launchd ssh-agent (which refuses FIDO2
     ; sk-ssh-ed25519). Installed by forge-provision/scripts/configure/
     ; git-ssh-sign.sh from forge-core/skills/VersionControl/scripts/
     ; git-ssh-sign-macos. See forge-core CommitSigning.md for the
     ; full diagnosis.
-    program = /Users/N4M3Z/.local/bin/git-ssh-sign-macos
+    program = {{ .chezmoi.homeDir }}/.local/bin/git-ssh-sign-macos
 
 [credential "https://github.com"]
     helper =
