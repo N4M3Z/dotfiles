@@ -1,0 +1,29 @@
+#!/bin/sh
+# Open paths in the Zed instance this terminal belongs to. Zed task terminals
+# descend from the app process, so walking the ancestry finds
+# .../Zed*.app/Contents/MacOS/zed; its sibling `cli` binary handles paths,
+# path:line:column, and window reuse for that exact build (stable, preview,
+# or the personal Zed Dev fork). Outside any Zed, falls back to zed-dev, then
+# the stable zed on PATH. A single empty argument (a cancelled picker) is a
+# clean no-op.
+
+[ $# -gt 0 ] && [ -n "$1" ] || exit 0
+
+pid=$$
+while [ -n "$pid" ] && [ "$pid" -gt 1 ]; do
+    exe=$(ps -o comm= -p "$pid" 2>/dev/null)
+    case $exe in
+        */Contents/MacOS/zed)
+            cli="${exe%/zed}/cli"
+            if [ -x "$cli" ]; then
+                exec "$cli" "$@"
+            fi
+            ;;
+    esac
+    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+done
+
+if command -v zed-dev >/dev/null 2>&1; then
+    exec zed-dev "$@"
+fi
+exec zed "$@"
