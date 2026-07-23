@@ -90,7 +90,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync"
+            "command": "[ -x {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync ] && {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync || true"
           }
         ]
       }
@@ -100,7 +100,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status working"
+            "command": "[ -x {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status ] && {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status working || true"
           }
         ]
       }
@@ -110,7 +110,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention"
+            "command": "[ -x {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status ] && {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention || true"
           }
         ]
       }
@@ -120,7 +120,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention"
+            "command": "[ -x {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status ] && {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention || true"
           }
         ]
       }
@@ -130,11 +130,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync"
+            "command": "[ -x {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync ] && {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync || true"
           },
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status clear"
+            "command": "[ -x {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status ] && {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status clear || true"
           }
         ]
       }
