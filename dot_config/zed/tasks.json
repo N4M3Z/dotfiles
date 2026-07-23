@@ -126,5 +126,20 @@
         "reveal": "always",
         "use_new_terminal": true,
         "allow_concurrent_runs": true
+    },
+    {
+        // Television picker: pick in a centered modal terminal, open in the
+        // running Zed via `sd zed open` (resolves this instance's bundled
+        // cli, so the pick lands in Zed Dev, not whichever zed is on PATH).
+        // Cancelling tv passes an empty arg, an open no-op. Bound to
+        // `space f`; cmd-p stays Zed's native finder, which spans all
+        // open worktrees. Hidden from the task picker itself.
+        "label": "Fuzzy find file (tv)",
+        "command": "sd zed open \"$(tv files)\"",
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "reveal": "always",
+        "use_new_terminal": true,
+        "hide": "always",
+        "allow_concurrent_runs": true
     }
 ]

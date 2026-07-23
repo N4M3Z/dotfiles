@@ -6,6 +6,9 @@
         "context": "VimControl && !menu",
         "bindings": {
             "space space": "file_finder::Toggle",
+            // Television picker in a centered modal; cmd-p stays the native
+            // finder (spans all open worktrees).
+            "space f": ["task::Spawn", { "task_name": "Fuzzy find file (tv)", "reveal_target": "center" }],
             "space e": "project_panel::ToggleFocus",
             "space g": "git_panel::ToggleFocus",
             "space o": "outline::Toggle",
