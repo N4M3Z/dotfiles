@@ -88,10 +88,12 @@
         "reveal": "always"
     },
     {
-        // Render the current markdown file in glow's pager. Bound to `space m g`.
+        // Render the current markdown file in glow's pager, styled like the
+        // rune TUI's markdown view (~/.config/glow/rune.json: dark, zero
+        // document margin, banner h1). Bound to `space m g`.
         "label": "Render markdown (glow)",
         "command": "glow",
-        "args": ["-p", "$ZED_FILE"],
+        "args": ["-s", "$HOME/.config/glow/rune.json", "-p", "$ZED_FILE"],
         "reveal": "always",
         "use_new_terminal": true,
         "allow_concurrent_runs": true
@@ -125,6 +127,21 @@
         "args": ["recall"],
         "reveal": "always",
         "use_new_terminal": true,
+        "allow_concurrent_runs": true
+    },
+    {
+        // Television picker: pick in a centered modal terminal, open in the
+        // running Zed via `sd zed open` (resolves this instance's bundled
+        // cli, so the pick lands in Zed Dev, not whichever zed is on PATH).
+        // Cancelling tv passes an empty arg, an open no-op. Bound to
+        // `space f`; cmd-p stays Zed's native finder, which spans all
+        // open worktrees. Hidden from the task picker itself.
+        "label": "Fuzzy find file (tv)",
+        "command": "sd zed open \"$(tv files)\"",
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "reveal": "always",
+        "use_new_terminal": true,
+        "hide": "always",
         "allow_concurrent_runs": true
     }
 ]
