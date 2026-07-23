@@ -7,6 +7,8 @@
   "agent_ui_font_size": 16.0,
   "bottom_dock_layout": "right_aligned",
   "soft_wrap": "editor_width",
+  // Format only git-modified lines on save; needs a 1.12+ build (sd zed rebuild).
+  // "format_on_save": "modifications",
   "allow_rewrap": "in_comments",
   "preferred_line_length": 120,
   "show_wrap_guides": false,
@@ -294,6 +296,8 @@
   "terminal": {
     "font_size": 15.0,
     "copy_on_select": true,
+    // Cmd-click opens URLs even while claude/tmux have mouse reporting on.
+    "open_links_in_mouse_mode": true,
     "draw_bold_text_with_bright_colors": true,
     // minimum_contrast 0: the contrast pass would shift bright_foreground's red.
     "minimum_contrast": 0,
@@ -331,6 +335,16 @@
     "markdown-oxide": true,
     // Harper (harper-ls): offline grammar/style checking alongside oxide.
     "harper": true,
+    // Code-aware spelling (identifier-splitting), the half Harper doesn't do.
+    "codebook": true,
+    // Typst diagnostics + live compile (tinymist).
+    "typst": true,
+    // Mermaid diagrams in markdown.
+    "mermaid": true,
+    // Inline dependency versions in manifests (Cargo.toml etc.).
+    "dependi": true,
+    "jq": true,
+    "kdl": true,
     "git-firefly": true,
     "csv": true,
     "lua": true,
