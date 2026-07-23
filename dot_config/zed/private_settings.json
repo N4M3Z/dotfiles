@@ -36,9 +36,9 @@
     // Terminal threads attach the directory's tmux session (create it empty if
     // absent), so a Zed restart reattaches. No agent is launched here: windows
     // come from tmux-continuum restore + claude-revive, or you open them.
-    // tmux-session-name derives the name (live session at the path wins, else
-    // owner-qualified for ~/Developer and client work, bare slug for own workshop).
-    "terminal_init_command": "tmux new-session -A -s \"$(tmux-session-name)\"",
+    // `sd tmux session-name` resolves the name: reuse a live session by
+    // candidate names (folder name first), else the canonical derivation.
+    "terminal_init_command": "tmux new-session -A -s \"$(sd tmux session-name)\"",
     "sidebar_side": "right",
     // Use the full panel width; the default caps content at 850px centered.
     "limit_content_width": false,
