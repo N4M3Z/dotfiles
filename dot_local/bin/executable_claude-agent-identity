@@ -1,0 +1,40 @@
+#!/bin/sh
+# SessionStart hook: derives the agent VCS identity from the session's model
+# id (stdin JSON) and writes it as shell exports. ~/.zshenv sources the file
+# inside Claude Code sessions only, so agent commits are stamped with the
+# model that made them while human terminals keep the user's own identity.
+#
+# The address is non-routable by design; local history names the model
+# exactly. On GitHub, agent branches publish via `sd github push`, which
+# replays commits through the API as the runewright app — bot-attributed and
+# GitHub-signed — so platform identity comes from the app, not this email.
+
+model=$(jq -r '.model // empty' 2>/dev/null | tr -cd 'a-z0-9.-')
+[ -n "$model" ] || model="claude"
+
+display=$(printf '%s\n' "$model" | awk -F- '{
+    out = "Claude"
+    prev_num = 0
+    for (i = 1; i <= NF; i++) {
+        if ($i == "claude") continue
+        if ($i ~ /^[0-9]{8}$/) continue
+        if ($i ~ /^[0-9]+$/ && prev_num) { out = out "." $i; continue }
+        if ($i ~ /^[0-9]+$/) { out = out " " $i; prev_num = 1; continue }
+        prev_num = 0
+        out = out " " toupper(substr($i, 1, 1)) substr($i, 2)
+    }
+    print out
+}')
+
+email="${model}@claude.noreply.nexus.local"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/claude"
+mkdir -p "$state_dir"
+
+{
+    printf 'export JJ_USER="%s (%s)"\n' "$display" "$model"
+    printf 'export JJ_EMAIL="%s"\n' "$email"
+    printf 'export GIT_AUTHOR_NAME="%s (%s)"\n' "$display" "$model"
+    printf 'export GIT_AUTHOR_EMAIL="%s"\n' "$email"
+    printf 'export GIT_COMMITTER_NAME="%s (%s)"\n' "$display" "$model"
+    printf 'export GIT_COMMITTER_EMAIL="%s"\n' "$email"
+} > "$state_dir/agent-identity.env"

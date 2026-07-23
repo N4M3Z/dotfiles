@@ -1,6 +1,6 @@
 #!/bin/bash
-# Mint a GitHub App installation token for the N4M3Z app (the agents' PR
-# identity, rendered as N4M3Z[bot]) and print it for use as GH_TOKEN.
+# Mint a GitHub App installation token for the runewright app (the agents'
+# platform identity, rendered as runewright[bot]) and print it for GH_TOKEN.
 #
 # Auth chain: sign a short-lived RS256 JWT with the app's private key (read
 # from pass at mint time, so the key never sits on disk unencrypted),
