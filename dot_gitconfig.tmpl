@@ -1,10 +1,15 @@
+{{- $gh := lookPath "gh" | default "gh" -}}
 ; ~/.gitconfig — Chezmoi-managed; canonical source at
-; dotfiles/dot_gitconfig, deploys to ~/.gitconfig.
+; dotfiles/dot_gitconfig.tmpl, deploys to ~/.gitconfig.
 ;
 ; Identity and signing config. Commits sign with the GPG signing subkey
 ; (on the YubiKey); the email matches the key's UID so GitHub shows
 ; Verified. The gpg "ssh" section is kept for the allowed-signers file
 ; and the FIDO2 signing wrapper, unused while gpg.format = openpgp.
+;
+; Paths are templated, not literal: this file deploys to machines whose home
+; directory and Homebrew prefix differ from the authoring machine's, and git
+; reports a bad absolute path only when it first tries to sign or authenticate.
 
 [filter "lfs"]
     required = true
@@ -27,18 +32,21 @@
     gpgsign = true
 
 [gpg "ssh"]
-    allowedSignersFile = /Users/N4M3Z/.config/git/allowed_signers
+    allowedSignersFile = {{ .chezmoi.homeDir }}/.config/git/allowed_signers
     ; Wrapper bypasses Apple's launchd ssh-agent (which refuses FIDO2
     ; sk-ssh-ed25519). Installed by forge-provision/scripts/configure/
     ; git-ssh-sign.sh from forge-core/skills/VersionControl/scripts/
     ; git-ssh-sign-macos. See forge-core CommitSigning.md for the
     ; full diagnosis.
-    program = /Users/N4M3Z/.local/bin/git-ssh-sign-macos
+    program = {{ .chezmoi.homeDir }}/.local/bin/git-ssh-sign-macos
 
+; gh resolves at render time: the Homebrew prefix differs between Apple
+; Silicon and Intel, and git runs a ! helper through the shell, where a
+; GUI-launched process may carry a PATH that never finds gh.
 [credential "https://github.com"]
     helper =
-    helper = !/opt/homebrew/bin/gh auth git-credential
+    helper = !{{ $gh }} auth git-credential
 
 [credential "https://gist.github.com"]
     helper =
-    helper = !/opt/homebrew/bin/gh auth git-credential
+    helper = !{{ $gh }} auth git-credential
