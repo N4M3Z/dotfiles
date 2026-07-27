@@ -34,6 +34,18 @@ while IFS= read -r template; do
     fi
     echo "ok render: ${relative}"
 
+    # A literal home directory from the authoring machine renders fine and then
+    # breaks wherever it deploys, and the tools that read these files report the
+    # bad path only when first used. Anything under /Users or /home that is not
+    # this machine's home is such a leak.
+    foreign_home=$(grep -oE '(/Users|/home)/[A-Za-z0-9._-]+' "${rendered}" \
+        | grep -vxF "${HOME}" | sort -u || true)
+    if [[ -n "${foreign_home}" ]]; then
+        echo "FAIL foreign home path: ${relative}"
+        echo "${foreign_home}" | sed 's/^/    /'
+        failures=$((failures + 1))
+    fi
+
     if [[ "$(basename "${template}")" == modify_* ]]; then
         if printf '' | bash "${rendered}" > "${rendered}.out" 2> "${rendered}.merr" \
                 && [[ -s "${rendered}.out" ]]; then
