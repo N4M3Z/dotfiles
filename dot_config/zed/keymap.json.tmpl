@@ -1,3 +1,10 @@
+{{/*
+    editor::AddReviewComment exists only in a locally built Zed, so a stock
+    build rejects the whole keymap section it appears in. Create the marker file
+    ~/.config/zed/.custom-build on a machine running the custom build to include
+    those bindings; every other machine renders the keymap without them.
+*/ -}}
+{{- $customBuild := stat (joinPath .chezmoi.homeDir ".config/zed/.custom-build") -}}
 [
     {
         // Space-leader bindings, vim-style. VimControl scopes them to
@@ -27,9 +34,9 @@
             "space a n": "agent::NewTerminalThread",
             "space a r": "editor::SendReviewToAgent",
             "space a c": "editor::ToggleReviewCommentsExpanded",
-            // Review annotations: m opens the marker popup, y clips all
-            // markers as tuicr markdown, p shows them all in project search.
-            "space a m": "editor::AddReviewComment",
+            // Review annotations: y clips all markers as tuicr markdown, p
+            // shows them all in project search. The marker popup on "space a m"
+            // needs a locally built Zed, so it lives in the segment at the end.
             "space a y": ["task::Spawn", { "task_name": "Clip review comments" }],
             "space a p": ["pane::DeploySearch", { "query": "\\[(NOTE|SUGGESTION|ISSUE|PRAISE)\\] ", "regex": true }],
             "space n t": "agent::NewTerminalThread",
@@ -83,9 +90,7 @@
         "use_key_equivalents": true,
         "context": "Editor",
         "bindings": {
-            "cmd-shift-j": "multi_workspace::ToggleWorkspaceSidebar",
-            // Review annotation popup on any buffer: cmd-k is Zed's chord prefix.
-            "cmd-k c": "editor::AddReviewComment"
+            "cmd-shift-j": "multi_workspace::ToggleWorkspaceSidebar"
         }
     },
     {
@@ -107,5 +112,26 @@
             "cmd-alt-[": "multi_workspace::PreviousThread",
             "cmd-alt-]": "multi_workspace::NextThread"
         }
-    }
+    }{{ if $customBuild }},
+
+    // Custom-build segment. Everything below binds an action that ships only in
+    // a locally built Zed, so a stock build rejects the entire section it sits
+    // in. Keeping it as one trailing segment means a stock machine drops these
+    // sections whole and every binding above stays untouched.
+    {
+        "use_key_equivalents": true,
+        "context": "VimControl && !menu",
+        "bindings": {
+            // Review annotation popup: m opens the marker popup on the selection.
+            "space a m": "editor::AddReviewComment"
+        }
+    },
+    {
+        "use_key_equivalents": true,
+        "context": "Editor",
+        "bindings": {
+            // Review annotation popup on any buffer: cmd-k is Zed's chord prefix.
+            "cmd-k c": "editor::AddReviewComment"
+        }
+    }{{ end }}
 ]
