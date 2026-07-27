@@ -45,8 +45,8 @@
 ; GUI-launched process may carry a PATH that never finds gh.
 [credential "https://github.com"]
     helper =
-    helper = !{{ $gh }} auth git-credential
+    helper = !"{{ $gh }}" auth git-credential
 
 [credential "https://gist.github.com"]
     helper =
-    helper = !{{ $gh }} auth git-credential
+    helper = !"{{ $gh }}" auth git-credential
