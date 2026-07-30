@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Refresh the pinned archive externals in .chezmoiexternal.toml.
+#
+# For every archive stanza the pin advances to the newest upstream ref:
+# release-tag URLs move to the latest release, commit URLs move to the
+# default branch head. Each new archive is downloaded and hashed on disk,
+# and the stanza's url and sha256 lines are rewritten in place. git-repo
+# stanzas (dotzsh) are left alone. Exits 0 with "unchanged" when every pin
+# is already current, so the calling workflow can skip the pull request.
+
+set -euo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+externals_file="$repo_root/.chezmoiexternal.toml"
+workdir=$(mktemp -d "${TMPDIR:-/tmp}/update-externals.XXXXXX")
+trap 'command rm -rf "$workdir"' EXIT
+
+sha256_of() {
+    local digest
+    digest=$(sha256sum "$1" 2>/dev/null || shasum -a 256 "$1")
+    printf '%s' "${digest%% *}"
+}
+
+changed=0
+
+while IFS= read -r old_url; do
+    if [[ "$old_url" =~ ^https://github\.com/([^/]+/[^/]+)/archive/refs/tags/(.+)\.tar\.gz$ ]]; then
+        github_repo="${BASH_REMATCH[1]}"
+        new_ref=$(gh api "repos/$github_repo/releases/latest" --jq .tag_name)
+        new_url="https://github.com/$github_repo/archive/refs/tags/$new_ref.tar.gz"
+    elif [[ "$old_url" =~ ^https://github\.com/([^/]+/[^/]+)/archive/([0-9a-f]{40})\.tar\.gz$ ]]; then
+        github_repo="${BASH_REMATCH[1]}"
+        new_ref=$(gh api "repos/$github_repo/commits/HEAD" --jq .sha)
+        new_url="https://github.com/$github_repo/archive/$new_ref.tar.gz"
+    else
+        echo "skip (unrecognized archive url shape): $old_url" >&2
+        continue
+    fi
+
+    if [[ "$new_url" == "$old_url" ]]; then
+        continue
+    fi
+
+    archive="$workdir/${github_repo//\//-}.tar.gz"
+    curl -fsSL "$new_url" -o "$archive"
+    new_sha256=$(sha256_of "$archive")
+
+    old_url="$old_url" new_url="$new_url" new_sha256="$new_sha256" \
+        awk '
+            $0 ~ "url = \"" ENVIRON["old_url"] "\"" {
+                sub(ENVIRON["old_url"], ENVIRON["new_url"])
+                pending_sha = 1
+            }
+            pending_sha && /sha256 = / {
+                sub(/"[0-9a-f]{64}"/, "\"" ENVIRON["new_sha256"] "\"")
+                pending_sha = 0
+            }
+            { print }
+        ' "$externals_file" > "$workdir/rewritten.toml"
+    command mv "$workdir/rewritten.toml" "$externals_file"
+
+    echo "updated $github_repo -> $new_ref"
+    changed=1
+done < <(grep -oE 'https://github\.com/[^"]+/archive/[^"]+\.tar\.gz' "$externals_file")
+
+if [[ "$changed" -eq 0 ]]; then
+    echo "unchanged"
+fi
