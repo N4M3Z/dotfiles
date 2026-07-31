@@ -29,14 +29,15 @@
 [credential "https://gist.github.com"]
     helper =
     helper = !{{ $gh }} auth git-credential
-{{ if .workEmail }}
-; Per-forge author identity. `hasconfig:remote.*.url` matches on the repo's own
-; remote rather than a checkout path, so a work repo cloned anywhere on disk
-; still commits as the work identity. Without this, every commit on a work forge
-; carries the public noreply address from ~/.gitconfig.
-[includeIf "hasconfig:remote.*.url:https://gitlab.protontech.ch/**"]
+{{ if and .workEmail .workGitHost }}
+; Work author identity, applied per repository. `hasconfig:remote.*.url` matches
+; on the repository's own remote rather than a path on disk, so a work checkout
+; anywhere gets the work email. Without this, every commit pushed to the work
+; server carries the public address from ~/.gitconfig. Both forms are listed
+; because the same server is cloned over HTTPS and over SSH.
+[includeIf "hasconfig:remote.*.url:https://{{ .workGitHost }}/**"]
     path = ~/.config/git/work
 
-[includeIf "hasconfig:remote.*.url:git@gitlab.protontech.ch:**"]
+[includeIf "hasconfig:remote.*.url:git@{{ .workGitHost }}:**"]
     path = ~/.config/git/work
 {{- end }}

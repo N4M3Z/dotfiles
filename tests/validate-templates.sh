@@ -23,31 +23,55 @@ trap 'command rm -rf "$WORKDIR"' EXIT
 failures=0
 index=0
 
-# chezmoi matches a seed against the prompt text rather than the data key, so
-# each key here is a prompt sentence from .chezmoi.toml.tmpl quoted verbatim. If
-# a prompt is reworded, this function fails to seed and the suite reports it
-# rather than silently falling back to interactive prompts.
-PROMPT_NAME="Full name, used as the author name on commits"
-PROMPT_EMAIL="Public commit email, published in git history (a forge noreply address keeps your real mailbox private)"
-PROMPT_WORK_EMAIL="Work email, used only for repositories hosted on the work forge (blank if you have none)"
-PROMPT_GITHUB_USER="Forge account name, used to build local repo paths like ~/Developer/<account>"
-PROMPT_MACHINE="Machine class, deciding which optional config deploys here"
-
+# The data config is written directly rather than produced by `chezmoi init`.
+# init matches seeds against prompt text, so seeding here would pin this suite to
+# the exact wording of six multi-line questions and break every time one is
+# reworded. Writing the data keeps the suite testing what it is for, which is
+# whether templates render for somebody who is not the author.
+#
+# What that trades away: the prompt flow in .chezmoi.toml.tmpl is not exercised,
+# because chezmoi reads answers from /dev/tty and prompts without a default
+# cannot be satisfied headlessly. assert_config_keys below covers the part that
+# can regress silently, namely which data keys the config is expected to define.
 seed_config() {
-    local class="$1" config="$2" work_email="$3"
-    chezmoi init --source "${SOURCE_DIR}" --config "${config}" \
-        --destination "${WORKDIR}/home-${class}" --cache "${WORKDIR}/cache" \
-        --promptString "${PROMPT_NAME}=Test Person" \
-        --promptString "${PROMPT_EMAIL}=test@users.noreply.github.com" \
-        --promptString "${PROMPT_WORK_EMAIL}=${work_email}" \
-        --promptString "${PROMPT_GITHUB_USER}=testuser" \
-        --promptChoice "${PROMPT_MACHINE}=${class}" >/dev/null 2>&1
+    local class="$1" config="$2" work_email="$3" work_host="$4"
+    {
+        printf '[data]\n'
+        printf '    name = "Test Person"\n'
+        printf '    email = "test@users.noreply.github.com"\n'
+        printf '    workEmail = "%s"\n' "${work_email}"
+        printf '    workGitHost = "%s"\n' "${work_host}"
+        printf '    githubUser = "testuser"\n'
+        printf '    machine = "%s"\n' "${class}"
+    } > "${config}"
+}
+
+# Every key the suite supplies must be one the config template also defines, and
+# the reverse, so a key added to one and not the other is caught here instead of
+# as a rendering failure on somebody's first install.
+assert_config_keys() {
+    local template="${SOURCE_DIR}/.chezmoi.toml.tmpl" key
+    for key in name email workEmail workGitHost githubUser machine; do
+        if ! grep -q "^    ${key} = " "${template}"; then
+            echo "FAIL config keys: .chezmoi.toml.tmpl does not define ${key}"
+            failures=$((failures + 1))
+        fi
+    done
+    while read -r key; do
+        case "${key}" in
+            name|email|workEmail|workGitHost|githubUser|machine) ;;
+            *)
+                echo "FAIL config keys: .chezmoi.toml.tmpl defines ${key}, which this suite does not seed"
+                failures=$((failures + 1))
+                ;;
+        esac
+    done < <(grep -oE '^    [a-zA-Z]+ = ' "${template}" | awk '{print $1}')
 }
 
 check_class() {
     local class="$1" config="${WORKDIR}/${1}.toml"
 
-    if ! seed_config "${class}" "${config}" "${2}"; then
+    if ! seed_config "${class}" "${config}" "${2}" "${3}"; then
         echo "FAIL seed: could not generate config for ${class}"
         failures=$((failures + 1))
         return
@@ -80,7 +104,7 @@ check_class() {
             | grep -vxF "${HOME}" | sort -u || true)
         if [[ -n "${foreign_home}" ]]; then
             echo "FAIL foreign home path (${class}): ${relative}"
-            echo "${foreign_home}" | sed 's/^/    /'
+            while IFS= read -r leaked; do printf '    %s\n' "${leaked}"; done <<< "${foreign_home}"
             failures=$((failures + 1))
         fi
 
@@ -99,8 +123,9 @@ check_class() {
 
 # A work machine sets workEmail so the per-forge git include renders; a personal
 # machine leaves it blank so the include is omitted entirely.
-check_class work "work@example.com"
-check_class personal ""
+assert_config_keys
+check_class work "work@example.com" "gitlab.example.com"
+check_class personal "" ""
 
 if [[ ${failures} -gt 0 ]]; then
     echo "validate-templates: ${failures} failure(s)"
