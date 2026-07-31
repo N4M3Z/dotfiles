@@ -1,0 +1,47 @@
+{{/*
+    Machine-level answers, asked once per machine by `chezmoi init` and then
+    stored in ~/.config/chezmoi/chezmoi.toml. Templates read them as .name,
+    .email, .workEmail, .githubUser and .machine instead of hardcoding one
+    person's identity, which is what previously made these dotfiles
+    single-owner.
+
+    Non-interactive install (CI, a scripted rebuild) seeds every answer on the
+    command line, so nothing blocks on a prompt:
+
+        chezmoi init --apply https://github.com/N4M3Z/dotfiles.git \
+            --promptString name="Ada Lovelace" \
+            --promptString email=ada@users.noreply.github.com \
+            --promptString workEmail=ada@example.com \
+            --promptString githubUser=ada \
+            --promptChoice machine=work
+
+    Identity here is for files no provisioning script writes. Git author and
+    signing identity stay with forge-provision's .env and its configure
+    scripts, per PROV-0008, so the two never overwrite each other.
+*/ -}}
+{{/*
+    Each prompt string below is identical to its data key on purpose. chezmoi
+    matches --promptString and --promptChoice seeds against the prompt text, so
+    a descriptive prompt would make the non-interactive form above unusable.
+    The meaning of each answer is documented here rather than at the prompt:
+
+      name        full name, used wherever a human-readable author is needed
+      email       public commit email; a forge noreply address keeps a private
+                  mailbox out of published history (PROV-0008)
+      workEmail   author email for repositories on the work forge; blank skips
+                  the per-forge include entirely
+      githubUser  forge account, used to build repo URLs and key comments
+      machine     personal or work; selects which optional config deploys
+*/ -}}
+{{- $name := promptStringOnce . "name" "name" -}}
+{{- $email := promptStringOnce . "email" "email" -}}
+{{- $workEmail := promptStringOnce . "workEmail" "workEmail" "" -}}
+{{- $githubUser := promptStringOnce . "githubUser" "githubUser" -}}
+{{- $machine := promptChoiceOnce . "machine" "machine" (list "personal" "work") -}}
+
+[data]
+    name = {{ $name | quote }}
+    email = {{ $email | quote }}
+    workEmail = {{ $workEmail | quote }}
+    githubUser = {{ $githubUser | quote }}
+    machine = {{ $machine | quote }}

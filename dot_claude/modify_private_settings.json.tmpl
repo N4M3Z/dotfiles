@@ -1,0 +1,36 @@
+#!/bin/bash
+# chezmoi modify_ script for ~/.claude/settings.json.
+#
+# How chezmoi runs this: the CURRENT live file arrives on stdin, and whatever
+# this script prints to stdout becomes the file's new contents on every
+# `chezmoi apply`. That makes the file partially managed, which is the only
+# arrangement that survives contact with Claude Code: the app writes its own
+# keys during a session (`model` when you switch models, permission grants when
+# you answer "always allow"), so a fully managed template drifts the moment the
+# app is used and every apply then fights the tool.
+#
+# The policy lives in .chezmoitemplates/claude-settings.json rather than in
+# .harness-settings/ like the other harnesses, because these settings need
+# chezmoi template values (hook paths under the home directory) and `include`
+# reads a file without rendering it.
+#
+# Permission lists are unioned, not replaced. Policy entries can never be lost,
+# and grants Claude Code recorded during a session survive the next apply.
+# Source: https://github.com/N4M3Z/dotfiles
+set -o pipefail
+umask 077
+
+policy=$(mktemp "${TMPDIR:-/tmp}/claude-policy.XXXXXX") || exit 1
+trap 'command rm -f "$policy"' EXIT
+
+cat > "$policy" <<'FORGE_POLICY'
+{{ template "claude-settings.json" . }}
+FORGE_POLICY
+
+jq -n --slurpfile policy "$policy" '
+    ((try input) // {}) as $live
+    | $policy[0] as $p
+    | ($live * $p)
+    | .permissions.allow = ((($live.permissions.allow // []) + ($p.permissions.allow // [])) | unique)
+    | .permissions.deny  = ((($live.permissions.deny  // []) + ($p.permissions.deny  // [])) | unique)
+'

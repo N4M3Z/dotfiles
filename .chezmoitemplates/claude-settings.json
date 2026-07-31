@@ -90,7 +90,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -x {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync ] && {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync || true"
+            "command": "[ -x {{ .chezmoi.homeDir }}/Developer/{{ .githubUser }}/forge-data/scripts/session-sync ] && {{ .chezmoi.homeDir }}/Developer/{{ .githubUser }}/forge-data/scripts/session-sync || true"
           }
         ]
       }
@@ -130,7 +130,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -x {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync ] && {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync || true"
+            "command": "[ -x {{ .chezmoi.homeDir }}/Developer/{{ .githubUser }}/forge-data/scripts/session-sync ] && {{ .chezmoi.homeDir }}/Developer/{{ .githubUser }}/forge-data/scripts/session-sync || true"
           },
           {
             "type": "command",
