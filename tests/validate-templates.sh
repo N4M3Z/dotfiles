@@ -23,17 +23,25 @@ trap 'command rm -rf "$WORKDIR"' EXIT
 failures=0
 index=0
 
-# Prompt strings are identical to their data keys, which is what makes these
-# seeds work; see the comment in .chezmoi.toml.tmpl.
+# chezmoi matches a seed against the prompt text rather than the data key, so
+# each key here is a prompt sentence from .chezmoi.toml.tmpl quoted verbatim. If
+# a prompt is reworded, this function fails to seed and the suite reports it
+# rather than silently falling back to interactive prompts.
+PROMPT_NAME="Full name, used as the author name on commits"
+PROMPT_EMAIL="Public commit email, published in git history (a forge noreply address keeps your real mailbox private)"
+PROMPT_WORK_EMAIL="Work email, used only for repositories hosted on the work forge (blank if you have none)"
+PROMPT_GITHUB_USER="Forge account name, used to build local repo paths like ~/Developer/<account>"
+PROMPT_MACHINE="Machine class, deciding which optional config deploys here"
+
 seed_config() {
     local class="$1" config="$2" work_email="$3"
     chezmoi init --source "${SOURCE_DIR}" --config "${config}" \
         --destination "${WORKDIR}/home-${class}" --cache "${WORKDIR}/cache" \
-        --promptString name="Test Person" \
-        --promptString email="test@users.noreply.github.com" \
-        --promptString workEmail="${work_email}" \
-        --promptString githubUser="testuser" \
-        --promptChoice machine="${class}" >/dev/null 2>&1
+        --promptString "${PROMPT_NAME}=Test Person" \
+        --promptString "${PROMPT_EMAIL}=test@users.noreply.github.com" \
+        --promptString "${PROMPT_WORK_EMAIL}=${work_email}" \
+        --promptString "${PROMPT_GITHUB_USER}=testuser" \
+        --promptChoice "${PROMPT_MACHINE}=${class}" >/dev/null 2>&1
 }
 
 check_class() {

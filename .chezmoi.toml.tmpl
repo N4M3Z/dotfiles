@@ -6,38 +6,35 @@
     single-owner.
 
     Non-interactive install (CI, a scripted rebuild) seeds every answer on the
-    command line, so nothing blocks on a prompt:
+    command line, so nothing blocks on a prompt. chezmoi matches a seed against
+    the prompt text, not the data key, so each key below is the prompt sentence
+    quoted verbatim:
 
         chezmoi init --apply https://github.com/N4M3Z/dotfiles.git \
-            --promptString name="Ada Lovelace" \
-            --promptString email=ada@users.noreply.github.com \
-            --promptString workEmail=ada@example.com \
-            --promptString githubUser=ada \
-            --promptChoice machine=work
+            --promptString "Full name, used as the author name on commits"="Ada Lovelace" \
+            --promptString "Public commit email, published in git history (a forge noreply address keeps your real mailbox private)"="ada@users.noreply.github.com" \
+            --promptString "Work email, used only for repositories hosted on the work forge (blank if you have none)"="ada@example.com" \
+            --promptString "Forge account name, used to build local repo paths like ~/Developer/<account>"="ada" \
+            --promptChoice "Machine class, deciding which optional config deploys here"=work
+
+    tests/validate-templates.sh seeds the same way, so it is the working
+    reference if these sentences ever change.
 
     Identity here is for files no provisioning script writes. Git author and
     signing identity stay with forge-provision's .env and its configure
     scripts, per PROV-0008, so the two never overwrite each other.
 */ -}}
 {{/*
-    Each prompt string below is identical to its data key on purpose. chezmoi
-    matches --promptString and --promptChoice seeds against the prompt text, so
-    a descriptive prompt would make the non-interactive form above unusable.
-    The meaning of each answer is documented here rather than at the prompt:
-
-      name        full name, used wherever a human-readable author is needed
-      email       public commit email; a forge noreply address keeps a private
-                  mailbox out of published history (PROV-0008)
-      workEmail   author email for repositories on the work forge; blank skips
-                  the per-forge include entirely
-      githubUser  forge account, used to build repo URLs and key comments
-      machine     personal or work; selects which optional config deploys
+    Each prompt states what its answer is used for, because a first run on a new
+    machine is exactly when that is not obvious. chezmoi matches seeds against
+    the prompt text rather than the data key, which is why the non-interactive
+    form above repeats these sentences verbatim.
 */ -}}
-{{- $name := promptStringOnce . "name" "name" -}}
-{{- $email := promptStringOnce . "email" "email" -}}
-{{- $workEmail := promptStringOnce . "workEmail" "workEmail" "" -}}
-{{- $githubUser := promptStringOnce . "githubUser" "githubUser" -}}
-{{- $machine := promptChoiceOnce . "machine" "machine" (list "personal" "work") -}}
+{{- $name := promptStringOnce . "name" "Full name, used as the author name on commits" -}}
+{{- $email := promptStringOnce . "email" "Public commit email, published in git history (a forge noreply address keeps your real mailbox private)" -}}
+{{- $workEmail := promptStringOnce . "workEmail" "Work email, used only for repositories hosted on the work forge (blank if you have none)" "" -}}
+{{- $githubUser := promptStringOnce . "githubUser" "Forge account name, used to build local repo paths like ~/Developer/<account>" -}}
+{{- $machine := promptChoiceOnce . "machine" "Machine class, deciding which optional config deploys here" (list "personal" "work") -}}
 
 [data]
     name = {{ $name | quote }}
