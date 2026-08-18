@@ -1,0 +1,53 @@
+[profiles.workspace-local]
+extends = "workspace"
+deny = [
+  "{{ .chezmoi.homeDir }}/.ssh",
+  "{{ .chezmoi.homeDir }}/.aws",
+  "{{ .chezmoi.homeDir }}/.azure",
+  "{{ .chezmoi.homeDir }}/.cargo/credentials.toml",
+  "{{ .chezmoi.homeDir }}/.config/containers",
+  "{{ .chezmoi.homeDir }}/.config/gcloud",
+  "{{ .chezmoi.homeDir }}/.config/gh",
+  "{{ .chezmoi.homeDir }}/.config/op",
+  "{{ .chezmoi.homeDir }}/.docker/config.json",
+  "{{ .chezmoi.homeDir }}/.gem/credentials",
+  "{{ .chezmoi.homeDir }}/.git-credentials",
+  "{{ .chezmoi.homeDir }}/.gnupg",
+  "{{ .chezmoi.homeDir }}/.kube",
+  "{{ .chezmoi.homeDir }}/.netrc",
+  "{{ .chezmoi.homeDir }}/.npm",
+  "{{ .chezmoi.homeDir }}/.npmrc",
+  "{{ .chezmoi.homeDir }}/.password-store",
+  "{{ .chezmoi.homeDir }}/.pypirc",
+  "{{ .chezmoi.homeDir }}/Library/Keychains",
+  "/Volumes/Keyvault",
+  "/Volumes/.timemachine",
+  "/Volumes/com.apple.TimeMachine.localsnapshots"
+]
+
+[profiles.review-local]
+extends = "read-only"
+deny = [
+  "{{ .chezmoi.homeDir }}/.ssh",
+  "{{ .chezmoi.homeDir }}/.aws",
+  "{{ .chezmoi.homeDir }}/.azure",
+  "{{ .chezmoi.homeDir }}/.cargo/credentials.toml",
+  "{{ .chezmoi.homeDir }}/.config/containers",
+  "{{ .chezmoi.homeDir }}/.config/gcloud",
+  "{{ .chezmoi.homeDir }}/.config/gh",
+  "{{ .chezmoi.homeDir }}/.config/op",
+  "{{ .chezmoi.homeDir }}/.docker/config.json",
+  "{{ .chezmoi.homeDir }}/.gem/credentials",
+  "{{ .chezmoi.homeDir }}/.git-credentials",
+  "{{ .chezmoi.homeDir }}/.gnupg",
+  "{{ .chezmoi.homeDir }}/.kube",
+  "{{ .chezmoi.homeDir }}/.netrc",
+  "{{ .chezmoi.homeDir }}/.npm",
+  "{{ .chezmoi.homeDir }}/.npmrc",
+  "{{ .chezmoi.homeDir }}/.password-store",
+  "{{ .chezmoi.homeDir }}/.pypirc",
+  "{{ .chezmoi.homeDir }}/Library/Keychains",
+  "/Volumes/Keyvault",
+  "/Volumes/.timemachine",
+  "/Volumes/com.apple.TimeMachine.localsnapshots"
+]

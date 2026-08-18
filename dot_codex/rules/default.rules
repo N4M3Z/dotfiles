@@ -1,0 +1,1343 @@
+# gh policy: three tiers mirroring .chezmoidata/harness/claude.json.
+# The most restrictive matched decision wins, so families whose subcommands
+# differ are enumerated per subcommand; a broad rule would override the allows.
+# Unmatched subcommands fall through to the default approval gate.
+prefix_rule(
+    pattern=["gh", "pr", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "checks"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "diff"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "status"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "edit"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "comment"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "review"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "ready"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "close"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "reopen"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "create"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "update-branch"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "checkout"],
+    decision="allow",
+    justification="Local-only convenience command.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "lock"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "unlock"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "revert"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "pr", "merge"],
+    decision="forbidden",
+    justification="Merges are the owner's action.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "status"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "comment"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "create"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "edit"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "close"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "reopen"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "develop"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "lock"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "unlock"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "pin"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "unpin"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "transfer"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "issue", "delete"],
+    decision="forbidden",
+    justification="Irreversible remote deletion is the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "run", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "run", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "run", "watch"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "run", "download"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "run", "rerun"],
+    decision="allow",
+    justification="Continuous-integration upkeep; reruns and cancels are reversible.",
+)
+prefix_rule(
+    pattern=["gh", "run", "cancel"],
+    decision="allow",
+    justification="Continuous-integration upkeep; reruns and cancels are reversible.",
+)
+prefix_rule(
+    pattern=["gh", "run", "delete"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "workflow", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "workflow", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "workflow", "run"],
+    decision="allow",
+    justification="Continuous-integration upkeep; reruns and cancels are reversible.",
+)
+prefix_rule(
+    pattern=["gh", "workflow", "enable"],
+    decision="allow",
+    justification="Continuous-integration upkeep; reruns and cancels are reversible.",
+)
+prefix_rule(
+    pattern=["gh", "workflow", "disable"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "release", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "release", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "release", "download"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "release", "create"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "release", "edit"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "release", "upload"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "release", "delete"],
+    decision="forbidden",
+    justification="Irreversible remote deletion is the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "release", "delete-asset"],
+    decision="forbidden",
+    justification="Irreversible remote deletion is the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "label", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "label", "create"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "label", "edit"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "label", "clone"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["gh", "label", "delete"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "cache", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "cache", "delete"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "secret", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "secret", "set"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "secret", "delete"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "variable", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "variable", "get"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "variable", "set"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "variable", "delete"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "ssh-key", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "ssh-key", "add"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "ssh-key", "delete"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "gpg-key", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "gpg-key", "add"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "gpg-key", "delete"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "clone"],
+    decision="allow",
+    justification="Local-only convenience command.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "read-file"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "read-dir"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "create"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "fork"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "edit"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "rename"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "archive"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "unarchive"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "sync"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "set-default"],
+    decision="allow",
+    justification="Local-only convenience command.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "delete"],
+    decision="forbidden",
+    justification="Irreversible remote deletion is the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "deploy-key", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "deploy-key", "add"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "repo", "deploy-key", "delete"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "ruleset"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "gist", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "gist", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "gist", "create"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "gist", "edit"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "gist", "rename"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "gist", "clone"],
+    decision="allow",
+    justification="Local-only convenience command.",
+)
+prefix_rule(
+    pattern=["gh", "gist", "delete"],
+    decision="forbidden",
+    justification="Irreversible remote deletion is the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "org", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "search"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "status"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "project"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "project", "delete"],
+    decision="forbidden",
+    justification="Irreversible remote deletion is the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "codespace"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "agent-task"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "attestation"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["gh", "browse"],
+    decision="prompt",
+    justification="Local-only convenience command.",
+)
+prefix_rule(
+    pattern=["gh", "config"],
+    decision="prompt",
+    justification="Can bypass or reshape command policy; the operator decides outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "api"],
+    decision="prompt",
+    justification="Direct API calls can mutate remote state and require the shared policy gate.",
+)
+prefix_rule(
+    pattern=["gh", "alias"],
+    decision="prompt",
+    justification="Can bypass or reshape command policy; the operator decides outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "alias", "set"],
+    decision="forbidden",
+    justification="Can bypass or reshape command policy; the operator decides outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "alias", "import"],
+    decision="forbidden",
+    justification="Can bypass or reshape command policy; the operator decides outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "extension"],
+    decision="prompt",
+    justification="Can bypass or reshape command policy; the operator decides outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "extension", "install"],
+    decision="forbidden",
+    justification="Can bypass or reshape command policy; the operator decides outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "extension", "exec"],
+    decision="forbidden",
+    justification="Can bypass or reshape command policy; the operator decides outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "extension", "upgrade"],
+    decision="forbidden",
+    justification="Can bypass or reshape command policy; the operator decides outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "auth", "status"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["gh", "auth", "login"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "auth", "logout"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "auth", "refresh"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "auth", "switch"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "auth", "token"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["gh", "auth", "setup-git"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+
+# rtk-wrapped gh mirrors.
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "checks"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "diff"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "status"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "edit"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "comment"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "review"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "ready"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "close"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "reopen"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "create"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "update-branch"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "checkout"],
+    decision="allow",
+    justification="Local-only convenience command.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "lock"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "unlock"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "revert"],
+    decision="prompt",
+    justification="Changes repository shape or publishes outward; the operator decides.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "pr", "merge"],
+    decision="forbidden",
+    justification="Merges are the owner's action.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "issue", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "issue", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "issue", "comment"],
+    decision="allow",
+    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "run", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "run", "list"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "run", "watch"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "repo", "view"],
+    decision="allow",
+    justification="Read-only query of remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "repo", "delete"],
+    decision="forbidden",
+    justification="Irreversible remote deletion is the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "api"],
+    decision="prompt",
+    justification="Direct API calls can mutate remote state and require the shared policy gate.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "auth", "token"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+prefix_rule(
+    pattern=["rtk", "gh", "secret", "set"],
+    decision="forbidden",
+    justification="Credential and identity changes are the owner's action outside the agent.",
+)
+
+prefix_rule(
+    pattern=["glab", "mr", "view"],
+    decision="allow",
+    justification="Viewing merge request state is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "list"],
+    decision="allow",
+    justification="Listing merge requests is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "diff"],
+    decision="allow",
+    justification="Viewing a merge request diff is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["glab", "ci", "status"],
+    decision="allow",
+    justification="Viewing pipeline status is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["glab", "ci", "view"],
+    decision="allow",
+    justification="Viewing pipeline state is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["glab", "ci", "list"],
+    decision="allow",
+    justification="Listing pipelines is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["glab", "ci", "get"],
+    decision="allow",
+    justification="Reading pipeline details is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["glab", "ci", "trace"],
+    decision="allow",
+    justification="Reading job logs is read-only and routine across repositories.",
+)
+# As with gh above: the most restrictive matched decision wins, so a broad
+# ["glab"] prompt rule would override the read-only allows. Gate each
+# mutating subcommand group instead.
+prefix_rule(
+    pattern=["glab", "api"],
+    decision="prompt",
+    justification="GitLab API calls can mutate remote state and require the shared policy gate.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "create"],
+    decision="prompt",
+    justification="Opening a merge request publishes state to the remote.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "update"],
+    decision="prompt",
+    justification="Updating a merge request changes remote state.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "note"],
+    decision="prompt",
+    justification="Notes are visible to other people and change remote state.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "approve"],
+    decision="prompt",
+    justification="Approving changes the approval state of a merge request.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "revoke"],
+    decision="prompt",
+    justification="Revoking approval changes the approval state of a merge request.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "close"],
+    decision="prompt",
+    justification="Closing a merge request changes remote state.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "reopen"],
+    decision="prompt",
+    justification="Reopening a merge request changes remote state.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "rebase"],
+    decision="prompt",
+    justification="Rebasing a merge request rewrites its branch on the remote.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "checkout"],
+    decision="prompt",
+    justification="Checkout moves the local working copy to another branch.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "subscribe"],
+    decision="prompt",
+    justification="Subscription changes remote notification state.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "unsubscribe"],
+    decision="prompt",
+    justification="Subscription changes remote notification state.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "todo"],
+    decision="prompt",
+    justification="Todo creation changes remote state.",
+)
+prefix_rule(
+    pattern=["glab", "ci", "run"],
+    decision="prompt",
+    justification="Run commands start continuous integration pipelines.",
+)
+prefix_rule(
+    pattern=["glab", "ci", "retry"],
+    decision="prompt",
+    justification="Retry commands start continuous integration jobs.",
+)
+prefix_rule(
+    pattern=["glab", "ci", "cancel"],
+    decision="prompt",
+    justification="Cancel commands stop continuous integration runs.",
+)
+prefix_rule(
+    pattern=["glab", "ci", "delete"],
+    decision="prompt",
+    justification="Delete commands remove pipeline history.",
+)
+prefix_rule(
+    pattern=["glab", "issue"],
+    decision="prompt",
+    justification="Issue commands can create, edit, or close remote issues.",
+)
+prefix_rule(
+    pattern=["glab", "release"],
+    decision="prompt",
+    justification="Release commands publish artifacts and tags.",
+)
+prefix_rule(
+    pattern=["glab", "repo"],
+    decision="prompt",
+    justification="Repository commands can create, rename, fork, or archive a repository.",
+)
+prefix_rule(
+    pattern=["glab", "label"],
+    decision="prompt",
+    justification="Label commands change remote repository metadata.",
+)
+prefix_rule(
+    pattern=["glab", "variable"],
+    decision="prompt",
+    justification="Variable commands change remote configuration.",
+)
+prefix_rule(
+    pattern=["glab", "snippet"],
+    decision="prompt",
+    justification="Snippet commands publish content outside the repository.",
+)
+prefix_rule(
+    pattern=["glab", "schedule"],
+    decision="prompt",
+    justification="Schedule commands change pipeline automation.",
+)
+prefix_rule(
+    pattern=["glab", "securefile"],
+    decision="prompt",
+    justification="Secure-file commands change remote secrets material.",
+)
+prefix_rule(
+    pattern=["glab", "ssh-key"],
+    decision="prompt",
+    justification="Key commands change account credentials.",
+)
+prefix_rule(
+    pattern=["glab", "deploy-key"],
+    decision="prompt",
+    justification="Key commands change repository credentials.",
+)
+prefix_rule(
+    pattern=["glab", "token"],
+    decision="prompt",
+    justification="Token commands mint or revoke credentials.",
+)
+prefix_rule(
+    pattern=["glab", "cluster"],
+    decision="prompt",
+    justification="Cluster commands change deployment infrastructure.",
+)
+prefix_rule(
+    pattern=["glab", "incident"],
+    decision="prompt",
+    justification="Incident commands change shared operational state.",
+)
+prefix_rule(
+    pattern=["glab", "stack"],
+    decision="prompt",
+    justification="Stack commands create and push branch stacks.",
+)
+prefix_rule(
+    pattern=["glab", "config"],
+    decision="prompt",
+    justification="Configuration commands change GitLab client behavior.",
+)
+prefix_rule(
+    pattern=["glab", "alias"],
+    decision="prompt",
+    justification="Alias commands change how later GitLab commands resolve.",
+)
+prefix_rule(
+    pattern=["glab", "auth"],
+    decision="prompt",
+    justification="Authentication commands change credentials.",
+)
+prefix_rule(
+    pattern=["glab", "duo"],
+    decision="prompt",
+    justification="Duo commands send repository content to an external model.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "merge"],
+    decision="forbidden",
+    justification="Merges are the owner's action.",
+)
+prefix_rule(
+    pattern=["glab", "mr", "delete"],
+    decision="forbidden",
+    justification="Remote deletion requires an explicit owner request outside the agent.",
+)
+prefix_rule(
+    pattern=["glab", "repo", "delete"],
+    decision="forbidden",
+    justification="Remote deletion requires an explicit owner request outside the agent.",
+)
+prefix_rule(
+    pattern=["glab", "auth", "login"],
+    decision="forbidden",
+    justification="Credential changes are the owner's action.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "view"],
+    decision="allow",
+    justification="Viewing merge request state is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "list"],
+    decision="allow",
+    justification="Listing merge requests is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "diff"],
+    decision="allow",
+    justification="Viewing a merge request diff is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ci", "status"],
+    decision="allow",
+    justification="Viewing pipeline status is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ci", "view"],
+    decision="allow",
+    justification="Viewing pipeline state is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ci", "list"],
+    decision="allow",
+    justification="Listing pipelines is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ci", "get"],
+    decision="allow",
+    justification="Reading pipeline details is read-only and routine across repositories.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ci", "trace"],
+    decision="allow",
+    justification="Reading job logs is read-only and routine across repositories.",
+)
+# As with gh above: the most restrictive matched decision wins, so a broad
+# ["rtk", "glab"] prompt rule would override the read-only allows. Gate each
+# mutating subcommand group instead.
+prefix_rule(
+    pattern=["rtk", "glab", "api"],
+    decision="prompt",
+    justification="GitLab API calls can mutate remote state and require the shared policy gate.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "create"],
+    decision="prompt",
+    justification="Opening a merge request publishes state to the remote.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "update"],
+    decision="prompt",
+    justification="Updating a merge request changes remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "note"],
+    decision="prompt",
+    justification="Notes are visible to other people and change remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "approve"],
+    decision="prompt",
+    justification="Approving changes the approval state of a merge request.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "revoke"],
+    decision="prompt",
+    justification="Revoking approval changes the approval state of a merge request.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "close"],
+    decision="prompt",
+    justification="Closing a merge request changes remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "reopen"],
+    decision="prompt",
+    justification="Reopening a merge request changes remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "rebase"],
+    decision="prompt",
+    justification="Rebasing a merge request rewrites its branch on the remote.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "checkout"],
+    decision="prompt",
+    justification="Checkout moves the local working copy to another branch.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "subscribe"],
+    decision="prompt",
+    justification="Subscription changes remote notification state.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "unsubscribe"],
+    decision="prompt",
+    justification="Subscription changes remote notification state.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "todo"],
+    decision="prompt",
+    justification="Todo creation changes remote state.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ci", "run"],
+    decision="prompt",
+    justification="Run commands start continuous integration pipelines.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ci", "retry"],
+    decision="prompt",
+    justification="Retry commands start continuous integration jobs.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ci", "cancel"],
+    decision="prompt",
+    justification="Cancel commands stop continuous integration runs.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ci", "delete"],
+    decision="prompt",
+    justification="Delete commands remove pipeline history.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "issue"],
+    decision="prompt",
+    justification="Issue commands can create, edit, or close remote issues.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "release"],
+    decision="prompt",
+    justification="Release commands publish artifacts and tags.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "repo"],
+    decision="prompt",
+    justification="Repository commands can create, rename, fork, or archive a repository.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "label"],
+    decision="prompt",
+    justification="Label commands change remote repository metadata.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "variable"],
+    decision="prompt",
+    justification="Variable commands change remote configuration.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "snippet"],
+    decision="prompt",
+    justification="Snippet commands publish content outside the repository.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "schedule"],
+    decision="prompt",
+    justification="Schedule commands change pipeline automation.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "securefile"],
+    decision="prompt",
+    justification="Secure-file commands change remote secrets material.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "ssh-key"],
+    decision="prompt",
+    justification="Key commands change account credentials.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "deploy-key"],
+    decision="prompt",
+    justification="Key commands change repository credentials.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "token"],
+    decision="prompt",
+    justification="Token commands mint or revoke credentials.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "cluster"],
+    decision="prompt",
+    justification="Cluster commands change deployment infrastructure.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "incident"],
+    decision="prompt",
+    justification="Incident commands change shared operational state.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "stack"],
+    decision="prompt",
+    justification="Stack commands create and push branch stacks.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "config"],
+    decision="prompt",
+    justification="Configuration commands change GitLab client behavior.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "alias"],
+    decision="prompt",
+    justification="Alias commands change how later GitLab commands resolve.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "auth"],
+    decision="prompt",
+    justification="Authentication commands change credentials.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "duo"],
+    decision="prompt",
+    justification="Duo commands send repository content to an external model.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "merge"],
+    decision="forbidden",
+    justification="Merges are the owner's action.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "mr", "delete"],
+    decision="forbidden",
+    justification="Remote deletion requires an explicit owner request outside the agent.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "repo", "delete"],
+    decision="forbidden",
+    justification="Remote deletion requires an explicit owner request outside the agent.",
+)
+prefix_rule(
+    pattern=["rtk", "glab", "auth", "login"],
+    decision="forbidden",
+    justification="Credential changes are the owner's action.",
+)
+prefix_rule(
+    pattern=["jj"],
+    decision="prompt",
+    justification="Route Jujutsu operations through auto-review because they can create commits or rewrite published history.",
+)
+prefix_rule(
+    pattern=["rtk", "jj"],
+    decision="prompt",
+    justification="Route RTK-wrapped Jujutsu operations through auto-review because they can create commits or rewrite published history.",
+)
+prefix_rule(
+    pattern=["trash"],
+    decision="allow",
+    justification="Moving files to Trash is the shared reversible-deletion path.",
+)
+prefix_rule(
+    pattern=["rtk", "trash"],
+    decision="allow",
+    justification="Moving files to Trash through RTK is the shared reversible-deletion path.",
+)
+prefix_rule(
+    pattern=["git", "push", "--force"],
+    decision="forbidden",
+    justification="Force-pushes rewrite published history. The ceremony forbids them.",
+)
+prefix_rule(
+    pattern=["git", "push", "--force-with-lease"],
+    decision="forbidden",
+    justification="Force-pushes rewrite published history. The ceremony forbids them.",
+)
+prefix_rule(
+    pattern=["git", "push", "-f"],
+    decision="forbidden",
+    justification="Force-pushes rewrite published history. The ceremony forbids them.",
+)
+prefix_rule(
+    pattern=["sudo"],
+    decision="forbidden",
+    justification="Privilege escalation is never routine.",
+)
+prefix_rule(
+    pattern=["rm", "-rf"],
+    decision="forbidden",
+    justification="Use trash for deletions. Recursive force deletion is not reversible.",
+)
+prefix_rule(
+    pattern=["security"],
+    decision="forbidden",
+    justification="The macOS security CLI reads the keychain.",
+)
+prefix_rule(
+    pattern=["ssh"],
+    decision="forbidden",
+    justification="Outbound shells leave the audited execution path.",
+)
+prefix_rule(
+    pattern=["scp"],
+    decision="forbidden",
+    justification="Outbound file transfer leaves the audited execution path.",
+)
+prefix_rule(
+    pattern=["dd"],
+    decision="forbidden",
+    justification="Raw device writes are destructive.",
+)
+prefix_rule(
+    pattern=["diskutil", "eraseDisk"],
+    decision="forbidden",
+    justification="Disk erasure is destructive.",
+)
+prefix_rule(
+    pattern=["diskutil", "eraseVolume"],
+    decision="forbidden",
+    justification="Disk erasure is destructive.",
+)
+prefix_rule(
+    pattern=["launchctl"],
+    decision="forbidden",
+    justification="Service management changes system state outside the workspace.",
+)
+prefix_rule(
+    pattern=["npm", "publish"],
+    decision="forbidden",
+    justification="Publication is the owner's action.",
+)
+prefix_rule(
+    pattern=["cargo", "publish"],
+    decision="forbidden",
+    justification="Publication is the owner's action.",
+)
+prefix_rule(
+    pattern=["npm", "login"],
+    decision="forbidden",
+    justification="Credential changes are the owner's action.",
+)
+prefix_rule(
+    pattern=["docker", "login"],
+    decision="forbidden",
+    justification="Credential changes are the owner's action.",
+)

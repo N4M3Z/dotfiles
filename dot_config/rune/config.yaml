@@ -1,0 +1,98 @@
+deck: /Users/N4M3Z/Developer/runedeck/deck
+ontology:
+    domain: Technology
+    skeleton: ~/Developer/runedeck/skeleton
+    vault: ~/Atlas/Domains
+    lore: ~/Data
+    mount: ~/Atlas
+bench:
+    - ~/Developer/runedeck/bench
+    - ~/Developer/N4M3Z/bench
+launch:
+    models:
+        sol:
+            id: gpt-5.6-sol
+            context: 270000
+        lumo:
+            id: lumo-max
+            context: 131072
+        lumo-opencode:
+            id: proton-lumo/lumo-max
+            context: 131072
+        fable-main:
+            id: main/claude-fable-5
+            context: 200000
+        fable-alt:
+            id: alt/claude-fable-5
+            context: 200000
+        grok:
+            id: grok-4.6
+            context: 500000
+    profiles:
+        claude:
+            sol:
+                model: sol
+                args:
+                    - "--settings"
+                    - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "gpt-5.6-luna"
+            lumo:
+                model: lumo
+                args:
+                    - "--settings"
+                    - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "lumo-lite"
+            grok:
+                model: grok
+                args:
+                    - "--settings"
+                    - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "grok-composer-2.5-fast"
+            sol-run:
+                model: sol
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "gpt-5.6-luna"
+            lumo-run:
+                model: lumo
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "lumo-lite"
+            main:
+                model: fable-main
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "main/claude-haiku-4-5-20251001"
+            alt:
+                model: fable-alt
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "alt/claude-haiku-4-5-20251001"
+        codex:
+            sol:
+                args: ["--profile", "sol"]
+            sol-run:
+                model: sol
+        opencode:
+            lumo:
+                model: lumo-opencode
