@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "gbrain": {
+      "timeoutSeconds": 15,
+      "command": "/opt/homebrew/bin/bun",
+      "args": [
+        "/Users/N4M3Z/Developer/N4M3Z/gbrain/src/cli.ts",
+        "serve"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://N4M3Z@localhost:5432/memex",
+        "GBRAIN_MCP_PROFILE": "recall",
+        "GBRAIN_STDIO_SOURCE": "__all__",
+        "PATH": "/Users/N4M3Z/.bun/bin:/opt/homebrew/bin:/usr/bin:/bin"
+      }
+    }
+  }
+}
