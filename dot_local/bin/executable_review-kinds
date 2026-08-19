@@ -1,0 +1,94 @@
+#!/bin/bash
+# Resolve the review annotation kinds, and the patterns that recognize a marker
+# line, for every tool that reads the markers Zed's review popup writes.
+#
+#   review-kinds                  print the kinds as an alternation
+#   review-kinds --marker         pattern matching a whole marker line
+#   review-kinds --marker-block   as above, but only block-comment markers
+#   review-kinds --block-opener   pattern matching a line that opens a block
+#   review-kinds --extract        pattern pulling kind, span and text out of an
+#                                 already-matched line
+#
+# Kinds come from Zed's `review_annotation_types` so the popup, the clipboard
+# export, and the strip check agree on one set. Zed's settings file is JSONC,
+# which jq cannot read, so comments are removed and the array is pulled out
+# directly, falling back to Zed's own defaults when the key is absent.
+#
+# A marker is only ever the first token of a comment, which is why a leader is
+# required rather than optional. Two shapes are recognized:
+#
+#   line   a line comment leader, where everything to end of line is comment
+#   block  a block opener, a body carrying no terminator, and the terminator
+#          at end of line
+#
+# The body must be terminator-free so that `/* [ISSUE] x */ call();` and
+# `/* [ISSUE] x */ call(); /* t */` are both read as code carrying a comment
+# rather than as annotations, which is what stops --apply deleting the call.
+# That check needs a lookahead, so --marker is a PCRE: use `rg -P` or perl,
+# never bash's =~, which is POSIX ERE. Only --extract and --block-opener are
+# safe for =~.
+#
+# Leaders that are ordinary syntax elsewhere (quotes, and `-` or `*` bullets)
+# are absent so string literals and Markdown lists are never mistaken for
+# markers. `#` opens a heading in Markdown, so --marker-block exists for files
+# where it must not count as a comment.
+#
+# --extract groups: 1 is the kind, 2 the whole span suffix, 3 N alone, 4 text.
+
+set -euo pipefail
+
+SETTINGS="${ZED_SETTINGS:-${HOME}/.config/zed/settings.json}"
+DEFAULT_KINDS="ISSUE|SUGGESTION|NOTE|PRAISE"
+
+# Longest first, so `///` is not read as `//` and `;;` is not read as `;`.
+LINE_LEADER="///|//!|//|##|#|--|;;|;|%%|%"
+BLOCK_OPEN="<!--|\{/\*|/\*|\(\*"
+BLOCK_CLOSE="-->|\*/\}|\*/|\*\)"
+
+kinds=""
+if [[ -r "${SETTINGS}" ]]; then
+    # Block comments and trailing line comments are removed first, so a
+    # commented-out setting never becomes the live kind list. `//` only counts
+    # at a line start or after whitespace, which leaves URLs such as
+    # "https://example.com" intact.
+    kinds=$(
+        perl -0777 -pe 's{/\*.*?\*/}{}gs; s{(^|\s)//[^\n]*}{$1}g' "${SETTINGS}" |
+            rg --no-line-number --only-matching --multiline \
+                '"review_annotation_types"[[:space:]]*:[[:space:]]*\[[^]]*\]' |
+            rg --no-line-number --only-matching '"[^"]*"' |
+            rg --invert-match '^"review_annotation_types"$' |
+            tr -d '"' |
+            sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' |
+            tr '[:lower:]' '[:upper:]' |
+            rg '^[A-Z0-9_-]+$' |
+            paste -sd '|' -
+    ) || kinds=""
+fi
+
+[[ -n "${kinds}" ]] || kinds="${DEFAULT_KINDS}"
+
+bracket="\[(${kinds})(:\+([0-9]+))?\]"
+marker_line="^[[:space:]]*(${LINE_LEADER})[[:space:]]*${bracket}[[:space:]]+\S.*\$"
+marker_block="^[[:space:]]*(${BLOCK_OPEN})[[:space:]]*${bracket}[[:space:]]+(?:(?!${BLOCK_CLOSE}).)*(${BLOCK_CLOSE})[[:space:]]*\$"
+
+case "${1:-}" in
+    "")
+        printf '%s\n' "${kinds}"
+        ;;
+    --marker)
+        printf '%s\n' "(?:${marker_line}|${marker_block})"
+        ;;
+    --marker-block)
+        printf '%s\n' "${marker_block}"
+        ;;
+    --block-opener)
+        printf '%s\n' "^[[:space:]]*(${BLOCK_OPEN})"
+        ;;
+    --extract)
+        printf '%s\n' "${bracket}[[:space:]]+(.*)\$"
+        ;;
+    *)
+        echo "usage: review-kinds [--marker|--marker-block|--block-opener|--extract]" >&2
+        exit 2
+        ;;
+esac

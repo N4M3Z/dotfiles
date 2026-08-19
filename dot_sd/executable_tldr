@@ -1,0 +1,8 @@
+#!/bin/sh
+# Render forge-provision's tealdeer pages through the sd command tree. Tealdeer
+# owns page resolution, patches, formatting, and cache behavior.
+
+if [ "$#" -eq 0 ]; then
+    exec tldr --list
+fi
+exec tldr "$@"

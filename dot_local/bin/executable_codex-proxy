@@ -1,0 +1,12 @@
+#!/bin/bash
+# Run one Codex CLI command through CLIProxyAPI.
+set -u
+
+off_flag="${HOME}/.config/zsh/cliproxy.off"
+if [[ -e "${off_flag}" ]]; then
+    printf '%s\n' 'codex-proxy: CLIProxyAPI is disabled. Run `cliproxy on` first.' >&2
+    exit 1
+fi
+
+exec "$(dirname "$0")/harness-run" codex \
+    --config 'model_provider="cliproxyapi"' "$@"

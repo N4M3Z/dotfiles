@@ -1,0 +1,5 @@
+#!/bin/sh
+# Forwarder: the shared lazy-revival implementation lives in sd agent revive.
+# This verb stays because tmux.conf's resurrect mapping and saved layouts
+# reference restored claude panes as `sd claude revive`.
+exec "$(dirname "$0")/../agent/revive" claude

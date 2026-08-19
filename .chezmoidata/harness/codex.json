@@ -1,6 +1,7 @@
 {
   "harness": {
     "codex": {
+      "model_provider": "openai",
       "model_reasoning_effort": "high",
       "approval_policy": "on-request",
       "sandbox_mode": "workspace-write",
@@ -23,6 +24,21 @@
         "status_line_use_colors": true
       },
       "file_opener": "none",
+      "model_providers": {
+        "cliproxyapi": {
+          "name": "cliproxyapi",
+          "base_url": "http://127.0.0.1:8317/v1",
+          "wire_api": "responses",
+          "auth": {
+            "command": "/usr/bin/sed",
+            "args": [
+              "-n",
+              "s/^CLIPROXY_API_KEY_CODEX=//p",
+              "/Users/N4M3Z/.env"
+            ]
+          }
+        }
+      },
       "mcp_servers": {
         "gbrain": {
           "startup_timeout_sec": 15
@@ -34,25 +50,38 @@
             ":root": "read",
             ":tmpdir": "write",
             ":slash_tmp": "write",
+            "~/.agents": "write",
             "~/.ssh": "deny",
             "~/.aws": "deny",
             "~/.azure": "deny",
             "~/.cargo/credentials.toml": "deny",
+            "~/.cache/gh": "write",
+            "~/.cache/prek": "write",
+            "~/.cargo/registry": "write",
+            "~/.codex/skills": "write",
             "~/.config/containers": "deny",
             "~/.config/gcloud": "deny",
-            "~/.config/gh": "deny",
+            "~/.config/gh": "read",
             "~/.config/op": "deny",
             "~/.docker/config.json": "deny",
             "~/.gem/credentials": "deny",
             "~/.git-credentials": "deny",
             "~/.gnupg": "deny",
+            "~/.gnupg/S.gpg-agent": "write",
+            "~/.gnupg/common.conf": "read",
+            "~/.gnupg/gpg.conf": "read",
+            "~/.gnupg/pubring.kbx": "read",
+            "~/.gnupg/trustdb.gpg": "read",
             "~/.kube": "deny",
             "~/.netrc": "deny",
             "~/.npm": "deny",
             "~/.npmrc": "deny",
             "~/.password-store": "deny",
             "~/.pypirc": "deny",
+            "~/Data/State/codex": "write",
+            "~/Library/Caches/rune": "write",
             "~/Library/Keychains": "deny",
+            "~/Library/Keychains/login.keychain-db": "read",
             ":workspace_roots": {
               ".": "write",
               ".git": "read",
@@ -98,7 +127,8 @@
         ],
         "set": {
           "GITLAB_HOST": "gitlab.protontech.ch",
-          "GLAB_CONFIG_DIR": "/Users/N4M3Z/.config/glab-cli-agent"
+          "GLAB_CONFIG_DIR": "/Users/N4M3Z/.config/glab-cli-agent",
+          "NPM_CONFIG_CACHE": "/Users/N4M3Z/Data/State/codex/npm-cache"
         }
       }
     }

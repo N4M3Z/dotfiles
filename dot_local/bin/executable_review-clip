@@ -1,0 +1,113 @@
+#!/bin/bash
+# Collect review markers (the comment lines Zed's review annotation popup
+# writes) from the current repo and copy them to the clipboard as a
+# tuicr-format markdown review.
+#
+#   review-clip            copy to clipboard
+#   review-clip --stdout   print instead
+#
+# Scans from the cwd, respecting .gitignore. Reads files on disk, so save
+# buffers before clipping. Exits 1 when no markers exist.
+#
+# Kinds and patterns come from review-kinds. Markdown is scanned for block
+# markers only, because `#` opens a heading there rather than a comment.
+# Matches are read as JSON so a path containing a colon survives.
+
+set -euo pipefail
+
+HERE="$(dirname "$0")"
+MARKER=$("${HERE}/review-kinds" --marker)
+MARKER_BLOCK=$("${HERE}/review-kinds" --marker-block)
+BLOCK_OPENER=$("${HERE}/review-kinds" --block-opener)
+EXTRACT=$("${HERE}/review-kinds" --extract)
+
+# iglob, so README.MD is still treated as Markdown.
+MARKDOWN_GLOBS=(--iglob '*.md' --iglob '*.markdown' --iglob '*.mdx')
+OTHER_GLOBS=(--iglob '!*.md' --iglob '!*.markdown' --iglob '!*.mdx')
+
+to_stdout=0
+if [[ "${1:-}" == "--stdout" ]]; then
+    to_stdout=1
+elif [[ -n "${1:-}" ]]; then
+    echo "usage: review-clip [--stdout]" >&2
+    exit 2
+fi
+
+# Each match becomes three lines: path, line number, then the matched text. A
+# single-line record would need a separator that cannot occur in a path, and
+# the obvious control-byte choice is too easily lost when the script is edited,
+# so the fields simply keep their own lines.
+as_records() {
+    jq -r 'select(.type=="match")
+           | .data.path.text,
+             (.data.line_number|tostring),
+             (.data.lines.text | sub("\r?\n$";""))'
+}
+
+matches=$(
+    {
+        rg -P --json --sort path "${MARKER}" "${OTHER_GLOBS[@]}" 2>/dev/null | as_records
+        rg -P --json --sort path "${MARKER_BLOCK}" "${MARKDOWN_GLOBS[@]}" 2>/dev/null | as_records
+    } || true
+)
+
+if [[ -z "${matches}" ]]; then
+    echo "review-clip: no review markers found" >&2
+    exit 1
+fi
+
+trim_trailing() {
+    printf '%s' "${1%"${1##*[![:space:]]}"}"
+}
+
+output="I reviewed your code and have the following comments. Please address them."
+output+=$'\n'
+
+count=0
+while IFS= read -r file && IFS= read -r lineno && IFS= read -r content; do
+    [[ -n "${file}" ]] || continue
+    [[ ${content} =~ ${EXTRACT} ]] || continue
+    kind=${BASH_REMATCH[1]}
+    span=${BASH_REMATCH[3]:-0}
+    text=${BASH_REMATCH[4]}
+    text=$(trim_trailing "${text}")
+    # Only a block comment's terminator is chrome. In a line comment a trailing
+    # `*/` is part of what the reviewer wrote, so it must survive the export.
+    if [[ ${content} =~ ${BLOCK_OPENER} ]]; then
+        text=${text%-->}
+        text=${text%\*/\}}
+        text=${text%\*/}
+        text=${text%\*\)}
+        text=$(trim_trailing "${text}")
+    fi
+    # The marker sits above the code it annotates, so the reviewed line is the
+    # next one. tuicr locations name the reviewed code, never the comment. A
+    # marker with nothing under it annotates itself. awk rather than wc -l,
+    # which undercounts a final line with no newline.
+    start=$((lineno + 1))
+    total=$(awk 'END { print NR }' "${file}" 2>/dev/null || echo 0)
+    if ((start > total)); then
+        start=${lineno}
+    fi
+    if ((span > 0)); then
+        location="${file}:${start}-$((start + span))"
+    else
+        location="${file}:${start}"
+    fi
+    count=$((count + 1))
+    output+=$'\n'"${count}. **[${kind}]** \`${location}\` - ${text}"
+done <<<"${matches}"
+
+if ((count == 0)); then
+    echo "review-clip: no review markers found" >&2
+    exit 1
+fi
+
+output+=$'\n'
+
+if ((to_stdout)); then
+    printf '%s' "${output}"
+else
+    printf '%s' "${output}" | pbcopy
+    echo "review-clip: ${count} comment(s) copied to clipboard" >&2
+fi
