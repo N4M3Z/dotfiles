@@ -23,5 +23,5 @@ cat > "$policy" <<'FORGE_POLICY'
 FORGE_POLICY
 
 yq -p=toml -o=json '.' - \
-    | jq --slurpfile policy "$policy" '(. // {}) * $policy[0]' \
+    | jq --slurpfile policy "$policy" '((. // {}) | del(.profile, .profiles)) * $policy[0]' \
     | yq -p=json -o=toml '.' -

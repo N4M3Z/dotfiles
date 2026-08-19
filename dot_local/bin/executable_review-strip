@@ -1,0 +1,108 @@
+#!/bin/bash
+# List, delete, or check for review marker lines (the comment lines Zed's
+# review annotation popup writes) in git-tracked files.
+#
+#   review-strip           dry-run: list every marker line
+#   review-strip --apply   delete whole-line markers in place
+#   review-strip --check   quiet check: exit 1 if any marker exists
+#
+# A marker is only recognized as the first token of a comment, and a block
+# comment must both close at end of line and carry no terminator in its body,
+# so `/* [ISSUE] x */ call();` is code and is left alone. Markdown is scanned
+# for block markers only, because `#` opens a heading there rather than a
+# comment. Kinds and patterns come from review-kinds, which reads Zed's
+# `review_annotation_types`.
+#
+# The patterns are PCRE, so rg runs with -P and deletion runs through perl.
+
+set -euo pipefail
+
+HERE="$(dirname "$0")"
+MARKER=$("${HERE}/review-kinds" --marker)
+MARKER_BLOCK=$("${HERE}/review-kinds" --marker-block)
+
+# Case-insensitive, so README.MD is still treated as Markdown. The file set is
+# partitioned with git pathspecs rather than rg --glob, which only filters
+# directory traversal and ignores explicitly listed paths.
+MARKDOWN_PATHS=(':(icase)*.md' ':(icase)*.markdown' ':(icase)*.mdx')
+OTHER_PATHS=(':(exclude,icase)*.md' ':(exclude,icase)*.markdown' ':(exclude,icase)*.mdx')
+
+# macOS xargs has no --no-run-if-empty, and running rg with no paths would
+# search the whole tree including untracked and ignored files. The emptiness
+# test is separate because command substitution drops the NUL bytes that -z
+# relies on, which would corrupt every path it passed along.
+scan() {
+    local pattern="$1"
+    shift
+    [[ -n "$(git ls-files -- "$@" | head -n 1)" ]] || return 0
+    git ls-files -z -- "$@" |
+        xargs -0 rg -P --no-heading --line-number --with-filename \
+            --sort path "${pattern}" 2>/dev/null || true
+}
+
+# Paths only, NUL separated, so a path containing a colon or a space is never
+# reconstructed by cutting at a delimiter.
+scan_files() {
+    local pattern="$1"
+    shift
+    [[ -n "$(git ls-files -- "$@" | head -n 1)" ]] || return 0
+    git ls-files -z -- "$@" |
+        xargs -0 rg -P --files-with-matches --null "${pattern}" 2>/dev/null || true
+}
+
+collect() {
+    scan "${MARKER}" "${OTHER_PATHS[@]}"
+    scan "${MARKER_BLOCK}" "${MARKDOWN_PATHS[@]}"
+}
+
+mode="${1:---dry-run}"
+case "${mode}" in
+    --dry-run | --apply | --check) ;;
+    *)
+        echo "usage: review-strip [--apply|--check]" >&2
+        exit 2
+        ;;
+esac
+
+matches=$(collect)
+
+if [[ -z "${matches}" ]]; then
+    if [[ "${mode}" != "--check" ]]; then
+        echo "review-strip: no review markers found" >&2
+    fi
+    exit 0
+fi
+
+# The pattern is passed through the environment so neither the shell nor a
+# regex delimiter has to quote it.
+delete_in() {
+    local pattern="$1"
+    shift
+    while IFS= read -r -d '' file; do
+        [[ -f "${file}" ]] || continue
+        REVIEW_MARKER="${pattern}" perl -n -i -e \
+            'BEGIN { $re = qr/$ENV{REVIEW_MARKER}/ } print unless /$re/' "${file}"
+    done < <(scan_files "${pattern}" "$@")
+}
+
+case "${mode}" in
+    --check)
+        echo "review-strip: review markers present, remove before committing:" >&2
+        printf '%s\n' "${matches}" >&2
+        exit 1
+        ;;
+    --dry-run)
+        printf '%s\n' "${matches}"
+        ;;
+    --apply)
+        delete_in "${MARKER}" "${OTHER_PATHS[@]}"
+        delete_in "${MARKER_BLOCK}" "${MARKDOWN_PATHS[@]}"
+
+        remaining=$(collect)
+        if [[ -n "${remaining}" ]]; then
+            echo "review-strip: markers left in place:" >&2
+            printf '%s\n' "${remaining}" >&2
+            exit 1
+        fi
+        ;;
+esac
