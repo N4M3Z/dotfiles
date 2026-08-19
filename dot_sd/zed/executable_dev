@@ -1,0 +1,26 @@
+#!/bin/bash
+# CLI for the personal Zed build, mirroring the `zed` / `zed-preview` commands
+# the casks link. The bundle's embedded cli handles paths, path:line:column,
+# and window reuse.
+#
+# The cask (brew install --cask n4m3z/tap/zed-dev) is the normal installer and
+# lands in /Applications. A local `sd zed rebuild --install` writes to
+# ~/Applications instead, and that copy wins here so a build under test
+# shadows the released one without uninstalling anything.
+
+CANDIDATES=(
+    "${HOME}/Applications/Zed Dev.app"
+    "/Applications/Zed Dev.app"
+)
+
+for app in "${CANDIDATES[@]}"; do
+    cli="${app}/Contents/MacOS/cli"
+    if [[ -x "${cli}" ]]; then
+        exec "${cli}" "$@"
+    fi
+done
+
+echo "zed dev: no Zed Dev.app found in ${CANDIDATES[*]}" >&2
+echo "  brew install --cask n4m3z/tap/zed-dev   (released build)" >&2
+echo "  sd zed rebuild --install                (local build under test)" >&2
+exit 1

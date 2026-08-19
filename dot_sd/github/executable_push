@@ -1,0 +1,124 @@
+#!/bin/bash
+# Publish a jj bookmark by replaying its commits through the GitHub API, so
+# each commit is created server-side: attributed to the runewright app (renders
+# as runewright[bot]) and signed by GitHub (renders Verified). This is how agent
+# branches publish; human branches keep plain `jj git push`.
+#
+# Usage: sd github push <bookmark> [--base <ref>]
+#
+# The base ref (default: main) must already exist on the remote; commits in
+# base@origin..bookmark are replayed oldest-first via GraphQL
+# createCommitOnBranch, full descriptions (trailers included) preserved.
+# Afterwards the remote holds bot-authored twins with new SHAs; run
+# `jj git fetch` and point the local bookmark at the fetched commit if
+# local and remote should converge.
+#
+# Limits: the API carries no file modes, so a NEW executable lands 100644
+# (warned; chezmoi executable_ sources are immune since mode comes from the
+# file name). Symlinks, submodules, and merge commits refuse.
+
+set -euo pipefail
+
+bookmark=${1:?usage: sd github push <bookmark> [--base <ref>]}
+base=main
+[[ "${2:-}" == "--base" ]] && base=${3:?--base needs a ref}
+
+cd "$(jj workspace root)"
+
+repo=$(jj git remote list | awk '$1 == "origin" { print $2 }' \
+    | sed -E 's#(git@github.com:|https://github.com/)##; s#\.git$##')
+[[ -n "$repo" ]] || { echo "sd github push: no origin remote" >&2; exit 1; }
+
+token=$(gh-app-token)
+[[ -n "$token" ]] || { echo "sd github push: token mint failed" >&2; exit 1; }
+
+graphql() {
+    curl -fsS https://api.github.com/graphql \
+        -H "Authorization: Bearer $token" \
+        -H "Content-Type: application/json" \
+        --data-binary @-
+}
+
+api() {
+    curl -fsS -H "Authorization: Bearer $token" \
+        -H "Accept: application/vnd.github+json" "$@"
+}
+
+head_oid=$(api "https://api.github.com/repos/${repo}/git/ref/heads/${bookmark}" \
+    2>/dev/null | jq -r '.object.sha' || true)
+if [[ -z "$head_oid" || "$head_oid" == "null" ]]; then
+    base_oid=$(api "https://api.github.com/repos/${repo}/commits/${base}" \
+        | jq -r '.sha')
+    jq -n --arg ref "refs/heads/${bookmark}" --arg sha "$base_oid" \
+        '{ref: $ref, sha: $sha}' \
+        | api -X POST "https://api.github.com/repos/${repo}/git/refs" \
+            --data-binary @- | jq -r '.ref' >/dev/null
+    head_oid=$base_oid
+    range_base="${base}@origin"
+    echo "created refs/heads/${bookmark} at ${base_oid:0:12}"
+else
+    range_base="${bookmark}@origin"
+fi
+
+commits=$(jj log -r "${range_base}..${bookmark}" --no-graph --reversed \
+    -T 'commit_id ++ "\n"')
+[[ -n "$commits" ]] || { echo "sd github push: nothing to push" >&2; exit 0; }
+
+while IFS= read -r commit; do
+    [[ -n "$commit" ]] || continue
+
+    parents=$(git rev-list --no-walk --parents "$commit" | wc -w)
+    (( parents <= 2 )) || { echo "sd github push: merge commit unsupported: $commit" >&2; exit 1; }
+
+    message=$(jj log -r "$commit" --no-graph -T 'description')
+    headline=${message%%$'\n'*}
+    body=${message#"$headline"}
+    body=${body#$'\n'}
+
+    additions='[]'
+    deletions='[]'
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        new_mode=$(awk '{print $2}' <<<"$line")
+        status=$(awk '{print $5}' <<<"$line")
+        path=$(cut -f2 <<<"$line")
+        case "$new_mode" in
+            120000|160000)
+                echo "sd github push: symlink/submodule unsupported: $path" >&2
+                exit 1
+                ;;
+        esac
+        if [[ "$status" == "D" ]]; then
+            deletions=$(jq -c --arg p "$path" '. + [{path: $p}]' <<<"$deletions")
+        else
+            if [[ "$status" == "A" && "$new_mode" == "100755" ]]; then
+                echo "warning: new executable ${path} lands mode 644 (API limit)" >&2
+            fi
+            contents=$(git cat-file blob "${commit}:${path}" | base64)
+            additions=$(jq -c --arg p "$path" --arg c "$contents" \
+                '. + [{path: $p, contents: $c}]' <<<"$additions")
+        fi
+    done < <(git diff-tree -r --no-renames --raw "${commit}^" "$commit")
+
+    result=$(jq -n \
+        --arg repo "$repo" --arg branch "$bookmark" --arg head "$head_oid" \
+        --arg headline "$headline" --arg body "$body" \
+        --argjson additions "$additions" --argjson deletions "$deletions" \
+        '{
+            query: "mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }",
+            variables: { input: {
+                branch: { repositoryNameWithOwner: $repo, branchName: $branch },
+                expectedHeadOid: $head,
+                message: { headline: $headline, body: $body },
+                fileChanges: { additions: $additions, deletions: $deletions }
+            } }
+        }' | graphql)
+    head_oid=$(jq -r '.data.createCommitOnBranch.commit.oid // empty' <<<"$result")
+    if [[ -z "$head_oid" ]]; then
+        echo "sd github push: API commit failed: $(jq -c '.errors // .' <<<"$result")" >&2
+        exit 1
+    fi
+    echo "pushed ${headline:0:60} -> ${head_oid:0:12}"
+done <<<"$commits"
+
+echo "done: ${bookmark} at ${head_oid:0:12} (bot-authored, GitHub-signed)"

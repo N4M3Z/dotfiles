@@ -1,0 +1,55 @@
+#!/bin/sh
+# Deferred revival for tmux-resurrect-restored agent panes. Holds the pane
+# with a one-line prompt instead of a live agent process, so a reboot
+# restores every saved layout without spawning one agent per pane. Enter
+# execs the provider's resume command through its PATH shim (sd agent run,
+# so policy and attribution apply); q drops to a login shell. Wired via
+# tmux.conf:
+#   set -g @resurrect-processes '"~claude->sd claude revive" "~codex->sd agent revive codex" ...'
+#
+# Claude resumes the exact session (breadcrumb -> cwd transcript -> fresh,
+# via sd claude resume). The other providers have no breadcrumb hooks, so
+# they resume their own notion of the latest session: grok scopes it to the
+# cwd by design; codex, opencode, and agy may reach for a session from
+# another directory, which is why the prompt names the command before
+# anything runs.
+
+here=$(dirname "$0")
+provider=${1:-}
+
+case "$provider" in
+    claude)
+        label=$("$here/../claude/resume" --print)
+        set -- "$here/../claude/resume"
+        ;;
+    codex)
+        label='codex resume --last'
+        set -- codex resume --last
+        ;;
+    grok)
+        label='grok --continue'
+        set -- grok --continue
+        ;;
+    opencode)
+        label='opencode --continue'
+        set -- opencode --continue
+        ;;
+    agy | antigravity)
+        label='agy --continue'
+        set -- agy --continue
+        ;;
+    *)
+        echo 'usage: sd agent revive <claude|codex|grok|opencode|agy>' >&2
+        exit 2
+        ;;
+esac
+
+printf '%s: %s\n' "$provider" "$label"
+printf 'press Enter to resume, q for shell: '
+read -r reply || exec "${SHELL:-/bin/zsh}" -l
+case "$reply" in
+    [qQ]*)
+        exec "${SHELL:-/bin/zsh}" -l
+        ;;
+esac
+exec "$@"

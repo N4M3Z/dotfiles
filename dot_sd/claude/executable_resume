@@ -1,0 +1,46 @@
+#!/bin/sh
+# Relaunch Claude Code in a tmux-resurrect-restored pane, resuming the exact
+# session that pane was running. Wired via tmux.conf:
+#   set -g @resurrect-processes '"~claude->sd claude resume" ...'
+#
+# Resolution order:
+#   1. Breadcrumb written by sd claude status (session_name:window_index ->
+#      session id). Exact binding; survives reboot because resurrect restores
+#      windows under their original names and indexes.
+#   2. Newest session transcript for the pane's cwd (what --continue does).
+#      Covers breadcrumb drift from window renumbering.
+#   3. Bare claude (fresh session).
+#
+# `--print` shows the command instead of running it (for testing).
+
+resolve() {
+    if [ -n "$TMUX" ] && [ -n "$TMUX_PANE" ]; then
+        key=$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}:#{window_index}' 2>/dev/null | tr '/' '_')
+        crumb="$HOME/.local/state/claude-tmux/$key"
+        if [ -n "$key" ] && [ -f "$crumb" ]; then
+            cat "$crumb"
+            return
+        fi
+    fi
+    encoded=$(pwd | tr '/.' '--')
+    # shellcheck disable=SC2012 # transcript names are uuid.jsonl, ls -t is safe
+    newest=$(ls -t "$HOME/.claude/projects/$encoded"/*.jsonl 2>/dev/null | head -1)
+    [ -n "$newest" ] && basename "$newest" .jsonl
+}
+
+session_id=$(resolve)
+
+if [ "$1" = "--print" ]; then
+    if [ -n "$session_id" ]; then
+        printf 'claude --resume %s\n' "$session_id"
+    else
+        printf 'claude\n'
+    fi
+    exit 0
+fi
+
+if [ -n "$session_id" ]; then
+    claude --resume "$session_id" && exit 0
+    echo "sd claude resume: resume of $session_id failed; starting fresh" >&2
+fi
+exec claude
