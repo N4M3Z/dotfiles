@@ -1,0 +1,29 @@
+# Codebook spell-checker global configuration.
+
+# Check only prose-bearing nodes in code: comments and string literals, never
+# bare identifiers (function, variable, type, key names). Markdown and plain
+# text prose is still checked in full. This stops the speller flagging every
+# unknown symbol while editing source.
+include_tags = ["comment", "string"]
+
+# Skip config and data formats outright. Their content is identifiers and
+# values (image refs, network names, keys), all string-tagged, so include_tags
+# cannot quiet them and every technical term reads as a misspelling.
+ignore_paths = [
+    "**/*.yaml",
+    "**/*.yml",
+    "**/*.toml",
+    "**/*.json",
+    "**/*.jsonc",
+    "**/*.lock",
+    "**/.env*",
+    "**/*.tsv",
+    "**/*.csv",
+]
+
+# Markdown reference-link labels ([KVBENCH], [CCDOCS]) and their definition
+# lines are identifiers, not prose; skip them.
+ignore_patterns = [
+    '\[[A-Z][A-Z0-9-]*\]',
+    '^\[[A-Za-z0-9-]+\]:\s+\S+',
+]
