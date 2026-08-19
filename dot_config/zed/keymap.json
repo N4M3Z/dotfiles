@@ -29,7 +29,7 @@
             "space a c": "editor::ToggleReviewCommentsExpanded",
             // Review annotations: m opens the marker popup, y clips all
             // markers as tuicr markdown, p shows them all in project search.
-            "space a m": "editor::AddReviewComment",
+            "space a m": "editor::InsertReviewAnnotation",
             "space a y": ["task::Spawn", { "task_name": "Clip review comments" }],
             "space a p": ["pane::DeploySearch", { "query": "\\[(NOTE|SUGGESTION|ISSUE|PRAISE)\\] ", "regex": true }],
             "space n t": "agent::NewTerminalThread",
@@ -85,7 +85,7 @@
         "bindings": {
             "cmd-shift-j": "multi_workspace::ToggleWorkspaceSidebar",
             // Review annotation popup on any buffer: cmd-k is Zed's chord prefix.
-            "cmd-k c": "editor::AddReviewComment"
+            "cmd-k c": "editor::InsertReviewAnnotation"
         }
     },
     {
