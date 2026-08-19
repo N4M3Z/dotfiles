@@ -49,3 +49,12 @@ export PATH="${BUN_INSTALL}/bin:${PATH}"
 # OpenTelemetry (Claude Code + any OTEL tool). Its own file, not inlined here; see
 # the header in otel.zsh. Mirrored into ~/.claude/settings.json by wire-brain.
 [ -r "${HOME}/.config/zsh/otel.zsh" ] && source "${HOME}/.config/zsh/otel.zsh"
+
+# Route coding harnesses through the local CLIProxyAPI, so CPA-Manager-Plus
+# meters their spend. Reads keys from ~/.env; `noproxy <cmd>` bypasses it.
+[ -r "${HOME}/.config/zsh/cliproxy.zsh" ] && source "${HOME}/.config/zsh/cliproxy.zsh"
+
+# Personal script directory (sd dispatcher). The tree deploys to ~/.sd via
+# chezmoi (source: dot_sd/); the dispatcher and completion default to ~/sd,
+# so this export is what points every shell at the real location (PROV-0024).
+export SD_ROOT="${HOME}/.sd"

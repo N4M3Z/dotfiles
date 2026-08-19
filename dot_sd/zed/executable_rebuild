@@ -1,0 +1,232 @@
+#!/bin/bash
+# Rebuild the personal Zed build from the fork: fetch upstream, base on the
+# CURRENT PREVIEW
+# branch, which is the weekly stabilization cut that Zed Preview ships. Lay the
+# patch stack on top as duplicates. Bundle it in release mode with ad-hoc signing.
+# The duplicated stack keeps the integration on preview without its main base.
+# The PR branches themselves stay on main, untouched.
+# The Dev channel identity (dev.zed.Zed-Dev) keeps the app apart from Zed and
+# Zed Preview; all three share ~/.config/zed.
+#
+# The released build is installed with `brew install --cask n4m3z/tap/zed-dev`
+# and lives in /Applications; CI produces that artifact. This script builds
+# only, printing the DMG and checksum, so a rebuild never silently replaces
+# what brew put there. Pass --install to also place the bundle in
+# ~/Applications, where `sd zed dev` prefers it, to try a build before it is
+# released.
+
+set -euo pipefail
+
+install_app=0
+case "${1:-}" in
+    --install) install_app=1 ;;
+    "") ;;
+    *)
+        echo "usage: sd zed rebuild [--install]" >&2
+        exit 2
+        ;;
+esac
+
+FORK="${HOME}/Developer/N4M3Z/zed"
+DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
+# The patch set riding on top of preview. The features are a single linear
+# stack on main (soft-wrap → markdown → terminal → review annotations →
+# single terminal spawn), so only the stack HEAD is listed. PATCH_ROOT and the
+# head bound the complete chain even when pushed bookmarks become immutable.
+# To add a patch, commit it on top of the stack and move the head bookmark up
+# (or add a new head bookmark and list it here instead). Each layer stays an
+# independent PR against the layer below.
+# This file's chezmoi source is canonical; check `chezmoi diff` and the
+# fork's `jj op log` before editing (multiple sessions share this machinery).
+PATCH_ROOT=soft-wrap-preferred-line-length
+BRANCHES=(agent-thread-single-spawn)
+MERGE_MESSAGE="local: dev build integration"
+
+cd "${FORK}"
+
+# A running Zed instance rescans the repo whenever an integration snapshot
+# lands and briefly holds .git/index; jj's colocated git sync loses that race
+# and rolls the whole operation back. Every jj op here is safe to retry, so
+# wait out the lock instead of aborting a build that is otherwise fine.
+jj_sync() {
+    local attempt output
+    for attempt in 1 2 3 4 5; do
+        if output=$(jj "$@" 2>&1); then
+            [[ -n "${output}" ]] && echo "${output}"
+            return 0
+        fi
+        if [[ "${output}" != *"index.lock"* ]] || [[ "${attempt}" == 5 ]]; then
+            echo "${output}" >&2
+            return 1
+        fi
+        echo "    waiting out .git/index lock (jj $1, attempt ${attempt})" >&2
+        sleep 2
+    done
+}
+
+# The integration steps below move @ onto a throwaway change that the NEXT
+# run abandons. Any edit made while a rebuild is in flight would land there
+# and be destroyed, so remember where the working copy was and return to it
+# before exiting.
+original_change=$(jj log -r @ --no-graph -T 'change_id')
+
+# The personal icon is swapped in over upstream's tracked assets just before
+# bundling. Restoring it must happen before any jj command, or the swap gets
+# snapshotted into the patch stack, so it leads the exit handler.
+ICON_SOURCE="${XDG_DATA_HOME:-${HOME}/.local/share}/zed-dev"
+ICON_TARGETS=(
+    crates/zed/resources/app-icon-dev.png
+    crates/zed/resources/app-icon-dev@2x.png
+)
+restore_icon() {
+    for target in "${ICON_TARGETS[@]}"; do
+        [[ -e "${target}" ]] && jj_sync restore "${target}" >/dev/null 2>&1
+    done
+    return 0
+}
+
+cleanup() {
+    restore_icon
+    # The previous round's integration change gets abandoned by this run; if
+    # that is where @ started, there is nothing to return to and the new
+    # integration is the equivalent position.
+    if jj log -r "${original_change}" --no-graph -T '""' >/dev/null 2>&1; then
+        jj_sync edit "${original_change}" >/dev/null 2>&1 ||
+            echo "zed-dev-rebuild: could not return to ${original_change:0:12}; check jj log" >&2
+    fi
+}
+trap cleanup EXIT
+
+echo "==> fetching upstream"
+jj git fetch --remote upstream
+
+echo "==> resolving the current preview branch"
+preview_branch=$(git ls-remote upstream 'refs/heads/v*.x' \
+    | awk -F'refs/heads/' '{print $2}' | sort -V | tail -1)
+tip=$(git rev-parse "upstream/${preview_branch}")
+echo "    ${preview_branch} (${tip:0:12})"
+
+echo "==> materializing blobs for the preview tip"
+blob_worktree=$(mktemp -d)
+git worktree add --detach "${blob_worktree}" "${tip}" >/dev/null
+git worktree remove --force "${blob_worktree}"
+
+echo "==> recreating the integration (preview + patch duplicates)"
+# The previous round hangs off the dev-build bookmark; abandon its changes
+# (old duplicates + integration) wherever the preview tip has moved since.
+# Anchoring on the bookmark instead of description-matching keeps this exact.
+branch_union=$(printf '%s | ' "${BRANCHES[@]}")
+branch_union=${branch_union% | }
+if jj bookmark list dev-build | grep -q '^dev-build'; then
+    jj_sync abandon -r "::dev-build ~ ::(${branch_union}) ~ immutable()"
+    jj_sync bookmark delete dev-build
+fi
+# A run that dies mid-integration leaves bookmark-less duplicates and merge
+# changes that the abandon above cannot find, and the heads() merge below
+# would absorb them as stray parents. Anything mutable on the tip is build
+# output by definition, so sweep it all before duplicating.
+jj_sync abandon -r "descendants(${tip}) & mutable()"
+# Duplicate each bookmark-bounded stack. A bare head duplicates one commit,
+# while `~ immutable()` drops pushed patch layers after they gain remote refs.
+for branch in "${BRANCHES[@]}"; do
+    jj_sync duplicate "${PATCH_ROOT}::${branch}" -d "${tip}"
+done
+# Merge the duplicated chain heads (children() would grab chain roots).
+jj_sync new "heads(descendants(${tip}) & mutable())" -m "${MERGE_MESSAGE}"
+jj_sync bookmark set dev-build -r @
+
+# Preview branches carry RELEASE_CHANNEL=preview, which would bundle a
+# colliding "Zed Preview.app"; this build stays on the dev channel.
+printf 'dev\n' > crates/zed/RELEASE_CHANNEL
+
+status_output=$(jj_sync st) || exit 1
+conflicts=$(grep -c "conflict" <<< "${status_output}" || true)
+if [[ "${conflicts}" != "0" ]]; then
+    echo "zed-dev-rebuild: integration has conflicts; resolve in ${FORK} and re-run" >&2
+    exit 1
+fi
+
+# cargo bundle reads the icon straight from crates/zed/resources per the
+# bundle-dev metadata, so branding means overwriting upstream's assets for the
+# duration of the build. The exit handler puts them back, which keeps the icon
+# out of the patch stack that becomes upstream PRs.
+if [[ -f "${ICON_SOURCE}/app-icon-dev@2x.png" ]]; then
+    echo "==> applying the personal icon"
+    for target in "${ICON_TARGETS[@]}"; do
+        cp "${ICON_SOURCE}/$(basename "${target}")" "${target}"
+    done
+fi
+
+echo "==> bundling (release; this takes a while)"
+# Homebrew rust has no rustup; bundle-mac only runs `rustup target add` for
+# the host triple, which Homebrew rustc already provides. Stub it, and put
+# ~/.cargo/bin on PATH for the cargo-bundle subcommand.
+shim_dir=$(mktemp -d)
+printf '#!/bin/bash\nexit 0\n' > "${shim_dir}/rustup"
+chmod +x "${shim_dir}/rustup"
+PATH="${shim_dir}:${HOME}/.cargo/bin:${PATH}" \
+    DEVELOPER_DIR="${DEVELOPER_DIR}" ./script/bundle-mac
+
+# Release mode packs the app into a DMG and removes the loose bundle;
+# debug mode leaves the bundle under target/*/release|debug/bundle/osx.
+app_path=""
+for candidate in target/*/*/bundle/osx/*.app; do
+    [[ -d "${candidate}" ]] && app_path="${candidate}" && break
+done
+
+volume=""
+if [[ -z "${app_path}" ]]; then
+    dmg_path=""
+    for candidate in target/*/release/Zed-*.dmg; do
+        [[ -f "${candidate}" ]] && dmg_path="${candidate}" && break
+    done
+    if [[ -z "${dmg_path}" ]]; then
+        echo "zed-dev-rebuild: no app bundle or DMG found under target/" >&2
+        exit 1
+    fi
+    volume=$(hdiutil attach -nobrowse -readonly "${dmg_path}" | tail -1 | grep -oE '/Volumes/.*$')
+    for candidate in "${volume}"/*.app; do
+        [[ -d "${candidate}" ]] && app_path="${candidate}" && break
+    done
+fi
+
+bundle_name=$(basename "${app_path}")
+if (( install_app )); then
+    echo "==> installing ${bundle_name} to ~/Applications"
+    mkdir -p "${HOME}/Applications"
+    # trash, not rm: recoverable, and ditto must not merge over a stale bundle.
+    [[ -d "${HOME}/Applications/${bundle_name}" ]] && /usr/bin/trash "${HOME}/Applications/${bundle_name}"
+    ditto "${app_path}" "${HOME}/Applications/${bundle_name}"
+    echo "ok: ${HOME}/Applications/${bundle_name} (shadows the brew copy for 'sd zed dev')"
+else
+    echo "==> not installing; the released build comes from the cask"
+    echo "    re-run with --install to try this build before releasing it"
+fi
+[[ -n "${volume}" ]] && hdiutil detach "${volume}" -quiet
+
+# Release handoff: the DMG this run produced is the brew-tap artifact, so
+# print everything the release step needs (tag version, asset, checksum).
+dmg=$(command ls -t target/*/release/Zed-*.dmg 2>/dev/null | head -1)
+if [[ -n "${dmg}" ]]; then
+    crate_version=$(grep -m1 '^version' crates/zed/Cargo.toml | cut -d'"' -f2)
+    echo "==> release artifact"
+    echo "    version: ${crate_version}"
+    echo "    dmg:     ${dmg}"
+    echo "    sha256:  $(shasum -a 256 "${dmg}" | cut -d' ' -f1)"
+    echo "    publish: sd zed release ${crate_version}-personal.N"
+fi
+
+# Each rebase pulls new dependency versions, and Cargo never collects the
+# object files the old ones left behind, so target/ grows without bound (it
+# reached 98 GB before the first sweep). Drop artifacts untouched for a week:
+# that keeps this build and any recent incremental work, and reclaims the
+# layers left by superseded rebases. Debug info stays on, so backtraces from
+# the daily driver remain symbolized.
+sweep=$(command -v cargo-sweep || echo "${HOME}/.cargo/bin/cargo-sweep")
+if [[ -x "${sweep}" ]]; then
+    echo "==> sweeping build artifacts older than 7 days"
+    "${sweep}" sweep --time 7 "${FORK}" || true
+else
+    echo "zed-dev-rebuild: cargo-sweep not installed; target/ will keep growing" >&2
+    echo "  cargo install cargo-sweep" >&2
+fi

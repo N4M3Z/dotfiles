@@ -1,0 +1,95 @@
+#!/bin/bash
+# Publish the personal Zed build that `sd zed rebuild` produced.
+#
+#   sd zed release 1.14.1-personal.3
+#
+# The ceremony follows WorkSessionFlow: commits and pushes are unsigned, and
+# the signature lives on the release tag. This script creates an annotated,
+# signed tag on the patch stack head (the thing worth vouching for), pushes
+# it, and attaches the locally built DMG to a release cut from that tag.
+# Expect one pinentry prompt, for the tag and nothing else.
+#
+# The integration commit the DMG was literally built from is deliberately not
+# tagged: `sd zed rebuild` regenerates it every run, and pushing it is refused
+# because it carries upstream's workflow files. The tag records the source;
+# the release notes record which preview tip it was replayed onto.
+#
+# CI can do the same job (.github/workflows/personal-release.yml on the fork,
+# dispatch only) but a cold runner takes one to two hours against roughly
+# seventeen minutes here, so local is the default path.
+
+set -euo pipefail
+
+FORK="${HOME}/Developer/N4M3Z/zed"
+STACK="zed-personal"
+TAP="${HOME}/Developer/N4M3Z/homebrew-tap"
+CASK="${TAP}/Casks/zed-dev.rb"
+
+version="${1:-}"
+if [[ -z "${version}" ]]; then
+    echo "usage: sd zed release <version>    e.g. 1.14.1-personal.3" >&2
+    exit 2
+fi
+tag="v${version}"
+
+cd "${FORK}"
+
+dmg=$(command ls -t target/*/release/Zed-*.dmg 2>/dev/null | head -1 || true)
+if [[ -z "${dmg}" ]]; then
+    echo "sd zed release: no DMG under target/; run 'sd zed rebuild' first" >&2
+    exit 1
+fi
+
+sha=$(shasum -a 256 "${dmg}" | cut -d' ' -f1)
+stack_sha=$(jj log -r "${STACK}" --no-graph -T 'commit_id' 2>/dev/null)
+preview=$(git ls-remote --heads upstream 'refs/heads/v*.x' |
+    awk -F'refs/heads/' '{print $2}' | sort -V | tail -1)
+preview_sha=$(git rev-parse "upstream/${preview}" 2>/dev/null || echo "unknown")
+
+echo "==> releasing ${tag}"
+echo "    stack:   ${STACK} @ ${stack_sha:0:12}"
+echo "    preview: ${preview} @ ${preview_sha:0:12}"
+echo "    dmg:     ${dmg}"
+echo "    sha256:  ${sha}"
+
+# The stack head must be on the remote before a tag can point at it there.
+echo "==> pushing ${STACK}"
+jj git push --remote origin -b "${STACK}"
+
+# Annotated and signed: this is the one place a key is expected.
+echo "==> signing tag (pinentry follows)"
+git tag -s "${tag}" "${stack_sha}" -m "Zed Dev ${version}
+
+Patch stack replayed onto ${preview} (${preview_sha:0:12}).
+Zed-aarch64.dmg sha256: ${sha}"
+git push origin "${tag}"
+
+echo "==> creating release"
+gh release create "${tag}" --repo N4M3Z/zed --verify-tag \
+    --title "Zed Dev ${version}" \
+    --notes "Personal Zed build: the patch stack replayed onto the current upstream preview tip, built locally.
+
+| | |
+| --- | --- |
+| stack | \`${STACK}\` at \`${stack_sha}\` |
+| preview base | \`${preview}\` at \`${preview_sha}\` |
+| sha256 | \`${sha}\` |
+
+Apple silicon only. Ad-hoc signed, so macOS quarantines it; the cask caveat explains how to clear it." \
+    "${dmg}#Zed-aarch64.dmg"
+
+# The cask is the last hop: bump it here, leave the commit to the human so the
+# published artifact gets a read before it reaches another machine.
+if [[ -f "${CASK}" ]]; then
+    echo "==> updating the cask"
+    /usr/bin/sed -i '' \
+        -e "s|^  version \".*\"|  version \"${version}\"|" \
+        -e "s|^  sha256 \".*\"|  sha256 \"${sha}\"|" \
+        "${CASK}"
+    git -C "${TAP}" add Casks/zed-dev.rb
+    echo "    staged ${CASK}"
+    echo
+    echo "next: review and commit the cask, then upgrade"
+    echo "  cd ${TAP} && git commit -m 'feat: zed-dev ${version}' && git push"
+    echo "  brew upgrade --cask n4m3z/tap/zed-dev"
+fi
