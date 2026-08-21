@@ -1,6 +1,7 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 format = """
+$custom.jj_attended\
 [](color_orange)\
 $os\
 $username\
@@ -59,6 +60,10 @@ color_bright_aqua = '#8ec07c'
 color_bright_orange = '#fe8019'
 color_light_grey = '#a89984'
 color_muddy_green = '#83a598'
+
+[custom.jj_attended]
+when = 'test "$JJ_ATTENDED" = "1"'
+format = '[ATTENDED](bold fg:color_bright_red) '
 
 [os]
 disabled = false

@@ -13,8 +13,8 @@
 #      commits with a jj co-author trailer naming the harness and requested
 #      model, so `jj log` answers "which agent wrote this".
 #
-#   3. Interactive runs pass through unchanged, apart from provider-native
-#      sandbox flags for grok and antigravity.
+#   3. Interactive runs keep provider defaults. All agent runs keep Jujutsu
+#      signing off and use the owner's stored gh authentication.
 #
 # Source: https://github.com/N4M3Z/dotfiles
 
@@ -141,12 +141,30 @@ provider_label() {
     esac
 }
 
+configure_agent_environment() {
+    local base_config="${XDG_CONFIG_HOME:-${HOME}/.config}/jj/config.toml"
+
+    jj_overlay=$(mktemp "${TMPDIR:-/tmp}/harness-jj-config.XXXXXX") || return 1
+    chmod 600 "$jj_overlay"
+    printf '%s\n' \
+        '[git]' \
+        'sign-on-push = false' \
+        > "$jj_overlay"
+
+    if [[ -f "$base_config" ]]; then
+        export JJ_CONFIG="${base_config}:${jj_overlay}"
+    else
+        export JJ_CONFIG="$jj_overlay"
+    fi
+
+    unset JJ_ATTENDED GH_TOKEN GITHUB_TOKEN
+}
+
 configure_jj_attribution() {
     local provider="$1"
     local requested_model="$2"
     local label
     local trailer
-    local base_config="${XDG_CONFIG_HOME:-${HOME}/.config}/jj/config.toml"
 
     label=$(provider_label "$provider")
     if [[ "$requested_model" == *$'\n'* \
@@ -159,18 +177,11 @@ configure_jj_attribution() {
     fi
 
     trailer="Co-authored-by: ${label} / ${requested_model} <N4M3Z@users.noreply.github.com>"
-    jj_overlay=$(mktemp "${TMPDIR:-/tmp}/harness-jj-config.XXXXXX") || return 1
-    chmod 600 "$jj_overlay"
     printf '%s\n' \
+        '' \
         '[templates]' \
         "commit_trailers = '''\"${trailer}\"'''" \
-        > "$jj_overlay"
-
-    if [[ -f "$base_config" ]]; then
-        export JJ_CONFIG="${base_config}:${jj_overlay}"
-    else
-        export JJ_CONFIG="$jj_overlay"
-    fi
+        >> "$jj_overlay"
     export HARNESS_EXPECTED_COAUTHOR="$trailer"
 }
 
@@ -248,6 +259,11 @@ fi
 arguments=("$@")
 automated="${HARNESS_AUTOMATED:-0}"
 requested_model=''
+
+configure_agent_environment || {
+    echo 'harness-run: could not create the agent Jujutsu policy' >&2
+    exit 1
+}
 
 if [[ "$automated" == '1' ]]; then
     case "$provider" in

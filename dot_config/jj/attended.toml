@@ -1,0 +1,5 @@
+#:schema https://docs.jj-vcs.dev/latest/config-schema.json
+
+# `sd jj attended` loads this overlay after the default configuration.
+[git]
+sign-on-push = true
