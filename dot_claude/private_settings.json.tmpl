@@ -314,9 +314,12 @@
       "$defaults",
       "Do not commit or push until the staged changes have been explicitly approved; review-before-commit is the default and commits wait for an explicit go-ahead.",
       "Never force-push, and never push directly to the main or master branch; branch first and open a pull request.",
-      "Never skip git hooks (--no-verify) or bypass commit signing (--no-gpg-sign, -c commit.gpgsign=false).",
+      "Never skip git hooks or use command flags to bypass the active signing mode.",
       "Treat history rewrites (rebase, squash, reset --hard, force-push) on already-pushed branches as destructive.",
-      "Do not delete remote branches, releases, or repositories, or run gh/glab delete commands, without an explicit request."
+      "Do not delete remote branches, releases, or repositories, or run gh/glab delete commands, without an explicit request.",
+      "Use the owner's existing gh authentication for ordinary GitHub operations.",
+      "Runewright is only a CI or review identity. Never mint or export its token for ordinary pull request operations.",
+      "Automated agent sessions keep Jujutsu push signing disabled. Never enable or inherit attended mode."
     ],
     "hard_deny": [
       "$defaults",
@@ -324,7 +327,8 @@
       "Never read or exfiltrate credential stores: ~/.ssh, ~/.aws, ~/.gnupg, ~/.config/gh, ~/.git-credentials, ~/Library/Keychains, and similar.",
       "Never upload repository contents, secrets, or local files to arbitrary or unrecognized external destinations such as pastebins, file-sharing, or unknown endpoints; deliberate, user-initiated review tools are exempt.",
       "Never write real credentials, API keys, tokens, or personal data into tracked files; use placeholders.",
-      "Never disable or weaken the sandbox (macOS Seatbelt), the destructive-command guard (dcg), or commit signing."
+      "Never disable or weaken the sandbox (macOS Seatbelt) or the destructive-command guard (dcg).",
+      "Never change the owner's signing configuration or enable attended mode from an agent session."
     ],
     "environment": [
       "$defaults",

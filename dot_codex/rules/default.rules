@@ -3,6 +3,36 @@
 # differ are enumerated per subcommand; a broad rule would override the allows.
 # Unmatched subcommands fall through to the default approval gate.
 prefix_rule(
+    pattern=["sd", "github", "app-token"],
+    decision="forbidden",
+    justification="Runewright is only a CI or review identity.",
+)
+prefix_rule(
+    pattern=["rtk", "sd", "github", "app-token"],
+    decision="forbidden",
+    justification="Runewright is only a CI or review identity.",
+)
+prefix_rule(
+    pattern=["sd", "github", "push"],
+    decision="forbidden",
+    justification="Ordinary agent pushes use the owner's existing gh authentication.",
+)
+prefix_rule(
+    pattern=["rtk", "sd", "github", "push"],
+    decision="forbidden",
+    justification="Ordinary agent pushes use the owner's existing gh authentication.",
+)
+prefix_rule(
+    pattern=["sd", "jj", "attended"],
+    decision="forbidden",
+    justification="Only the owner starts an attended signing session.",
+)
+prefix_rule(
+    pattern=["rtk", "sd", "jj", "attended"],
+    decision="forbidden",
+    justification="Only the owner starts an attended signing session.",
+)
+prefix_rule(
     pattern=["gh", "pr", "view"],
     decision="allow",
     justification="Read-only query of remote state.",
@@ -60,7 +90,7 @@ prefix_rule(
 prefix_rule(
     pattern=["gh", "pr", "create"],
     decision="allow",
-    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+    justification="Creates a pull request with the owner's existing gh authentication.",
 )
 prefix_rule(
     pattern=["gh", "pr", "update-branch"],
@@ -677,7 +707,7 @@ prefix_rule(
 prefix_rule(
     pattern=["rtk", "gh", "pr", "create"],
     decision="allow",
-    justification="Reversible pull-request or issue upkeep; agents run PR babysitting autonomously.",
+    justification="Creates a pull request with the owner's existing gh authentication.",
 )
 prefix_rule(
     pattern=["rtk", "gh", "pr", "update-branch"],

@@ -4,10 +4,9 @@
 # inside Claude Code sessions only, so agent commits are stamped with the
 # model that made them while human terminals keep the user's own identity.
 #
-# The address is non-routable by design; local history names the model
-# exactly. On GitHub, agent branches publish via `sd github push`, which
-# replays commits through the API as the runewright app — bot-attributed and
-# GitHub-signed — so platform identity comes from the app, not this email.
+# The address is non-routable by design. Local history names the model.
+# GitHub operations use the owner's existing gh authentication. Runewright
+# remains a CI and review identity.
 
 # A model id may carry a bracketed context marker ("claude-fable-5[1m]").
 # Strip it before sanitizing, or the digits leak into the identity
