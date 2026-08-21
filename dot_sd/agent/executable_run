@@ -17,7 +17,7 @@
 #      model, so `jj log` answers "which agent wrote this".
 #
 #   3. Interactive runs preserve provider defaults. Grok and Antigravity use
-#      native sandboxes. OpenCode uses the Codex supervisor sandbox.
+#      native sandboxes. All agent runs use the owner's stored gh authentication.
 #
 # Source: https://github.com/N4M3Z/dotfiles
 
@@ -142,18 +142,6 @@ provider_label() {
         grok) echo 'Grok' ;;
         opencode) echo 'OpenCode' ;;
     esac
-}
-
-# Agent GitHub identity: gh and API calls made by the harness post as the
-# runewright[bot] GitHub App when an installation token can be minted (cached by
-# gh-app-token; pass may prompt once per hour). On any failure the export is
-# skipped and the harness silently falls back to the user's own gh auth.
-configure_github_identity() {
-    local token
-    if command -v gh-app-token >/dev/null 2>&1 \
-        && token=$(gh-app-token 2>/dev/null) && [[ -n "$token" ]]; then
-        export GH_TOKEN="$token"
-    fi
 }
 
 # Grok must not present its xAI OAuth session to CLIProxyAPI — the proxy only
@@ -315,6 +303,8 @@ arguments=("$@")
 automated="${HARNESS_AUTOMATED:-0}"
 requested_model=''
 
+unset GH_TOKEN GITHUB_TOKEN
+
 if [[ "$automated" == '1' ]]; then
     case "$provider" in
         claude)
@@ -354,7 +344,6 @@ if [[ "$automated" == '1' ]]; then
             ;;
     esac
     configure_jj_attribution "$provider" "$requested_model" || exit 1
-    configure_github_identity
     if ! begin_jj_change "$provider"; then
         echo 'sd agent run: could not claim an isolated jj change' >&2
         exit 1

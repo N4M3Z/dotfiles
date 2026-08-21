@@ -1,8 +1,7 @@
 #!/bin/bash
-# Publish a jj bookmark by replaying its commits through the GitHub API, so
-# each commit is created server-side: attributed to the runewright app (renders
-# as runewright[bot]) and signed by GitHub (renders Verified). This is how agent
-# branches publish; human branches keep plain `jj git push`.
+# Publish a jj bookmark through the GitHub API for CI or review automation.
+# GitHub attributes each server-side commit to runewright[bot] and marks it
+# Verified. Ordinary agents use the owner's existing gh authentication.
 #
 # Usage: sd github push <bookmark> [--base <ref>]
 #
@@ -23,13 +22,14 @@ bookmark=${1:?usage: sd github push <bookmark> [--base <ref>]}
 base=main
 [[ "${2:-}" == "--base" ]] && base=${3:?--base needs a ref}
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$(jj workspace root)"
 
 repo=$(jj git remote list | awk '$1 == "origin" { print $2 }' \
     | sed -E 's#(git@github.com:|https://github.com/)##; s#\.git$##')
 [[ -n "$repo" ]] || { echo "sd github push: no origin remote" >&2; exit 1; }
 
-token=$(gh-app-token)
+token=$("${script_dir}/app-token")
 [[ -n "$token" ]] || { echo "sd github push: token mint failed" >&2; exit 1; }
 
 graphql() {
