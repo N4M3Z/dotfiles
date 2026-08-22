@@ -1,0 +1,42 @@
+#!/bin/sh
+# Start an owner-only interactive shell that signs each Jujutsu push.
+# Ordinary agent sessions must not run this command or inherit its JJ_CONFIG.
+
+set -eu
+
+if [ "$#" -ne 0 ]; then
+    echo 'Usage: sd jj attended' >&2
+    exit 2
+fi
+
+if [ "${JJ_ATTENDED:-0}" = '1' ]; then
+    echo 'sd jj attended: attended mode is already active' >&2
+    exit 1
+fi
+
+if [ ! -t 0 ] || [ ! -t 1 ]; then
+    echo 'sd jj attended: start attended mode from an owner terminal' >&2
+    exit 1
+fi
+
+config_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/jj"
+base_config="${config_dir}/config.toml"
+attended_config="${config_dir}/attended.toml"
+
+if [ ! -r "$base_config" ] || [ ! -r "$attended_config" ]; then
+    echo "sd jj attended: expected ${base_config} and ${attended_config}" >&2
+    exit 1
+fi
+
+owner_shell="${SHELL:-/bin/zsh}"
+if [ ! -x "$owner_shell" ]; then
+    echo "sd jj attended: shell is not executable: ${owner_shell}" >&2
+    exit 1
+fi
+
+export JJ_ATTENDED=1
+export JJ_CONFIG="${base_config}:${attended_config}"
+
+echo 'Attended mode signs each Jujutsu push with the owner key.'
+echo 'Exit this shell to restore automated mode.'
+exec "$owner_shell" -i

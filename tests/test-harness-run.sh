@@ -43,6 +43,13 @@ make_fake_harnesses() {
             'printf "command=%s args=" "${0##*/}" >> "$HARNESS_TEST_LOG"' \
             'printf "%q " "$@" >> "$HARNESS_TEST_LOG"' \
             'printf "opencode_permission=%s\n" "${OPENCODE_PERMISSION:-}" >> "$HARNESS_TEST_LOG"' \
+            'printf "jj_attended=%s\n" "${JJ_ATTENDED:-}" >> "$HARNESS_TEST_LOG"' \
+            'printf "gh_token=%s\n" "${GH_TOKEN:+set}" >> "$HARNESS_TEST_LOG"' \
+            'printf "github_token=%s\n" "${GITHUB_TOKEN:+set}" >> "$HARNESS_TEST_LOG"' \
+            'agent_config="${JJ_CONFIG##*:}"' \
+            'if grep -Fq "sign-on-push = false" "$agent_config"; then' \
+            '    printf "agent_sign_on_push=false\n" >> "$HARNESS_TEST_LOG"' \
+            'fi' \
             'if [[ -n "${HARNESS_TEST_JJ_REPO:-}" ]]; then' \
             '    cd "$HARNESS_TEST_JJ_REPO" || exit 1' \
             '    printf "%s\n" material > material.txt' \
@@ -84,6 +91,12 @@ assert_log_excludes '--model' 'interactive Claude leaves the model default untou
 run_harness codex review
 assert_log_contains 'command=codex args=review' 'interactive Codex preserves arguments'
 assert_log_excludes '--model' 'interactive Codex leaves the model default untouched'
+
+JJ_ATTENDED=1 GH_TOKEN=runewright GITHUB_TOKEN=runewright run_harness codex review
+assert_log_excludes 'jj_attended=1' 'agent launcher removes the attended marker'
+assert_log_contains 'agent_sign_on_push=false' 'agent launcher disables Jujutsu push signing'
+assert_log_excludes 'gh_token=set' 'agent launcher removes GH_TOKEN'
+assert_log_excludes 'github_token=set' 'agent launcher removes GITHUB_TOKEN'
 
 run_harness antigravity --help
 assert_log_contains 'command=agy args=--sandbox --help' 'Antigravity always enables its native sandbox'

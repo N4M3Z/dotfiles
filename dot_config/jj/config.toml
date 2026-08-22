@@ -6,10 +6,8 @@ email = "N4M3Z@users.noreply.github.com"
 
 [signing]
 backend = "gpg"
-# Commits and pushes stay unsigned: "drop" keeps jj from signing working-copy
-# snapshots, and sign-on-push stays off so agent sessions never hit pinentry
-# or the YubiKey mid-push. The owner's signature enters at release tags, and
-# the signed tag vouches for the history beneath it.
+# Automated mode is the default. It keeps snapshots and pushes unsigned.
+# Run `sd jj attended` to enable push signing for one owner shell.
 behavior = "drop"
 key = "0x29DD2145CE7A818929459B2649F08103D3DA399E"
 
