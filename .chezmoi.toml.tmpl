@@ -1,0 +1,82 @@
+{{/*
+    Machine-level answers, asked once by `chezmoi init` and then stored in
+    ~/.config/chezmoi/chezmoi.toml. Templates read them as .name, .email,
+    .workEmail, .workGitHost, .githubUser and .machine instead of hardcoding one
+    person's identity, which is what previously made these dotfiles
+    single-owner.
+
+    Identity here is only for files no provisioning script writes. Git author
+    and signing identity stay with forge-provision's .env and its configure
+    scripts, per PROV-0008, so the two never overwrite each other.
+
+    chezmoi matches a seed against the prompt text rather than the data key, so a
+    scripted install repeats each question verbatim. Hold them in shell variables
+    rather than inline, as tests/validate-templates.sh does, which is the working
+    reference if any wording here changes.
+*/ -}}
+{{- $ask_name := `
+━━━ 1/6 ━ Your name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Shown as the author name on every commit you make.
+  Example: Ada Lovelace
+
+  Full name` -}}
+{{- $ask_email := `
+━━━ 2/6 ━ Public email ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Recorded in the history of every public repository, so it stays
+  readable forever. A hosting provider's noreply address keeps your
+  real mailbox out of it while still linking commits to your account.
+  Example: ada@users.noreply.github.com
+
+  Public email` -}}
+{{- $ask_work_email := `
+━━━ 3/6 ━ Work email ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Used as the author email only in repositories hosted on your
+  employer's git server, so work commits are attributed to you there
+  instead of to your personal address. Leave blank if you have none.
+  Example: ada@example.com
+
+  Work email (blank to skip)` -}}
+{{- $ask_work_host := `
+━━━ 4/6 ━ Work git server ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Hostname of the git server the work email applies to. Any repository
+  whose remote points there gets the work email automatically, no
+  matter where it sits on disk. Ignored if the work email is blank.
+  Example: gitlab.example.com
+
+  Work git server hostname (blank to skip)` -}}
+{{- $ask_github_user := `
+━━━ 5/6 ━ GitHub username ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Used to build local paths, so your repositories are expected under
+  ~/Developer/<username>/. It is not used to authenticate anything.
+  Example: ada
+
+  GitHub username` -}}
+{{- $ask_machine := `
+━━━ 6/6 ━ Machine type ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  personal  everything deploys, including tools tied to personal
+            accounts and licences
+  work      the corporate subset only, leaving personal accounts,
+            media and key-custody tooling off this machine
+
+  Machine type` -}}
+
+{{- $name := promptStringOnce . "name" $ask_name -}}
+{{- $email := promptStringOnce . "email" $ask_email -}}
+{{- $workEmail := promptStringOnce . "workEmail" $ask_work_email "" -}}
+{{- $workGitHost := promptStringOnce . "workGitHost" $ask_work_host "" -}}
+{{- $githubUser := promptStringOnce . "githubUser" $ask_github_user -}}
+{{- $machine := promptChoiceOnce . "machine" $ask_machine (list "personal" "work") -}}
+
+[data]
+    name = {{ $name | quote }}
+    email = {{ $email | quote }}
+    workEmail = {{ $workEmail | quote }}
+    workGitHost = {{ $workGitHost | quote }}
+    githubUser = {{ $githubUser | quote }}
+    machine = {{ $machine | quote }}

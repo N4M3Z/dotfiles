@@ -1,0 +1,43 @@
+{{- $gh := lookPath "gh" | default "gh" -}}
+; Git policy, chezmoi-managed at ~/.config/git/config.
+;
+; Git reads this file first and ~/.gitconfig second, so anything written there
+; wins. That ordering is the point: forge-provision's configure scripts own
+; author and signing identity and write them to ~/.gitconfig with
+; `git config --global` (user.name, user.email, user.signingkey, gpg.format,
+; gpg.ssh.*, commit.gpgsign, tag.gpgsign). Declaring any of those keys here
+; would put two owners on one value, and whichever ran last would decide how
+; commits are attributed and signed.
+;
+; So this file carries only settings no script writes. Identity policy that must
+; hold is enforced as a check instead, by forge-provision's
+; scripts/verify/identity.sh and scripts/verify/signing.sh.
+
+[filter "lfs"]
+    required = true
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+
+; gh resolves at render time: the Homebrew prefix differs between Apple Silicon
+; and Intel, and git runs a ! helper through the shell, where a GUI-launched
+; process may carry a PATH that never finds gh.
+[credential "https://github.com"]
+    helper =
+    helper = !{{ $gh }} auth git-credential
+
+[credential "https://gist.github.com"]
+    helper =
+    helper = !{{ $gh }} auth git-credential
+{{ if and .workEmail .workGitHost }}
+; Work author identity, applied per repository. `hasconfig:remote.*.url` matches
+; on the repository's own remote rather than a path on disk, so a work checkout
+; anywhere gets the work email. Without this, every commit pushed to the work
+; server carries the public address from ~/.gitconfig. Both forms are listed
+; because the same server is cloned over HTTPS and over SSH.
+[includeIf "hasconfig:remote.*.url:https://{{ .workGitHost }}/**"]
+    path = ~/.config/git/work
+
+[includeIf "hasconfig:remote.*.url:git@{{ .workGitHost }}:**"]
+    path = ~/.config/git/work
+{{- end }}

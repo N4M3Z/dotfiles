@@ -1,0 +1,7 @@
+; Work-forge author identity, pulled in by the includeIf rules in
+; ~/.config/git/config when a repository's remote points at the work forge.
+;
+; Only the email varies. The name stays the same everywhere so commits remain
+; attributable to one person across forges, per PROV-0008.
+[user]
+    email = {{ .workEmail }}
