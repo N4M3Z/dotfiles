@@ -1,5 +1,16 @@
-# External git repos that chezmoi clones/pulls on apply.
+# External content chezmoi places on apply.
 # Reference: https://www.chezmoi.io/reference/special-files-and-directories/chezmoiexternal-format/
+#
+# Third-party code that tmux sources at startup is pinned: each external is an
+# immutable archive at a release tag (or commit, for projects without
+# releases) with a SHA-256 the download must match. Updates land through
+# .github/workflows/externals-update.yaml, which runs
+# .github/scripts/update-externals weekly and opens a pull request when a pin
+# moves, so refreshes stay reviewable instead of executing silently.
+#
+# dotzsh stays type git-repo: it pulls submodules recursively, which archive
+# externals do not include, and chezmoi offers no revision pin for git-repo.
+# It is first-party code under the same ownership as this repository.
 
 # dotzsh — Prezto fork. Cloned to ~/.zsh/ to match the convention used in
 # the legacy stow-managed dotfiles (.zshrc sources ${ZDOTDIR:-$HOME}/.zsh/init.zsh).
@@ -13,37 +24,48 @@
         args = ["--ff-only"]
 
 # tmux plugins sourced directly via run-shell in tmux.conf (no TPM runner).
-# chezmoi handles the git cloning; tmux.conf sources each plugin's *.tmux
-# entry script. To add a new plugin: add a block here, add a run-shell
-# line in dot_config/tmux/tmux.conf, run `chezmoi apply`, reload tmux.
+# To add a plugin: add a pinned stanza here, add a run-shell line in
+# dot_config/tmux/tmux.conf, run `chezmoi apply`, reload tmux.
 # See forge-provision ARCH-0015 for the rationale behind dropping TPM.
 
 [".config/tmux/plugins/tmux-resurrect"]
-    type = "git-repo"
-    url = "https://github.com/tmux-plugins/tmux-resurrect.git"
-    refreshPeriod = "168h"
+    type = "archive"
+    url = "https://github.com/tmux-plugins/tmux-resurrect/archive/cff343cf9e81983d3da0c8562b01616f12e8d548.tar.gz"
+    stripComponents = 1
+    [".config/tmux/plugins/tmux-resurrect".checksum]
+        sha256 = "9f1dda18554291ee7f8a0f499e2af90bbadc2ebceb7a995bb13b76529fe0c5c9"
 
 [".config/tmux/plugins/tmux-continuum"]
-    type = "git-repo"
-    url = "https://github.com/tmux-plugins/tmux-continuum.git"
-    refreshPeriod = "168h"
+    type = "archive"
+    url = "https://github.com/tmux-plugins/tmux-continuum/archive/0698e8f4b17d6454c71bf5212895ec055c578da0.tar.gz"
+    stripComponents = 1
+    [".config/tmux/plugins/tmux-continuum".checksum]
+        sha256 = "a1b9a2f0715163472ca713679204a1ca55d3f845cf1c659ae04222db3553424f"
 
 [".config/tmux/plugins/catppuccin"]
-    type = "git-repo"
-    url = "https://github.com/catppuccin/tmux.git"
-    refreshPeriod = "168h"
+    type = "archive"
+    url = "https://github.com/catppuccin/tmux/archive/refs/tags/v2.3.0.tar.gz"
+    stripComponents = 1
+    [".config/tmux/plugins/catppuccin".checksum]
+        sha256 = "6072ac982aaba71a1ee2a4780a2b5debecfb272857d6ae2ffb9b52649ee07b1a"
 
 [".config/tmux/plugins/tmux-fingers"]
-    type = "git-repo"
-    url = "https://github.com/Morantron/tmux-fingers.git"
-    refreshPeriod = "168h"
+    type = "archive"
+    url = "https://github.com/Morantron/tmux-fingers/archive/refs/tags/2.7.1.tar.gz"
+    stripComponents = 1
+    [".config/tmux/plugins/tmux-fingers".checksum]
+        sha256 = "5e62f8550787842fc712203df31f7eaa723f7023ab19bc97d28b3b85e2d7c420"
 
 [".config/tmux/plugins/tmux-cpu"]
-    type = "git-repo"
-    url = "https://github.com/tmux-plugins/tmux-cpu.git"
-    refreshPeriod = "168h"
+    type = "archive"
+    url = "https://github.com/tmux-plugins/tmux-cpu/archive/bcb110d754ab2417de824c464730c412a3eb2769.tar.gz"
+    stripComponents = 1
+    [".config/tmux/plugins/tmux-cpu".checksum]
+        sha256 = "340219f97e506b0b5e2a4e263f73f8646dbb5e21834f2e61acf6353ba2d32340"
 
 [".config/tmux/plugins/extrakto"]
-    type = "git-repo"
-    url = "https://github.com/laktak/extrakto.git"
-    refreshPeriod = "168h"
+    type = "archive"
+    url = "https://github.com/laktak/extrakto/archive/d1af77988081dae496fa4a1f5e5e6bc9ef66767f.tar.gz"
+    stripComponents = 1
+    [".config/tmux/plugins/extrakto".checksum]
+        sha256 = "1042858558b14f77993b0d576b381abd86ed0cd52f4a10d60928fbc7a0d24429"
