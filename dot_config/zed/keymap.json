@@ -124,5 +124,16 @@
             "cmd-alt-[": "multi_workspace::PreviousThread",
             "cmd-alt-]": "multi_workspace::NextThread"
         }
+    },
+    {
+        // Claude Code Shift+Enter newline: Zed's terminal lacks the kitty
+        // keyboard protocol (zed#29654), so forward Shift+Enter as Ctrl+J,
+        // which Claude Code treats as newline in every terminal.
+        // Escape-free and tmux-transparent.
+        "use_key_equivalents": true,
+        "context": "Terminal",
+        "bindings": {
+            "shift-enter": ["terminal::SendKeystroke", "ctrl-j"]
+        }
     }
 ]
