@@ -4,13 +4,13 @@
 # How chezmoi runs this: the CURRENT live file arrives on stdin, and whatever
 # this script prints to stdout becomes the file's new contents on every
 # `chezmoi apply`. That makes the file partially managed: the policy fields
-# declared in .harness-settings/codex.json are enforced, while everything the
+# declared in .chezmoidata/harness/codex.json are enforced, while everything the
 # app writes itself (model choice, auth store, notify hooks) passes through
 # untouched.
 #
 # The config is TOML but the policy is JSON, so the pipeline converts
 # TOML -> JSON, deep-merges the policy with jq, and converts back.
-# The chezmoi include directive embeds the policy at template render time.
+# The template expression below embeds the policy at render time.
 # Source: https://github.com/N4M3Z/dotfiles
 set -o pipefail
 umask 077
@@ -19,7 +19,7 @@ policy=$(mktemp "${TMPDIR:-/tmp}/codex-policy.XXXXXX") || exit 1
 trap 'command rm -f "$policy"' EXIT
 
 cat > "$policy" <<'FORGE_POLICY'
-{{ include ".harness-settings/codex.json" }}
+{{ .harness.codex | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir }}
 FORGE_POLICY
 
 yq -p=toml -o=json '.' - \

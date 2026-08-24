@@ -1,0 +1,100 @@
+{
+  "harness": {
+    "grok": {
+      "sandbox": {
+        "profile": "workspace-local",
+        "auto_allow_bash": false
+      },
+      "shell_environment_policy": {
+        "inherit": "core",
+        "ignore_default_excludes": false
+      },
+      "tools": {
+        "respect_gitignore": true
+      },
+      "session": {
+        "load_envrc": false
+      },
+      "mcp_servers": {
+        "gbrain": {
+          "startup_timeout_sec": 15
+        }
+      },
+      "model": {
+        "grok-3-mini": {
+          "env_key": "GROK_CODE_XAI_API_KEY"
+        },
+        "grok-3-mini-fast": {
+          "env_key": "GROK_CODE_XAI_API_KEY"
+        },
+        "grok-4.20-0309-non-reasoning": {
+          "env_key": "GROK_CODE_XAI_API_KEY"
+        },
+        "grok-4.20-0309-reasoning": {
+          "env_key": "GROK_CODE_XAI_API_KEY"
+        },
+        "grok-4.20-multi-agent-0309": {
+          "env_key": "GROK_CODE_XAI_API_KEY"
+        },
+        "grok-4.3": {
+          "env_key": "GROK_CODE_XAI_API_KEY"
+        },
+        "grok-4.5": {
+          "env_key": "GROK_CODE_XAI_API_KEY"
+        },
+        "grok-build-0.1": {
+          "env_key": "GROK_CODE_XAI_API_KEY"
+        },
+        "grok-composer-2.5-fast": {
+          "env_key": "GROK_CODE_XAI_API_KEY"
+        }
+      },
+      "cli": {
+        "auto_update": false
+      },
+      "permission": {
+        "deny": [
+          "Bash(open *Finder*)",
+          "Bash(osascript *Finder*)",
+          "Bash(sd github app-token)",
+          "Bash(sd github app-token *)",
+          "Bash(rtk sd github app-token)",
+          "Bash(rtk sd github app-token *)",
+          "Bash(sd github push)",
+          "Bash(sd github push *)",
+          "Bash(rtk sd github push)",
+          "Bash(rtk sd github push *)",
+          "Bash(sd jj attended)",
+          "Bash(sd jj attended *)",
+          "Bash(rtk sd jj attended)",
+          "Bash(rtk sd jj attended *)",
+          "Read(~/.ssh/**)",
+          "Edit(~/.ssh/**)",
+          "Read(~/.aws/**)",
+          "Read(~/.azure/**)",
+          "Read(~/.config/gcloud/**)",
+          "Read(~/.netrc)",
+          "Read(~/.gnupg/**)",
+          "Read(~/.kube/**)",
+          "Read(~/.docker/config.json)",
+          "Read(~/.config/containers/**)",
+          "Read(~/.config/gh/**)",
+          "Read(~/.config/op/**)",
+          "Read(~/.git-credentials)",
+          "Read(~/.npm/**)",
+          "Read(~/.npmrc)",
+          "Read(~/.pypirc)",
+          "Read(~/.gem/credentials)",
+          "Read(~/.cargo/credentials.toml)",
+          "Read(~/Library/Keychains/**)",
+          "Read(~/.password-store/**)",
+          "Edit(~/.bashrc)",
+          "Edit(~/.zshrc)",
+          "Edit(~/.bash_profile)",
+          "Edit(~/.zprofile)",
+          "Edit(~/.profile)"
+        ]
+      }
+    }
+  }
+}
