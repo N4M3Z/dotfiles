@@ -92,6 +92,8 @@ jobs:
         needs: [release, overrides]
         if: '!cancelled() && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.draft == false && needs.overrides.outputs.skipped == ''false'' && ((github.event.action == ''labeled'' && github.event.label.name == ''review:runeseer'') || (github.event.action == ''ready_for_review'' && needs.release.outputs.summoned == ''true''))'
         uses: runedeck/seer/.github/workflows/review-correctness.yaml@main
+        with:
+            reviewer_login: "sentinel[bot]"
         secrets:
             RUNESEER_APP_ID: ${{ secrets.RUNESEER_APP_ID }}
             RUNESEER_APP_KEY: ${{ secrets.RUNESEER_APP_KEY }}
@@ -129,6 +131,7 @@ jobs:
             - env:
                   GH_TOKEN: ${{ github.token }}
                   HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+                  REVIEWER_LOGIN: "sentinel[bot]"
                   RUNESEER_TOKEN: ${{ steps.runeseer.outputs.token }}
               run: |
                   set -o pipefail
@@ -141,7 +144,7 @@ jobs:
                           --jq '[.jobs[] | select(.name == "review / correctness")]' \
                           | jq -s -r 'add // [] | first // empty | .html_url // ""') || job_url=""
                       verdict_line=$(gh api --paginate "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments?per_page=100" \
-                          --jq '[.[] | select(.user.login == "runeseer[bot]") | select(.body | startswith("review/correctness:")) | select(.body | contains(env.HEAD_SHA))]' \
+                          --jq '[.[] | select(.user.login == env.REVIEWER_LOGIN) | select(.body | startswith("review/correctness:")) | select(.body | contains(env.HEAD_SHA))]' \
                           | jq -s -r 'add // [] | last // empty | "\(.body | split("\n") | first) (\(.html_url))"') || verdict_line=""
                       echo "the lane concluded: $conclusion"
                       [ -n "$job_url" ] && echo "lane job: $job_url"
@@ -181,7 +184,7 @@ jobs:
                           exit 1
                       }
                       if acceptance_ids=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews?per_page=100" \
-                          --jq '[.[] | select(.user.login == "runeseer[bot]" and .state == "APPROVED") | select((.body // "") | contains("ignore:runeseer acceptance")) | .id]' \
+                          --jq '[.[] | select(.user.login == env.REVIEWER_LOGIN and .state == "APPROVED") | select((.body // "") | contains("ignore:runeseer acceptance")) | .id]' \
                           | jq -s -r 'add // [] | .[]'); then
                           for review_id in $acceptance_ids; do
                               if [ -z "$RUNESEER_TOKEN" ]; then
@@ -213,13 +216,13 @@ jobs:
                   # leaves none.
                   if printf '%s\n' "$labels" | grep -qx 'ignore:runeseer'; then
                       judged=$(gh api --paginate "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments?per_page=100" \
-                          --jq '[.[] | select(.user.login == "runeseer[bot]") | select(.body | startswith("review/correctness:")) | select(.body | contains(env.HEAD_SHA))]' \
+                          --jq '[.[] | select(.user.login == env.REVIEWER_LOGIN) | select(.body | startswith("review/correctness:")) | select(.body | contains(env.HEAD_SHA))]' \
                           | jq -s -r 'add // [] | length') \
                           || { echo "could not read the pull request comments; rerun the check"; exit 1; }
                       if [ "$judged" != "0" ]; then
                           echo "ignore:runeseer present and this head carries a Runeseer verdict summary; the owner accepted its findings."
                           approved=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews?per_page=100" \
-                              --jq '[.[] | select(.user.login == "runeseer[bot]") | select(.state == "APPROVED") | select(.commit_id == env.HEAD_SHA)]' \
+                              --jq '[.[] | select(.user.login == env.REVIEWER_LOGIN) | select(.state == "APPROVED") | select(.commit_id == env.HEAD_SHA)]' \
                               | jq -s -r 'add // [] | length') \
                               || { echo "could not read the pull request reviews; rerun the check"; exit 1; }
                           if [ "$approved" = "0" ] && [ -z "$RUNESEER_TOKEN" ]; then
@@ -268,7 +271,7 @@ jobs:
                       exit 1
                   fi
                   latest_state=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews?per_page=100" \
-                      --jq '[.[] | select(.user.login == "runeseer[bot]" and .commit_id == env.HEAD_SHA) | select((.body // "") | contains("ignore:runeseer acceptance") | not)]' \
+                      --jq '[.[] | select(.user.login == env.REVIEWER_LOGIN and .commit_id == env.HEAD_SHA) | select((.body // "") | contains("ignore:runeseer acceptance") | not)]' \
                       | jq -s -r 'add // [] | sort_by(.submitted_at) | last | .state // ""') \
                       || { echo "could not read the pull request reviews; rerun the check"; exit 1; }
                   if [ "$latest_state" = "APPROVED" ]; then
