@@ -1,15 +1,37 @@
 #!/bin/sh
-# fzf picker over tmux windows flagged by claude-tmux-status; Enter jumps.
-# Windows needing input (attention) sort above ones still working. Bound to
-# prefix+u as a popup in tmux.conf.
+# fzf picker over active agents; Enter jumps to the agent's tmux window.
+# Sources, merged:
+#   1. tmux windows flagged by claude-tmux-status (interactive agents).
+#      Windows needing input (attention) sort above ones still working.
+#      Each row shows session:window, state, project (pane directory
+#      basename), and window name.
+#   2. `claude agents --json` background sessions (no tmux window;
+#      listed last for visibility, Enter shows a hint instead).
+# Bound to prefix+u as a popup in tmux.conf.
 
-list=$(tmux list-windows -a -F '#{?#{==:#{@agent},attention},0,#{?#{==:#{@agent},working},1,9}} #{session_name}:#{window_index} #{?#{==:#{@agent},attention},needs-you,working} #{window_name}' \
+win=$(tmux list-windows -a -F '#{?#{==:#{@agent},attention},0,#{?#{==:#{@agent},working},1,9}} #{session_name}:#{window_index} #{?#{==:#{@agent},attention},needs-you,working} #{b:pane_current_path} #{window_name}' \
     | grep -v '^9 ' | sort)
+
+bg=""
+if command -v claude >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    # </dev/null keeps claude from grabbing the popup TTY if it tries
+    # anything interactive (daemon start, login prompt).
+    bg=$(claude agents --json </dev/null 2>/dev/null | jq -r '
+        .[]? | "8 bg \(.status // .state // "?") \((.cwd // "?") | split("/") | last) \(.name // .id // "?")"' 2>/dev/null)
+fi
+
+command -v fzf >/dev/null 2>&1 || { tmux display-message "tmux-agents: fzf not found"; exit 0; }
+
+list=$(printf '%s\n%s\n' "$win" "$bg" | sed '/^$/d' | sort)
 if [ -z "$list" ]; then
     tmux display-message "no active agents"
     exit 0
 fi
+
 target=$(printf '%s\n' "$list" | cut -d' ' -f2- \
-    | fzf --reverse --header 'agent windows') || exit 0
-tmux switch-client -t "${target%% *}"
+    | fzf --reverse --header 'agents: target  state  project  name') || exit 0
+case "$target" in
+    bg\ *) tmux display-message "background session: attach with claude agents" ;;
+    *) tmux switch-client -t "${target%% *}" ;;
+esac
 exit 0
