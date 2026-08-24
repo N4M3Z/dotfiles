@@ -1,0 +1,48 @@
+# Tool policy pack (deck DECK-0010 companion). dcg evaluates every
+# agent shell command, so this pack is the harness-independent home for
+# the approved-tool policy: Claude Code, Codex, Gemini, Copilot, Cursor.
+# Validate: dcg pack validate ~/.config/dcg/packs/toolpolicy.yaml
+schema_version: 1
+id: rune.toolpolicy
+name: Rune Tool Policy
+version: 1.0.0
+
+description: |
+  Redirects slow or unapproved search tools to the approved set.
+  rg replaces grep. fd replaces find. The denial text tells the agent
+  the replacement, so the correction costs one turn.
+
+keywords:
+  - grep
+  - find
+
+destructive_patterns:
+  - name: grep-use-rg
+    pattern: '^grep\b'
+    severity: high
+    description: Use rg (ripgrep) instead of grep.
+    explanation: |
+      rg is faster, respects .gitignore, and prints file and line by
+      default. Replace `grep -r pattern .` with `rg pattern`.
+      `git grep` stays allowed.
+    executables:
+      - grep
+
+  - name: find-use-fd
+    pattern: '^find\s+\S'
+    severity: high
+    description: Use fd instead of find.
+    explanation: |
+      fd is faster and respects .gitignore. Replace
+      `find . -name "*.md"` with `fd -e md`. Destructive find flags
+      are already covered by the core.filesystem pack.
+    executables:
+      - find
+
+safe_patterns:
+  - name: grep-version-probe
+    pattern: '^grep\s+--(version|help)\b'
+    description: Version and help probes stay allowed.
+  - name: find-version-probe
+    pattern: '^find\s+--(version|help)\b'
+    description: Version and help probes stay allowed.
