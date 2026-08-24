@@ -1,0 +1,52 @@
+#!/usr/bin/env zsh
+# zed-project [DIR]: open a project in Zed as a multi-root workspace. The folder
+# set is the project root plus the "additional directories" declared by whatever
+# AI-harness configs are present in the project. Claude Code's
+# permissions.additionalDirectories is the canonical source; Gemini, OpenCode,
+# and a project-level Codex config are folded in when they declare anything else
+# that resolves to a real directory. Entries are normalized, existence-checked,
+# and de-duplicated. Set ZED_PROJECT_PRINT=1 to print the resolved roots instead
+# of launching Zed (useful for testing).
+# Source of truth: chezmoi dot_local/bin/executable_zed-project.
+emulate -L zsh
+
+local root="${1:-$PWD}"
+root="${root:A}"
+local -a raw=()
+
+# Claude Code (canonical) — permissions.additionalDirectories
+if [[ -f "$root/.claude/settings.json" ]] && (( $+commands[jq] )); then
+    raw+=("${(@f)$(jq -r '.permissions.additionalDirectories[]? // empty' "$root/.claude/settings.json" 2>/dev/null)}")
+fi
+
+# Gemini CLI — context.includeDirectories (older configs: top-level includeDirectories)
+if [[ -f "$root/.gemini/settings.json" ]] && (( $+commands[jq] )); then
+    raw+=("${(@f)$(jq -r '((.context.includeDirectories // .includeDirectories) // [])[]? // empty' "$root/.gemini/settings.json" 2>/dev/null)}")
+fi
+
+# OpenCode — references (local paths only; skip owner/repo git refs)
+if [[ -f "$root/opencode.json" ]] && (( $+commands[jq] )); then
+    raw+=("${(@f)$(jq -r '.references // {} | to_entries[].value | (if type=="object" then (.path // empty) elif type=="string" then . else empty end) | select(test("^[/.~]"))' "$root/opencode.json" 2>/dev/null)}")
+fi
+
+# Codex — project-level writable_roots only (user ~/.codex is global, too broad)
+if [[ -f "$root/.codex/config.toml" ]] && (( $+commands[yq] )); then
+    raw+=("${(@f)$(yq -p toml -o=json -r '.sandbox_workspace_write.writable_roots // [] | .[]' "$root/.codex/config.toml" 2>/dev/null)}")
+fi
+
+# Normalize (~ and relative -> absolute), keep only real directories, dedup; root first.
+local -aU roots=("$root")
+local dir
+for dir in "${raw[@]}"; do
+    [[ -z "$dir" ]] && continue
+    dir="${dir/#\~/$HOME}"
+    [[ "$dir" = /* ]] || dir="$root/$dir"
+    dir="${dir:A}"
+    [[ -d "$dir" ]] && roots+=("$dir")
+done
+
+if [[ -n "$ZED_PROJECT_PRINT" ]]; then
+    print -l -- "${roots[@]}"
+else
+    exec zed "${roots[@]}"
+fi
