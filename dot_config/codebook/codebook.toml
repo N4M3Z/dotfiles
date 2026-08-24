@@ -21,6 +21,26 @@ ignore_paths = [
     "**/*.csv",
 ]
 
+# Workshop jargon: tools, forks, and names the stock dictionaries lack.
+words = [
+    "agavra",
+    "chezmoi",
+    "codebook",
+    "gitui",
+    "jjui",
+    "jujutsu",
+    "memex",
+    "moxide",
+    "ratatui",
+    "revset",
+    "revsets",
+    "sabiql",
+    "tealdeer",
+    "tuicr",
+    "worktree",
+    "worktrees",
+]
+
 # Markdown reference-link labels ([KVBENCH], [CCDOCS]) and their definition
 # lines are identifiers, not prose; skip them.
 ignore_patterns = [
