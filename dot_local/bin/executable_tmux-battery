@@ -1,12 +1,28 @@
 #!/bin/sh
-# Status-bar battery segment: "chg 84%" on AC, "bat 84%" on battery, nothing
-# if pmset reports no battery (desktop). macOS-only (pmset).
+# Status-bar battery segment: a Nerd Font battery glyph plus percent
+# ("󰂄 84" on AC, "󰁿 62" discharging at that level), nothing if pmset
+# reports no battery (desktop). Glyph rendering happens in the viewing
+# terminal, so SSH sessions show them wherever the local font is a
+# Nerd Font. macOS-only (pmset).
 
 raw=$(pmset -g batt 2>/dev/null) || exit 0
 pct=$(printf '%s' "$raw" | grep -o '[0-9]\{1,3\}%' | head -1 | tr -d '%')
 [ -n "$pct" ] || exit 0
 
 case "$raw" in
-    *"AC Power"*) printf 'chg %s%%' "$pct" ;;
-    *)            printf 'bat %s%%' "$pct" ;;
+    *"AC Power"*) icon="󰂄" ;;
+    *)
+        if   [ "$pct" -ge 95 ]; then icon="󰁹"
+        elif [ "$pct" -ge 85 ]; then icon="󰂂"
+        elif [ "$pct" -ge 75 ]; then icon="󰂁"
+        elif [ "$pct" -ge 65 ]; then icon="󰂀"
+        elif [ "$pct" -ge 55 ]; then icon="󰁿"
+        elif [ "$pct" -ge 45 ]; then icon="󰁾"
+        elif [ "$pct" -ge 35 ]; then icon="󰁽"
+        elif [ "$pct" -ge 25 ]; then icon="󰁼"
+        elif [ "$pct" -ge 15 ]; then icon="󰁻"
+        else                         icon="󰁺"
+        fi
+        ;;
 esac
+printf '%s %s' "$icon" "$pct"

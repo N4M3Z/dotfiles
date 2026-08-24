@@ -1,0 +1,62 @@
+#!/bin/sh
+# Wrap each finished Claude Code turn as its own jj change and report
+# a per-turn summary card back into the conversation. The card also
+# names other opted-in repos with pending changes (session footprint
+# from `sd tmux turn repos`).
+# Wired as a Claude Code Stop hook; run manually as: sd claude turn wrap
+# Opt in for each repository: touch .jj/turn-wrap
+# Zed's uncommitted-changes view (git::Diff) then shows only the
+# current turn, because git HEAD tracks @- in a colocated repo.
+set -u
+
+dir="${CLAUDE_PROJECT_DIR:-$PWD}"
+[ -d "$dir/.jj" ] || exit 0
+[ -e "$dir/.jj/turn-wrap" ] || exit 0
+command -v jj >/dev/null 2>&1 || exit 0
+cd "$dir" || exit 0
+own=$(jj root 2>/dev/null) || exit 0
+
+# Snapshot the working copy. Exit quietly when jj refuses
+# (stale lock, oversized file, concurrent operation).
+nonempty=$(jj log -r '@ & ~empty()' --no-graph -T 'change_id' 2>/dev/null) || exit 0
+[ -n "$nonempty" ] || exit 0
+
+# Capture the turn summary before wrapping resets the working copy.
+stat=$(jj diff -r @ --stat 2>/dev/null | tail -1)
+
+desc=$(jj log -r '@' --no-graph -T 'description' 2>/dev/null) || exit 0
+if [ -n "$desc" ]; then
+    # The change already has a curated description. Keep it and
+    # start a fresh change on top.
+    jj new >/dev/null 2>&1 || true
+else
+    jj commit -m "claude: turn $(date '+%Y-%m-%d %H:%M')" >/dev/null 2>&1 || true
+fi
+
+# Session footprint: other opted-in repos with pending changes.
+elsewhere=$(sh "$HOME/.sd/tmux/turn/repos" 2>/dev/null | while IFS= read -r r; do
+    [ -n "$r" ] || continue
+    [ "$r" -ef "$own" ] && continue
+    counts=$( (cd "$r" 2>/dev/null && jj diff -r @ --stat --ignore-working-copy 2>/dev/null | tail -1) | awk '
+        /changed/ {
+            p = 0; m = 0
+            for (i = 1; i <= NF; i++) {
+                if ($i ~ /^insertion/) p = $(i - 1)
+                if ($i ~ /^deletion/)  m = $(i - 1)
+            }
+            if (p + m > 0) printf "%s+ %s-", p, m
+        }')
+    [ -n "$counts" ] && printf '%s %s, ' "$(basename "$r")" "$counts"
+done)
+elsewhere=${elsewhere%, }
+
+# End-of-turn card in the conversation, ChatGPT-app style:
+# what changed, what is pending elsewhere, how to review, how to undo.
+if [ -n "$stat" ]; then
+    if [ -n "$elsewhere" ]; then
+        printf '{"systemMessage":"Turn wrapped: %s Elsewhere: %s. Review: space g d in Zed, or click the ± status segment. Undo: /rewind."}\n' "$stat" "$elsewhere"
+    else
+        printf '{"systemMessage":"Turn wrapped: %s Review: space g d in Zed, or click the ± status segment. Undo: /rewind."}\n' "$stat"
+    fi
+fi
+exit 0

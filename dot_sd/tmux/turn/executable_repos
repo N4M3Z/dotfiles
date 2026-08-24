@@ -1,0 +1,20 @@
+#!/bin/sh
+# List the jj repos in the tmux server's pane footprint that opted into
+# turn wrapping (.jj/turn-wrap). One absolute root per line.
+# The tmux server is the repo registry: one persistent session per
+# project, so pane directories cover every project in play. No state
+# file exists; the marker is the only authority.
+# Run as: sd tmux turn repos
+# TURN_WRAP_REPOS overrides the pane scan (tests, scripting).
+if [ -n "${TURN_WRAP_REPOS:-}" ]; then
+    printf '%s\n' "$TURN_WRAP_REPOS"
+    exit 0
+fi
+command -v jj >/dev/null 2>&1 || exit 0
+tmux list-panes -a -F '#{pane_current_path}' 2>/dev/null | sort -u \
+    | while IFS= read -r p; do
+        [ -d "$p" ] || continue
+        root=$( (cd "$p" 2>/dev/null && jj root 2>/dev/null) ) || continue
+        [ -n "$root" ] && [ -e "$root/.jj/turn-wrap" ] && printf '%s\n' "$root"
+    done | sort -u
+exit 0

@@ -1,0 +1,39 @@
+#!/bin/sh
+# Print the working-copy state of the pane's jj repo for the tmux
+# status bar: "± N+ M-" with changes, a bare "±" when clean, nothing
+# outside a jj repo. A trailing "⁺N" marks N other opted-in repos with
+# pending changes (session footprint from `sd tmux turn repos`).
+# The bare glyph keeps the click target (the turn review popup)
+# present at all times. Called every status-interval, so
+# --ignore-working-copy avoids snapshot work and lock contention.
+# Run as: sd tmux turn diff
+d="$1"
+[ -n "$d" ] || exit 0
+cd "$d" 2>/dev/null || exit 0
+[ -d "$(pwd)/.jj" ] || jj root >/dev/null 2>&1 || exit 0
+own=$(jj root 2>/dev/null)
+out=$(jj diff -r @ --stat --ignore-working-copy 2>/dev/null | tail -1 | awk '
+    /changed/ {
+        plus = 0; minus = 0
+        for (i = 1; i <= NF; i++) {
+            if ($i ~ /^insertion/) plus = $(i - 1)
+            if ($i ~ /^deletion/)  minus = $(i - 1)
+        }
+        if (plus + minus > 0) printf "#[fg=#a6e3a1]%s+#[default] #[fg=#f38ba8]%s-#[default]", plus, minus
+    }')
+extra=$(sh "$HOME/.sd/tmux/turn/repos" 2>/dev/null | while IFS= read -r r; do
+    [ -n "$r" ] || continue
+    [ -n "$own" ] && [ "$r" -ef "$own" ] && continue
+    (cd "$r" 2>/dev/null && jj diff -r @ --stat --ignore-working-copy 2>/dev/null | tail -1) | awk '
+        /changed/ {
+            p = 0; m = 0
+            for (i = 1; i <= NF; i++) {
+                if ($i ~ /^insertion/) p = $(i - 1)
+                if ($i ~ /^deletion/)  m = $(i - 1)
+            }
+            if (p + m > 0) print "x"
+        }'
+done | grep -c x)
+printf '%s' "${out:-±}"
+[ "${extra:-0}" -gt 0 ] && printf ' #[fg=#f9e2af]⁺%s#[default]' "$extra"
+exit 0

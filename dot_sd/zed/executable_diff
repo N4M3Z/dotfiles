@@ -1,0 +1,25 @@
+#!/bin/sh
+# Open Zed's Project Diff full-window from outside Zed: focus the
+# running Zed (Dev first, then Preview, then stable), close all docks
+# (cmd-alt-shift-g -> workspace::CloseAllDocks), then open the diff
+# (cmd-alt-g -> git::Diff). Used by the tmux click on the path
+# segment; run manually as: sd zed diff
+# Focus uses `open -b` (no Apple Events permission needed). The
+# keystrokes need Accessibility for the app that hosts the tmux
+# server. Always exits 0 so tmux never parks an error screen; a
+# keystroke failure shows a transient tmux message instead.
+for b in dev.zed.Zed-Dev dev.zed.Zed-Preview dev.zed.Zed; do
+    if open -b "$b" 2>/dev/null; then
+        sleep 0.2
+        if ! osascript -e 'tell application "System Events"
+            keystroke "g" using {command down, option down, shift down}
+            delay 0.1
+            keystroke "g" using {command down, option down}
+        end tell' 2>/dev/null; then
+            tmux display-message "sd zed diff: grant Accessibility to the tmux host app" 2>/dev/null || true
+        fi
+        exit 0
+    fi
+done
+tmux display-message "sd zed diff: no Zed bundle found" 2>/dev/null || true
+exit 0

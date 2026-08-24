@@ -1,0 +1,100 @@
+#!/bin/sh
+# Turn review launcher for the tmux ± segment; run as: sd tmux turn review
+# Offers /diff-style steps across the session footprint. Discovery is
+# tiered for session relevance: the current tmux session's pane
+# directories and the opted-in marker repos (`sd tmux turn repos`)
+# always appear; jj op-log recency under the standard roots adds at
+# most the five most recently active others (12-hour window) as the
+# agent-work safety net. The machine-wide registry is deliberately
+# NOT merged here: with ~20 registered repos it floods the picker
+# (65 rows in a one-repo session) and drowns the relevant few.
+# Repos order by op recency, the pane's own repo first; the pane
+# repo lists 8 recent changes, others 3.
+# Row building is read-only (--ignore-working-copy): a snapshot here
+# would advance every listed repo's op head and make the recency
+# window self-arming. Only the picked repo gets a jj snapshot and git
+# export, right before tuicr opens, so tuicr sees the current state.
+# The working-copy row's +/- stat reflects the last snapshot, not
+# live unsaved edits; tuicr -w shows the truth after the pick.
+# The .jj/turn-wrap marker gates wrapping only, never review
+# visibility. TURN_WRAP_REPOS overrides discovery (tests, scripting).
+d="${1:-$PWD}"
+cd "$d" 2>/dev/null || exit 0
+command -v tuicr >/dev/null 2>&1 || exit 0
+if ! command -v fzf >/dev/null 2>&1 || ! command -v jj >/dev/null 2>&1; then
+    exec tuicr -w
+fi
+own=$(jj root 2>/dev/null)
+
+repos() {
+    if [ -n "${TURN_WRAP_REPOS:-}" ]; then
+        printf '%s\n' "$TURN_WRAP_REPOS"
+        return
+    fi
+    {
+        tmux list-panes -s -F '#{pane_current_path}' 2>/dev/null | sort -u \
+            | while IFS= read -r p; do
+                [ -d "$p" ] || continue
+                (cd "$p" 2>/dev/null && jj root 2>/dev/null)
+            done
+        sh "$HOME/.sd/tmux/turn/repos" 2>/dev/null
+        now=$(date +%s)
+        for r in "$HOME"/Developer/* "$HOME"/Developer/*/* "$HOME"/Agents/* "$HOME"/Agents/*/* "$HOME"/Atlas; do
+            h="$r/.jj/repo/op_heads/heads"
+            [ -d "$h" ] || continue
+            m=$(stat -f %m "$h" 2>/dev/null || echo 0)
+            [ $((now - m)) -lt 43200 ] && printf '%s\t%s\n' "$m" "$r"
+        done | sort -rn | cut -f2 | head -5
+    } | awk 'NF && !seen[$0]++' | while IFS= read -r r; do
+        m=$(stat -f %m "$r/.jj/repo/op_heads/heads" 2>/dev/null || stat -f %m "$r/.jj" 2>/dev/null || echo 0)
+        printf '%s\t%s\n' "$m" "$r"
+    done | sort -rn | cut -f2
+}
+
+repo_steps() {
+    (
+        cd "$1" 2>/dev/null || exit 0
+        name=$(basename "$1")
+        stat=$(jj diff -r @ --stat --ignore-working-copy 2>/dev/null | tail -1 | awk '
+            /changed/ {
+                p = 0; m = 0
+                for (i = 1; i <= NF; i++) {
+                    if ($i ~ /^insertion/) p = $(i - 1)
+                    if ($i ~ /^deletion/)  m = $(i - 1)
+                }
+                if (p + m > 0) printf " %s+ %s-", p, m
+            }')
+        printf '%s\tcurrent\t%s  working copy (uncommitted)%s\n' "$1" "$name" "$stat"
+        jj log --ignore-working-copy -r "ancestors(@-, ${2:-8}) ~ immutable()" --no-graph \
+            -T 'change_id.short() ++ "\t" ++ commit_id.short() ++ "\t" ++ if(description, description.first_line(), "(no description)") ++ "\n"' 2>/dev/null \
+            | awk -F '\t' -v r="$1" -v n="$name" '{printf "%s\t%s\t%s  %s  %s  %s\n", r, $1, n, $1, $2, $3}'
+    )
+}
+
+steps=""
+[ -n "$own" ] && steps=$(repo_steps "$own" 8)
+others=$(repos)
+if [ -n "$others" ]; then
+    while IFS= read -r r; do
+        [ -n "$r" ] || continue
+        [ -n "$own" ] && [ "$r" -ef "$own" ] && continue
+        steps=$(printf '%s\n%s' "$steps" "$(repo_steps "$r" 3)")
+    done <<EOF
+$others
+EOF
+fi
+[ -n "$steps" ] || exec tuicr -w
+
+choice=$(printf '%s\n' "$steps" | sed '/^$/d' \
+    | fzf --reverse --delimiter '\t' --with-nth 3.. \
+          --header 'turn review: pick a repo state or a change') || exit 0
+root=${choice%%	*}
+rest=${choice#*	}
+rev=${rest%%	*}
+cd "$root" 2>/dev/null || exit 0
+# Snapshot and git-export the picked repo only, so tuicr sees now.
+jj log -r @ --no-graph -T '' >/dev/null 2>&1
+if [ "$rev" = "current" ]; then
+    exec tuicr -w
+fi
+exec tuicr -r "$rev"

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Capture one window to ~/Data/Captures and print the file path.
+# ChatGPT-app "Appshot" analog: the tmux binding (prefix S) pastes the
+# path into the active pane so the agent can read the image.
+# screencapture -W is interactive: click the window to capture.
+f="$HOME/Data/Captures/appshot-$(date +%Y%m%d-%H%M%S).png"
+screencapture -o -W "$f" 2>/dev/null || exit 0
+[ -s "$f" ] || exit 0
+printf '%s' "$f"
