@@ -122,6 +122,11 @@
           {
             "type": "command",
             "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention"
+          },
+          {
+            "type": "command",
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/turn/wrap",
+            "timeout": 30
           }
         ]
       }

@@ -10,7 +10,16 @@
             // finder (spans all open worktrees).
             "space f": ["task::Spawn", { "task_name": "Fuzzy find file (tv)", "reveal_target": "center" }],
             "space e": "project_panel::ToggleFocus",
-            "space g": "git_panel::ToggleFocus",
+            "space g g": "git_panel::ToggleFocus",
+            // Turn-scoped review pane: d shows uncommitted changes (the
+            // current turn when the jj turn-seal hook is active), b shows
+            // the whole branch against the default-branch merge base.
+            "space g d": "git::Diff",
+            "space g b": "git::BranchDiff",
+            // Scope selector, ChatGPT-app Review-pane style: u unstaged,
+            // s staged. d above is the full uncommitted set.
+            "space g u": "git::ViewUnstagedChanges",
+            "space g s": "git::ViewStagedChanges",
             "space o": "outline::Toggle",
             "space v": ["task::Spawn", { "task_name": "Open note in Obsidian" }],
             "space b": "editor::FindAllReferences",
@@ -63,7 +72,15 @@
             // New Terminal Thread directly — cmd-n reuses the last-used thread
             // type, and the type picker (cmd-alt-shift-n) is easy to miss.
             // ProjectPanel keeps its own cmd-alt-n (NewDirectory).
-            "cmd-alt-n": "agent::NewTerminalThread"
+            "cmd-alt-n": "agent::NewTerminalThread",
+            // Project Diff from any focus (terminal thread included) — the
+            // space g d leader needs editor normal mode. Also the target
+            // chord `sd zed diff` synthesizes for the tmux right-click
+            // redirect into Zed.
+            "cmd-alt-g": "git::Diff",
+            // Companion chord for sd zed diff: hide every dock so the
+            // review multibuffer gets the full window.
+            "cmd-alt-shift-g": "workspace::CloseAllDocks"
         }
     },
     {
