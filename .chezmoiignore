@@ -6,3 +6,6 @@ README.md
 docs
 tests
 .harness-settings
+CODEOWNERS
+KEYS
+schemas

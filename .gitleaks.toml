@@ -1,0 +1,23 @@
+# useDefault is required: a gitleaks config without it REPLACES the built-in
+# ruleset, silently disabling every secret rule. This keeps the defaults and
+# layers the allowlist on top.
+[extend]
+useDefault = true
+
+# The SpecStory allowlist covers only the untracked output directories; the
+# tracked project binding and configuration stay inside the scan.
+[allowlist]
+paths = [
+    "\\.entire/.*",
+    "\\.specstory/history/.*",
+    "\\.specstory/debug/.*",
+    "\\.jj/.*",
+]
+
+# GPG key fingerprints named in signing config are public-key material,
+# not secrets.
+regexTarget = "line"
+regexes = [
+    "(?i)signingkey\\s*=\\s*0x[0-9A-F]{40}",
+    "key\\s*=\\s*\"0x[0-9A-F]{40}\"",
+]

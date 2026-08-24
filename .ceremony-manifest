@@ -1,0 +1,15 @@
+# Ceremony-owned files: every scaffolded repository's copies are checked
+# against the skeleton baseline (templates/base/ in runedeck/skeleton) by the
+# quality workflow's drift job. Diverge deliberately by removing a line here
+# in a reviewed pull request, never by silent local edits.
+#
+# This repository keeps its own Entire-wrapped pre-push hook, an adapted
+# labeler, a prek config with JSONC and zsh excludes, and a gitleaks
+# allowlist for public signing-key fingerprints, and runs no congrats
+# workflow, so those baseline lines are absent here. The quality and pr-lint
+# workflows and the pull-request schema follow a skeleton baseline newer than
+# published main; list them here once runedeck/skeleton PR #2 merges.
+.githooks/pre-commit
+.githooks/jj-push
+KEYS
+schemas/INSTALL.mdschema

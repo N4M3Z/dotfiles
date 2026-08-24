@@ -31,3 +31,6 @@ jobs:
 
             - name: Validate templates
               run: bash tests/validate-templates.sh
+
+            - name: Validate target state
+              run: bash tests/validate-target-state.sh
