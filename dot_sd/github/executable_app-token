@@ -1,0 +1,88 @@
+#!/bin/bash
+# Mint a GitHub App installation token for Runewright CI and review jobs.
+# The command prints the token for the calling job's GH_TOKEN variable.
+# Ordinary agents use the owner's existing gh authentication.
+#
+# The command signs a short RS256 JWT with the App private key.
+# It reads the private key from pass when it creates the JWT.
+# It finds the installation and exchanges the JWT for a one-hour token.
+# The token covers only repositories in that installation.
+# The command caches tokens with mode 0600 until five minutes before expiry.
+# GPG agent caching limits YubiKey decryption prompts.
+#
+# The App identifies Runewright CI and review jobs.
+# Each machine has a separate private key.
+# The owner can revoke each key independently.
+#
+# CI review example:
+#   GH_TOKEN=$(sd github app-token) gh pr comment "$PR_NUMBER" --body-file review.md
+#
+# These environment variables override defaults:
+# GH_APP_ID, GH_APP_PASS_ENTRY, GH_APP_CACHE_DIR, GH_APP_ACCOUNT,
+# and GH_APP_INSTALLATION_ID.
+
+set -euo pipefail
+
+app_id=${GH_APP_ID:-4369275}
+pass_entry=${GH_APP_PASS_ENTRY:-personal/keys/github.com/n4m3z}
+cache_dir=${GH_APP_CACHE_DIR:-"${XDG_CACHE_HOME:-$HOME/.cache}/sd/github-app-token"}
+cache_file="${cache_dir}/${app_id}.json"
+api=https://api.github.com
+
+now=$(date +%s)
+
+# Use the cached token while more than five minutes remain.
+if [[ -f "$cache_file" ]]; then
+    cached_exp=$(sed -n 's/.*"exp_epoch": *\([0-9]*\).*/\1/p' "$cache_file")
+    if [[ -n "$cached_exp" ]] && (( cached_exp - now > 300 )); then
+        sed -n 's/.*"token": *"\([^"]*\)".*/\1/p' "$cache_file"
+        exit 0
+    fi
+fi
+
+b64url() {
+    openssl base64 -A | tr '+/' '-_' | tr -d '='
+}
+
+header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
+payload=$(printf '{"iat":%d,"exp":%d,"iss":%d}' "$((now - 60))" "$((now + 540))" "$app_id" | b64url)
+signature=$(printf '%s.%s' "$header" "$payload" \
+    | openssl dgst -sha256 -sign <(pass show "$pass_entry") -binary \
+    | b64url)
+jwt="${header}.${payload}.${signature}"
+
+# An owner can install the App on personal and organization accounts.
+# Each installation token covers only its installation repositories.
+# GH_APP_ACCOUNT selects the account and defaults to the personal account.
+# GH_APP_INSTALLATION_ID selects one installation directly.
+account=${GH_APP_ACCOUNT:-N4M3Z}
+installation_id=${GH_APP_INSTALLATION_ID:-$(curl -fsS -H "Authorization: Bearer $jwt" \
+    -H "Accept: application/vnd.github+json" \
+    "$api/app/installations" | awk -v target="$account" '
+        /^    "id":/ { candidate = $2; gsub(/[^0-9]/, "", candidate) }
+        /"login":/ {
+            login = $2; gsub(/[",]/, "", login)
+            if (login == target) { print candidate; exit }
+        }')}
+if [[ -z "$installation_id" ]]; then
+    echo "sd github app-token: no installation found for app $app_id" >&2
+    exit 1
+fi
+
+response=$(curl -fsS -X POST -H "Authorization: Bearer $jwt" \
+    -H "Accept: application/vnd.github+json" \
+    "$api/app/installations/$installation_id/access_tokens")
+token=$(printf '%s' "$response" | sed -n 's/.*"token": *"\([^"]*\)".*/\1/p')
+expires_at=$(printf '%s' "$response" | sed -n 's/.*"expires_at": *"\([^"]*\)".*/\1/p')
+if [[ -z "$token" ]]; then
+    echo "sd github app-token: token exchange failed" >&2
+    exit 1
+fi
+
+exp_epoch=$(date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$expires_at" +%s 2>/dev/null || echo $((now + 3600)))
+
+mkdir -p "$cache_dir"
+umask 077
+printf '{"token": "%s", "exp_epoch": %s}\n' "$token" "$exp_epoch" > "$cache_file"
+
+printf '%s\n' "$token"
