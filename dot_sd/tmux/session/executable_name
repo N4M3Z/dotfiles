@@ -1,0 +1,123 @@
+#!/bin/sh
+# Print the tmux session name a directory belongs to, preferring reuse of a
+# live session over inventing a new name. Candidates, in order:
+#   1. the directory basename (a session named like the current folder is
+#      the safest reuse target)
+#   2. the canonical derived name (flat roots, owner-qualified Developer
+#      clones, workshop slug rules — see below)
+#   3. legacy alternates (the canonical form the other scheme would give)
+# The first candidate with a live session wins. Bare candidates (no "/") are
+# ambiguous across projects, so they only match when that session's path
+# lies within the directory; slashed names are unique by construction and
+# match by name alone. Session paths drift as panes cd around, so path
+# equality is never used as the primary signal. When nothing matches, the
+# canonical name is printed for creation.
+#
+# Canonical derivation:
+#   - flat roots: anywhere inside maps to one session (a vault is one session)
+#   - ~/Developer/<owner>/<repo> -> <owner>/<repo>, always owner-qualified
+#   - ~/Agents/<owner>/<slug> workshop -> <slug> for SELF_OWNER, else
+#     <owner>/<slug> (client work stays qualified)
+#   - the directory basename
+# A name like <repo>/<spec> is a manual context label, never derived.
+# Consumed by Zed's terminal_init_command:
+#   tmux new-session -A -s "$(sd tmux session name)"
+
+dir=${1:-$PWD}
+self_owner=${SELF_OWNER:-N4M3Z}
+workshop=${FORGE_WORKSHOP:-$HOME/Agents}
+develop=${FORGE_DEVELOP:-$HOME/Developer}
+# Flat roots: space-separated "path=name" pairs; anywhere inside <path> -> <name>.
+flat_roots="$HOME/Atlas=atlas"
+
+base=$(basename "$dir")
+canonical=""
+alternate=""
+
+for pair in $flat_roots; do
+    root=${pair%=*}
+    name=${pair#*=}
+    case "$dir" in
+        "$root" | "$root"/*)
+            canonical=$name
+            ;;
+    esac
+done
+
+if [ -z "$canonical" ]; then
+    case "$dir" in
+        "$develop"/*/*)
+            rel=${dir#"$develop"/}
+            owner=${rel%%/*}
+            rest=${rel#*/}
+            canonical="$owner/${rest%%/*}"
+            alternate=${rest%%/*}
+            ;;
+        "$workshop"/*/*)
+            rel=${dir#"$workshop"/}
+            owner=${rel%%/*}
+            rest=${rel#*/}
+            slug=${rest%%/*}
+            if [ "$owner" = "$self_owner" ]; then
+                canonical=$slug
+                alternate="$owner/$slug"
+            else
+                canonical="$owner/$slug"
+                alternate=$slug
+            fi
+            ;;
+        *)
+            canonical=$base
+            ;;
+    esac
+fi
+
+# tmux target syntax reads a leading "." as a window separator, so a
+# session named ".claude" is not addressable without the "=" escape and
+# does not resume cleanly. Replace the leading dot with "dot_" (the
+# chezmoi convention) before any match or creation.
+__sanitize() {
+    case $1 in
+        .*) printf 'dot_%s\n' "${1#.}" ;;
+        *)  printf '%s\n' "$1" ;;
+    esac
+}
+base=$(__sanitize "$base")
+canonical=$(__sanitize "$canonical")
+alternate=$(__sanitize "$alternate")
+
+# A candidate reuses a live session when the name exists; bare names
+# additionally require the session's path to sit inside this directory.
+__try() {
+    name=$1
+    [ -n "$name" ] || return 1
+    command -v tmux >/dev/null 2>&1 || return 1
+    tmux has-session -t "=$name" 2>/dev/null || return 1
+    case "$name" in
+        */*)
+            return 0
+            ;;
+    esac
+    path=$(tmux list-sessions -F '#{session_path}' -f "#{==:#{session_name},$name}" 2>/dev/null | head -1)
+    case "$path" in
+        "$dir" | "$dir"/*)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+tried=""
+for candidate in "$base" "$canonical" "$alternate"; do
+    [ -n "$candidate" ] || continue
+    case " $tried " in
+        *" $candidate "*) continue ;;
+    esac
+    tried="$tried $candidate"
+    if __try "$candidate"; then
+        printf '%s\n' "$candidate"
+        exit 0
+    fi
+done
+
+printf '%s\n' "$canonical"
