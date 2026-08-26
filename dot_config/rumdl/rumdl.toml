@@ -1,0 +1,12 @@
+# User-level rumdl configuration. Applies wherever no repository
+# .rumdl.toml exists (memory files, scratch notes, unconfigured repos).
+# Repository configs override this file completely for their trees.
+
+[global]
+# MD025 and MD041 misread frontmatter: the title field counts as the
+# document title, so a body heading reads as a duplicate. MD076 forbids
+# the spaced lists the memory index uses on purpose.
+disable = ["MD025", "MD041", "MD076"]
+
+[MD013]
+line_length = 120
