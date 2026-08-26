@@ -11,25 +11,25 @@
 
 `sd tldr`
 
-- Open a path in the currently running Zed bundle:
+- Open the turn review picker (session footprint: working copies and recent changes) in tuicr:
 
-`sd zed open {{path/to/file}}`
+`sd tmux turn review`
 
-- Build the personal Zed patch stack:
+- Wrap the current agent turn as one Jujutsu change (Stop hook; opt in with `touch .jj/turn-wrap`):
 
-`sd zed rebuild`
+`sd claude turn wrap`
 
-- Resolve the canonical tmux session name for the current directory:
+- Focus Zed and open its Project Diff with all docks hidden:
 
-`sd tmux session-name`
+`sd zed diff`
 
 - Resume the exact Claude session for the current pane:
 
 `sd claude resume`
 
-- Show the exact Claude resume command for the current pane:
+- Resolve the canonical tmux session name for the current directory:
 
-`sd claude resume --print`
+`sd tmux session-name`
 
 - Run an agent through shared policy and capture:
 

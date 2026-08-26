@@ -1,8 +1,10 @@
 #!/bin/sh
 # Print the working-copy state of the pane's jj repo for the tmux
 # status bar: "± N+ M-" with changes, a bare "±" when clean, nothing
-# outside a jj repo. A trailing "⁺N" marks N other opted-in repos with
-# pending changes (session footprint from `sd tmux turn repos`).
+# outside a jj repo. A trailing "⁺N" marks N other opted-in repos
+# (.jj/turn-wrap, via `sd tmux turn repos`) with pending changes —
+# marker-scoped on purpose: the registry-wide count was machine-global
+# noise (⁺25 everywhere).
 # The bare glyph keeps the click target (the turn review popup)
 # present at all times. Called every status-interval, so
 # --ignore-working-copy avoids snapshot work and lock contention.
