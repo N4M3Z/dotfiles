@@ -24,6 +24,25 @@ tug = ["bookmark", "move", "--from", "closest_bookmark(@-)", "--to", "@-"]
 [revset-aliases]
 'closest_bookmark(to)' = 'heads(::to & bookmarks())'
 
+# `jj fix` auto-repair rung of the gate ladder (deck DECK-0010): format
+# and spelling fixes rewrite changed files in revisions before the push
+# gate sees them. Tools read stdin and write the fixed content to stdout.
+# Caution: the tools do not resolve repository excludes over stdin, and
+# jj fix only touches files changed in the fixed revisions. A change to
+# a digest-bound adopted file therefore gets reformatted, but such an
+# edit already implies digest churn through the adaptation flow.
+[fix.tools.rumdl]
+command = ["rumdl", "fmt", "--stdin-filename", "$path", "-"]
+patterns = ["glob:'**/*.md'"]
+
+[fix.tools.typos]
+command = ["typos", "--write-changes", "-"]
+patterns = ["glob:'**/*.md'", "glob:'**/*.sh'", "glob:'**/*.rs'", "glob:'**/*.toml'", "glob:'**/*.yaml'", "glob:'**/*.yml'"]
+
+[fix.tools.shfmt]
+command = ["shfmt"]
+patterns = ["glob:'**/*.sh'"]
+
 [colors]
 # jjui renders jj's own diff output; the default underline on changed
 # tokens reads terribly there, so color alone carries the word-level
