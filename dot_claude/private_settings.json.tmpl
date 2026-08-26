@@ -55,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // empty'); case \"/$f/\" in */.git/*|*/.jj/*|*/.entire/*) printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Path is inside .git/.jj/.entire: file tools must not touch VCS or checkpoint internals (corrupts entire checkpoints). Drive changes through git or jj commands instead.\"}}' ;; esac"
+            "command": "f=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // empty'); case \"/$f/\" in */.git/*|*/.jj/*) printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Path is inside .git/.jj: file tools must not touch VCS internals. Drive changes through git or jj commands instead.\"}}' ;; esac"
           }
         ]
       },
