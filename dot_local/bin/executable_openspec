@@ -36,8 +36,12 @@ for prefix in "$HOME/Developer/" "$HOME/Agents/" "$HOME/"; do
     esac
 done
 shadow="$HOME/.openspec/$rel"
-mkdir -p "$shadow"
-ln -sfn "$root/docs" "$shadow/openspec"
+# Idempotent: touch the filesystem only when the link is absent or wrong,
+# so read-only sandboxes with a correct link still work.
+if [ "$(readlink "$shadow/openspec" 2>/dev/null)" != "$root/docs" ]; then
+    mkdir -p "$shadow"
+    ln -sfn "$root/docs" "$shadow/openspec"
+fi
 
 cd "$shadow"
 exec "$real" "$@"
