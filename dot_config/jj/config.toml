@@ -23,3 +23,10 @@ tug = ["bookmark", "move", "--from", "closest_bookmark(@-)", "--to", "@-"]
 
 [revset-aliases]
 'closest_bookmark(to)' = 'heads(::to & bookmarks())'
+
+[colors]
+# jjui renders jj's own diff output; the default underline on changed
+# tokens reads terribly there, so color alone carries the word-level
+# emphasis.
+"diff added token" = { underline = false }
+"diff removed token" = { underline = false }
