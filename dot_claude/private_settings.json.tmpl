@@ -78,6 +78,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in *.md) out=$( { command -v rumdl >/dev/null && rumdl check \"$f\"; command -v typos >/dev/null && typos --force-exclude \"$f\"; command -v vale >/dev/null && [ -f .vale.ini ] && vale --no-wrap --output line \"$f\"; } 2>&1 ); [ -z \"$out\" ] || { printf '%s\n' \"$out\" >&2; exit 2; } ;; esac"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
