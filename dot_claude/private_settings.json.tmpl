@@ -148,6 +148,10 @@
           {
             "type": "command",
             "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status clear"
+          },
+          {
+            "type": "command",
+            "command": "specstory sync --silent >/dev/null 2>&1 || true"
           }
         ]
       },
