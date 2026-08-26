@@ -1,0 +1,9 @@
+#!/bin/sh
+# jjui popup guard: open jjui for the current directory's Jujutsu
+# repo; outside one, flash a status message instead of erroring
+# inside a vanishing popup. Launched by clicking the jj state segment.
+if jj root >/dev/null 2>&1; then
+    exec jjui
+fi
+tmux display-message "not a jj repo" 2>/dev/null
+exit 0
