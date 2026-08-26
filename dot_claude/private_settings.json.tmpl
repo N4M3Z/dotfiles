@@ -84,7 +84,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in *.md) cd \"$(dirname \"$f\")\" 2>/dev/null || exit 0; out=$( { command -v rumdl >/dev/null && rumdl check \"$f\"; command -v typos >/dev/null && typos --force-exclude \"$f\"; command -v vale >/dev/null && vale ls-config >/dev/null 2>&1 && vale --no-wrap --output line \"$f\"; } 2>&1 ); [ -z \"$out\" ] || { printf '%s\n' \"$out\" >&2; exit 2; } ;; esac"
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in *.md) cd \"$(dirname \"$f\")\" 2>/dev/null || exit 0; out=$( { command -v rumdl >/dev/null && rumdl check --disable MD013,MD025,MD041,MD076 \"$f\"; command -v typos >/dev/null && typos --force-exclude \"$f\"; command -v vale >/dev/null && vale ls-config >/dev/null 2>&1 && vale --no-wrap --output line \"$f\"; } 2>&1 ); [ -z \"$out\" ] || { printf '%s\n' \"$out\" >&2; exit 2; } ;; esac"
           }
         ]
       }
