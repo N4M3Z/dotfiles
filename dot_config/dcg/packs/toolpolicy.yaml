@@ -15,6 +15,8 @@ description: |
 keywords:
   - grep
   - find
+  - awk
+  - sed
   - .env
   - id_rsa
   - id_ed25519
@@ -54,6 +56,14 @@ destructive_patterns:
     pattern: '(^/(usr/)?bin/|\bbusybox\s+)find\s+\S'
     severity: high
     description: Use fd instead of find, in any invocation form.
+
+  - name: yaml-json-needs-real-parser
+    pattern: '\b(awk|sed)\b[^|;&]*\.(ya?ml|json)\b'
+    severity: high
+    description: Parse YAML and JSON with yq or jq, never awk or sed.
+    explanation: |
+      Line tools break on indentation, quoting, and multi-line values,
+      and the breakage is silent. yq and jq parse the structure.
 
   - name: casual-secret-read
     pattern: '^(cat|less|more|head|tail|bat)\s+[^|;&]*(\.env\b|id_rsa\b|id_ed25519\b|\.pem\b|\.key\b|/Library/Keychains)'
