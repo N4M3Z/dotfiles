@@ -45,6 +45,16 @@ destructive_patterns:
     executables:
       - find
 
+  - name: grep-alt-forms
+    pattern: '(^/(usr/)?bin/|\bxargs\s+(-\S+\s+)*|\bbusybox\s+)grep\b'
+    severity: high
+    description: Use rg (ripgrep) instead of grep, in any invocation form.
+
+  - name: find-alt-forms
+    pattern: '(^/(usr/)?bin/|\bbusybox\s+)find\s+\S'
+    severity: high
+    description: Use fd instead of find, in any invocation form.
+
   - name: casual-secret-read
     pattern: '^(cat|less|more|head|tail|bat)\s+[^|;&]*(\.env\b|id_rsa\b|id_ed25519\b|\.pem\b|\.key\b|/Library/Keychains)'
     severity: high
