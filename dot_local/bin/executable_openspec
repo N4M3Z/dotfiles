@@ -10,13 +10,16 @@ set -eu
 # script's own directory.
 self_dir=$(cd "$(dirname "$0")" && pwd)
 real=""
-for dir in $(printf '%s' "$PATH" | tr ':' ' '); do
+old_ifs=$IFS
+IFS=:
+for dir in $PATH; do
     [ "$dir" = "$self_dir" ] && continue
     if [ -x "$dir/openspec" ]; then
         real="$dir/openspec"
         break
     fi
 done
+IFS=$old_ifs
 [ -n "$real" ] || { echo "openspec: real binary not found on PATH" >&2; exit 1; }
 
 export OPENSPEC_TELEMETRY=0
