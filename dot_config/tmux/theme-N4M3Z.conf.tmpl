@@ -1,0 +1,66 @@
+# Flat status bar — N4M3Z's own theme: solid host block, session in
+# its own block, index:name windows, and an info-dense clickable right
+# side. Grew out of Theo's (t3.gg) flat look; every segment, click
+# zone, and stat is local now. Selected from tmux.conf's "status bar
+# theme" block — switch there, not here.
+#
+# The accent is color-coded per machine via the chezmoi hostname map;
+# unknown hosts fall back to the default purple.
+#
+# Clickable bar segments (MouseDown1Status dispatch lives in tmux.conf,
+# keyed on the range=user names below): session block -> sesh, ± turn
+# diffstat -> turn review picker, jj state -> jjui, git state -> gitui,
+# path -> glow (README preview and file browser; its e key edits the
+# highlighted file, and files route into the open Zed workspace),
+# Δ -> Zed Project Diff (sd zed diff), ⛭ openspec -> spec picker,
+# 󰃭 -> cal, battery+CPU/MEM -> btop
+# (persistent session, prefix d detaches). The window-list clicks
+# can't carry a user range (tmux wraps each cell in its own
+# range=window), so window management stays on native gestures wired
+# in tmux.conf: left-click selects, middle-click closes (the ✕ is the
+# cue), drag reorders, right-click opens the kill/rename menu. The
+# trailing [+] renders past the last window's cell, so its
+# range=user|neww does register (-> new window).
+{{- $accents := dict "Nexus" "#8f68c9" }}
+set -g @accent '{{ index $accents .chezmoi.hostname | default "#8f68c9" }}'
+
+# Catppuccin runs as the palette provider (@thm_* colors); 'none' keeps its
+# hands off the window formats so the flat styling owns the look.
+set -g @catppuccin_flavor 'mocha'
+set -g @catppuccin_window_status_style 'none'
+run-shell '~/.config/tmux/plugins/catppuccin/catppuccin.tmux'
+
+set -g status-interval 5
+set -g status-style 'bg=#1d1d1d,fg=#8a8a8a'
+set -g status-left-length 60
+set -g status-right-length 160
+
+# Left: prefix indicator (only while the prefix is held) + solid host
+# block + the session in its own block (click -> sesh session switcher).
+set -g status-left "#{?client_prefix,#[fg=#1d1d1d#,bg=#f9e2af#,bold] ⌘ #[default],}#[fg=#1d1d1d,bg=#{@accent},bold] #h #[default] #[range=user|sesh]#[fg=#cdd6f4,bg=#313244,bold] #S #[norange]#[default]  "
+
+# Windows: index:name, active in the accent. The leading conditional renders
+# the claude-tmux-status agent flag: ◉ (yellow) = agent needs you, ● (blue)
+# = agent working, nothing = no agent.
+# The trailing [+] (after the last window, via window_end_flag) opens a new
+# window. It works because it renders past the per-window range=window cell,
+# so its range=user|neww registers — unlike a per-window ✕, which tmux would
+# absorb into the window cell's own range.
+setw -g window-status-format '#[fg=#8a8a8a] #{?#{==:#{@agent},attention},#[fg=#f9e2af bold]◉ #[fg=#8a8a8a nobold],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#8a8a8a],}}#I:#W #[fg=#585b70]✕#[default] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
+setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},attention},#[fg=#f9e2af]◉ #[fg=#{@accent}],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#{@accent}],}}#I:#W #[fg=#585b70]✕#[default] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
+
+# Right: ± turn diffstat (-> review picker) · jj state (-> jjui) · git
+# state (-> gitui) · dim cwd basename (-> glow) · Δ (-> Zed Project
+# Diff via sd zed diff) · ⛭ openspec (-> spec picker) · 󰃭 clock
+# (click -> cal) · accent block with battery, CPU, MEM (-> btop).
+# tmux-cpu rewrites the CPU/MEM placeholders, so it is sourced AFTER
+# status-right is set.
+# Parked: ▼▲ net throughput — re-add "#(sh ~/.sd/tmux/bar/net)  "
+# before the btop block when wanted.
+# Parked: icon variant of the accent block — "󰓅 #{cpu_percentage}  󰍛
+# #{ram_percentage}" (speedometer + memory chip); words are easier on
+# the eyes.
+set -g @cpu_percentage_format '%2.0f%%'
+set -g @ram_percentage_format '%2.0f%%'
+set -g status-right "#[range=user|review]#[fg=#f9e2af]#(sh ~/.sd/tmux/turn/diff '#{pane_current_path}')#[norange]  #[range=user|jj]#[fg=#a6adc8]#(sh ~/.sd/tmux/bar/jj '#{pane_current_path}')#[norange] #[range=user|git]#[fg=#7f849c]#(sh ~/.sd/tmux/bar/git '#{pane_current_path}')#[norange]  #[range=user|glow]#[fg=#6f6f6f]#{b:pane_current_path}#[norange] #[range=user|zed]#[fg=#7f849c]Δ#[norange]  #[range=user|spec]#[fg=#94a3b8]#(sh ~/.sd/openspec/stat '#{pane_current_path}' '#{session_name}')#[norange]  #[range=user|cal]#[fg=#8a8a8a]󰃭#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] #(sh ~/.sd/tmux/bar/battery)  CPU #{cpu_percentage}  MEM #{ram_percentage} #[norange]"
+run-shell '~/.config/tmux/plugins/tmux-cpu/cpu.tmux'

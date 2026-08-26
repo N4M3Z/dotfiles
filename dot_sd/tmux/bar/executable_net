@@ -1,0 +1,31 @@
+#!/bin/sh
+# Compact network throughput for the status bar: "▲2.8M ▼465K" over
+# the default-route interface, computed from byte deltas between
+# status ticks (state file per user in TMPDIR). Prints nothing on the
+# first tick or without a default route. macOS netstat column layout.
+
+iface=$(route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}')
+[ -n "$iface" ] || iface=en0
+now=$(date +%s)
+set -- $(netstat -ibn 2>/dev/null | awk -v i="$iface" '$1==i && $3 ~ /Link/ {print $7, $10; exit}')
+in_b=${1:-}; out_b=${2:-}
+[ -n "$in_b" ] && [ -n "$out_b" ] || exit 0
+
+state="${TMPDIR:-/tmp}/tmux-net.$(id -u)"
+prev=$(cat "$state" 2>/dev/null)
+printf '%s %s %s\n' "$now" "$in_b" "$out_b" > "$state"
+set -- $prev
+pt=${1:-}; pi=${2:-}; po=${3:-}
+[ -n "$pt" ] && [ "$now" -gt "$pt" ] || exit 0
+
+rate() {
+    r=$(( $1 / $2 ))
+    if   [ "$r" -ge 1048576 ]; then printf '%s.%sM' $((r / 1048576)) $(((r % 1048576) * 10 / 1048576))
+    elif [ "$r" -ge 1024 ];    then printf '%sK' $((r / 1024))
+    else                            printf '%sB' "$r"
+    fi
+}
+dt=$((now - pt))
+down=$(rate $((in_b - pi)) "$dt")
+up=$(rate $((out_b - po)) "$dt")
+printf '▼%s ▲%s' "$down" "$up"

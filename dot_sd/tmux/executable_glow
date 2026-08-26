@@ -1,0 +1,48 @@
+#!/bin/sh
+# Markdown browser: glow-styled document list on the left (the Glow
+# badge, a document count, and two-line entries — filename over a dim
+# date — like glow's own TUI), rendered preview on the right.
+# Enter reads full screen, ctrl-e edits the highlighted file (files
+# route into the open editor workspace), Esc leaves; every action
+# loops back to the list. Falls back to glow's native TUI when fzf is
+# missing. Launched by clicking the path segment; run as:
+# sd tmux glow [dir]
+d="${1:-$PWD}"
+cd "$d" 2>/dev/null || exit 0
+command -v glow >/dev/null 2>&1 || exit 0
+command -v fzf >/dev/null 2>&1 || exec glow -t .
+
+files() {
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+        git ls-files -co --exclude-standard -- '*.md' 2>/dev/null
+    else
+        find . -name '*.md' -not -path '*/.*' 2>/dev/null | sed 's|^\./||'
+    fi | sort -u
+}
+
+while :; do
+    count=$(files | grep -c .)
+    [ "$count" -gt 0 ] || exec glow -t .
+    # NUL-separated multiline items must stream straight into fzf:
+    # a shell variable would strip the NULs and fuse the list into
+    # one giant item.
+    out=$(files | while IFS= read -r f; do
+            printf '%s\n  \033[2m%s\033[0m\n\0' "$f" "$(stat -f '%Sm' -t '%e %b %Y %H:%M' "$f" 2>/dev/null)"
+        done \
+        | fzf --read0 --ansi --reverse --highlight-line \
+              --prompt '❯ ' --pointer '▌' \
+              --color 'bg+:#313244,fg+:#cba6f7,hl:#cba6f7,hl+:#f5c2e7,pointer:#cba6f7,prompt:#cba6f7,header:#9399b2,border:#45475a,info:#6c7086,spinner:#cba6f7' \
+              --header "$(printf '\033[48;5;177;30;1m Glow \033[0m  %s documents · Enter read · ^e edit · Esc leave' "$count")" \
+              --expect=ctrl-e \
+              --preview 'glow -s dark -w "$FZF_PREVIEW_COLUMNS" "$(echo {} | head -1)"' \
+              --preview-window 'right,62%,border-left') || exit 0
+    key=$(printf '%s\n' "$out" | sed -n 1p)
+    file=$(printf '%s\n' "$out" | sed -n 2p)
+    [ -n "$file" ] || continue
+    clear 2>/dev/null || printf '\033[2J\033[H'
+    if [ "$key" = "ctrl-e" ]; then
+        ${EDITOR:-vi} "$file"
+    else
+        PAGER='less -+F -R' glow -p "$file"
+    fi
+done

@@ -1,0 +1,189 @@
+#!/bin/sh
+# OpenSpec review picker for the tmux bar; run as: sd openspec review
+# Glow-styled: badge header, two-line entries (dim source, bold change
+# name, task progress over dim artifact flags and root), rendered
+# proposal preview on the right. Loops: pick a change, run an action,
+# land back in the picker with a fresh scan (Esc or ctrl-c leaves).
+# Rows span the SESSION footprint: the pane's repo plus every repo in
+# the same tmux session with an openspec/changes root, plus registered
+# stores (registry.yaml) that belong to a session repo — id equal to
+# a repo or owner-folder name, "name-" prefixed (runedeck-docs for a
+# runedeck session), or a local_path routed through such a folder.
+# Store-backed specs that live outside the work repo surface this
+# way; unrelated sessions' specs never do. archive/ is excluded.
+# With no open changes the popup says so instead of flashing shut.
+# Enter: glow browse the change. ctrl-s: status + strict validation.
+# ctrl-u: paste the agent update invocation into the pane under the
+# popup and close (the handoff ends the picker on purpose).
+# ctrl-r: annotate in tuicr. ctrl-o: show. ctrl-v: dashboard.
+# ctrl-d: doctor. ctrl-x: archive (own confirmation; never -y).
+# ctrl-e: $EDITOR escape hatch.
+# OpenSpec CLI 1.10 resolves roots through the store registry, not the
+# cwd: store_flag maps a root to its registered store id by reading
+# registry.yaml directly (no CLI startup side effects).
+# NUL-separated multiline items must stream straight into fzf: a shell
+# variable would strip the NULs and fuse the list into one item.
+# OPENSPEC_REPOS overrides the footprint (tests, scripting).
+d="${1:-$PWD}"
+cd "$d" 2>/dev/null || exit 0
+command -v fzf >/dev/null 2>&1 || exit 0
+tab=$(printf '\t')
+
+pane_repos() {
+    {
+        jj root 2>/dev/null || git rev-parse --show-toplevel 2>/dev/null || pwd
+        tmux list-panes -s -F '#{pane_current_path}' 2>/dev/null | sort -u \
+            | while IFS= read -r p; do
+                [ -d "$p" ] || continue
+                (cd "$p" 2>/dev/null && { jj root 2>/dev/null || git rev-parse --show-toplevel 2>/dev/null; })
+            done
+    } | awk 'NF && !seen[$0]++'
+}
+
+store_roots() {
+    # $1 = repo basenames (path rule), $2 = repo plus owner basenames
+    # (id rule). The path rule never uses owner names: the home
+    # folder's own name is an owner name and would match every store.
+    reg="$HOME/.local/share/openspec/stores/registry.yaml"
+    [ -f "$reg" ] || return 0
+    awk '/^  [^ ]/ { id = $1; sub(/:$/, "", id) }
+         $1 == "local_path:" { print id "\t" $2 }' "$reg" \
+        | while IFS="$tab" read -r id path; do
+            [ -d "$path/openspec/changes" ] || continue
+            hit=""
+            for nm in $2; do
+                case "$id" in "$nm"|"$nm"-*) hit=1; break ;; esac
+            done
+            if [ -z "$hit" ]; then
+                rel="${path#"$HOME"/}"
+                for nm in $1; do
+                    case "/$rel/" in */"$nm"/*) hit=1; break ;; esac
+                done
+            fi
+            if [ -n "$hit" ]; then printf '%s\t%s\n' "$id" "$path"; fi
+        done
+}
+
+footprint() {
+    if [ -n "${OPENSPEC_REPOS:-}" ]; then
+        printf '%s\n' "$OPENSPEC_REPOS" | while IFS= read -r r; do
+            [ -n "$r" ] && printf '%s\t%s\n' "$(basename "$r")" "$r"
+        done
+        return
+    fi
+    repos=$(pane_repos)
+    rnames=$(printf '%s\n' "$repos" | while IFS= read -r r; do
+        [ -n "$r" ] && basename "$r"
+    done | awk 'NF && !seen[$0]++')
+    onames=$(printf '%s\n' "$repos" | while IFS= read -r r; do
+        [ -n "$r" ] && basename "$(dirname "$r")"
+    done | awk 'NF && !seen[$0]++')
+    {
+        printf '%s\n' "$repos" | while IFS= read -r r; do
+            [ -n "$r" ] && [ -d "$r/openspec/changes" ] && printf '%s\t%s\n' "$(basename "$r")" "$r"
+        done
+        store_roots "$rnames" "$rnames $onames"
+    } | awk -F '\t' 'NF && !seen[$2]++'
+}
+
+store_flag() {
+    reg="$HOME/.local/share/openspec/stores/registry.yaml"
+    [ -f "$reg" ] || return 0
+    awk -v root="$1" '
+        /^  [^ ]/ { id = $1; sub(/:$/, "", id) }
+        $1 == "local_path:" && $2 == root { printf "--store %s", id; exit }
+    ' "$reg"
+}
+
+# Hold the popup open when an action fails, so the error stays
+# readable instead of closing with the window.
+run_hold() {
+    "$@"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        echo
+        printf '[%s exited %s — Enter returns] ' "$1" "$rc"
+        read -r _ 2>/dev/null
+    fi
+}
+
+items() {
+    footprint | while IFS="$tab" read -r label r; do
+        [ -n "$r" ] && [ -d "$r/openspec/changes" ] || continue
+        for c in "$r/openspec/changes"/*/; do
+            [ -d "$c" ] || continue
+            n=$(basename "$c")
+            [ "$n" = "archive" ] && continue
+            dn=0
+            tt=0
+            if [ -f "$c/tasks.md" ]; then
+                dn=$(grep -c '^- \[x\]' "$c/tasks.md")
+                tt=$(grep -c '^- \[[x ]\]' "$c/tasks.md")
+            fi
+            a=""
+            if [ -f "$c/proposal.md" ]; then a="${a}p"; else a="${a}·"; fi
+            if [ -d "$c/specs" ]; then a="${a}s"; else a="${a}·"; fi
+            if [ -f "$c/design.md" ]; then a="${a}d"; else a="${a}·"; fi
+            if [ -f "$c/tasks.md" ]; then a="${a}t"; else a="${a}·"; fi
+            printf '\033[2m%s\033[0m  \033[1m%s\033[0m  %s/%s\n  \033[2m%s · %s\033[0m\0' \
+                "$label" "$n" "$dn" "$tt" "$a" "$r"
+        done
+    done
+}
+
+while :; do
+    count=$(items | tr -cd '\0' | wc -c | tr -d ' ')
+    if [ "$count" -eq 0 ]; then
+        printf 'no open spec changes in this session footprint\n[Enter returns] '
+        read -r _ 2>/dev/null
+        exit 0
+    fi
+    out=$(items | fzf --read0 --ansi --reverse --highlight-line \
+        --prompt '❯ ' --pointer '▌' \
+        --color 'bg+:#313244,fg+:#89b4fa,hl:#89b4fa,hl+:#b4befe,pointer:#89b4fa,prompt:#89b4fa,header:#9399b2,border:#45475a,info:#6c7086,spinner:#89b4fa' \
+        --header "$(printf '\033[48;5;110;30;1m Spec \033[0m  %s changes · Enter glow · ^s status+validate · ^u agent update\n^r annotate · ^o show · ^v dashboard · ^d doctor · ^x archive · ^e edit · Esc leave' "$count")" \
+        --expect=ctrl-u,ctrl-e,ctrl-r,ctrl-o,ctrl-s,ctrl-v,ctrl-d,ctrl-x \
+        --preview 'set -- $(echo {} | sed -n 1p); n=$2; for w in $(echo {} | sed -n 2p); do r=$w; done; d="$r/openspec/changes/$n"; if [ -f "$d/proposal.md" ]; then glow -s dark -w "$FZF_PREVIEW_COLUMNS" "$d/proposal.md"; elif [ -f "$d/tasks.md" ]; then glow -s dark -w "$FZF_PREVIEW_COLUMNS" "$d/tasks.md"; elif [ -d "$d" ]; then ls "$d"; fi' \
+        --preview-window 'right,58%,border-left') || exit 0
+    key=$(printf '%s\n' "$out" | sed -n 1p)
+    name=$(printf '%s\n' "$out" | sed -n 2p | awk '{print $2}')
+    root=$(printf '%s\n' "$out" | sed -n 3p | awk '{print $NF}')
+    [ -n "$root" ] && [ -n "$name" ] || continue
+    sf=$(store_flag "$root")
+    ch="$root/openspec/changes"
+    clear 2>/dev/null || printf '\033[2J\033[H'
+
+    case "$key" in
+        ctrl-u)
+            # Hand the change to the agent thread under this popup:
+            # paste the update invocation into the pane the popup was
+            # opened from, naming the root so a cross-repo steer
+            # resolves the right openspec root. Enter stays with the
+            # user, so a mid-turn agent is never hijacked.
+            target=$(tmux display-message -p '#{pane_id}' 2>/dev/null)
+            if [ -n "$target" ]; then
+                tmux set-buffer -b osupdate -- "/openspec-update-change $name in $root "
+                tmux paste-buffer -b osupdate -t "$target"
+                exit 0
+            fi
+            printf 'run in your agent thread: /openspec-update-change %s in %s\n[Enter returns] ' "$name" "$root"
+            read -r _
+            ;;
+        ctrl-e)
+            # Edit a single artifact file: files route into the editor's
+            # existing workspace; a directory would spawn a new one.
+            f=$( (cd "$ch/$name" && find . -name '*.md' | sed 's|^\./||' | sort) | fzf --reverse --header "edit artifact of $name") || continue
+            [ -n "$f" ] && run_hold ${EDITOR:-vi} "$ch/$name/$f"
+            ;;
+        ctrl-r) run_hold tuicr --file "$ch/$name" ;;
+        ctrl-o) (cd "$root" && echo && openspec show "$name" --type change $sf && echo) 2>&1 | less -+F -R ;;
+        ctrl-s) { cd "$root" && echo; openspec status --change "$name" $sf; printf '\n\n'; openspec validate "$name" --strict $sf; echo; } 2>&1 | less -+F -R ;;
+        ctrl-v) (cd "$root" && echo && openspec view $sf && echo) 2>&1 | less -+F -R ;;
+        ctrl-d) (cd "$root" && echo && openspec doctor $sf && echo) 2>&1 | less -+F -R ;;
+        ctrl-x)
+            # Archive keeps its own interactive confirmation; never -y.
+            (cd "$root" && run_hold openspec archive "$name" $sf)
+            ;;
+        *) run_hold sh "$HOME/.sd/tmux/glow" "$ch/$name" ;;
+    esac
+done
