@@ -9,6 +9,18 @@
 
 [ $# -gt 0 ] && [ -n "$1" ] || exit 0
 
+# When every argument is an existing file (path or path:line:col),
+# pass --add so files outside every open worktree attach to the
+# current workspace instead of spawning a new window. Directories
+# keep workspace-open semantics.
+add="--add"
+for p in "$@"; do
+    if [ ! -f "$p" ] && [ ! -f "${p%%:*}" ]; then
+        add=""
+        break
+    fi
+done
+
 pid=$$
 while [ -n "$pid" ] && [ "$pid" -gt 1 ]; do
     exe=$(ps -o comm= -p "$pid" 2>/dev/null)
@@ -16,11 +28,11 @@ while [ -n "$pid" ] && [ "$pid" -gt 1 ]; do
         */Contents/MacOS/zed)
             cli="${exe%/zed}/cli"
             if [ -x "$cli" ]; then
-                exec "$cli" "$@"
+                exec "$cli" $add "$@"
             fi
             ;;
     esac
     pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
 done
 
-exec zed "$@"
+exec zed $add "$@"
