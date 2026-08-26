@@ -1,0 +1,43 @@
+#!/bin/sh
+# openspec wrapper: run the real openspec CLI against the repository's
+# docs/ tree. The CLI hard-codes the openspec/ directory name, so a
+# shadow root under ~/.openspec/<org>/<repo> holds one symlink
+# (openspec -> <repo>/docs) and the repository carries no extra entry.
+# openspec then reads docs/changes and docs/specs. Telemetry stays off.
+set -eu
+
+# Resolve the real binary: the first openspec on PATH outside this
+# script's own directory.
+self_dir=$(cd "$(dirname "$0")" && pwd)
+real=""
+for dir in $(printf '%s' "$PATH" | tr ':' ' '); do
+    [ "$dir" = "$self_dir" ] && continue
+    if [ -x "$dir/openspec" ]; then
+        real="$dir/openspec"
+        break
+    fi
+done
+[ -n "$real" ] || { echo "openspec: real binary not found on PATH" >&2; exit 1; }
+
+export OPENSPEC_TELEMETRY=0
+
+# Outside a repository with a docs/ tree, behave exactly like the CLI.
+root=$(jj root 2>/dev/null || git rev-parse --show-toplevel 2>/dev/null) || root=""
+if [ -z "$root" ] || [ ! -d "$root/docs" ]; then
+    exec "$real" "$@"
+fi
+
+# Mirror the repository path under ~/.openspec without the development
+# root prefix: ~/Developer/runedeck/deck becomes ~/.openspec/runedeck/deck.
+rel=$root
+for prefix in "$HOME/Developer/" "$HOME/Agents/" "$HOME/"; do
+    case $rel in
+        "$prefix"*) rel=${rel#"$prefix"}; break ;;
+    esac
+done
+shadow="$HOME/.openspec/$rel"
+mkdir -p "$shadow"
+ln -sfn "$root/docs" "$shadow/openspec"
+
+cd "$shadow"
+exec "$real" "$@"

@@ -21,7 +21,7 @@
 #   - the directory basename
 # A name like <repo>/<spec> is a manual context label, never derived.
 # Consumed by Zed's terminal_init_command:
-#   tmux new-session -A -s "$(tmux-session-name)"
+#   tmux new-session -A -s "$(sd tmux session name)"
 
 dir=${1:-$PWD}
 self_owner=${SELF_OWNER:-N4M3Z}
@@ -71,6 +71,20 @@ if [ -z "$canonical" ]; then
             ;;
     esac
 fi
+
+# tmux target syntax reads a leading "." as a window separator, so a
+# session named ".claude" is not addressable without the "=" escape and
+# does not resume cleanly. Replace the leading dot with "dot_" (the
+# chezmoi convention) before any match or creation.
+__sanitize() {
+    case $1 in
+        .*) printf 'dot_%s\n' "${1#.}" ;;
+        *)  printf '%s\n' "$1" ;;
+    esac
+}
+base=$(__sanitize "$base")
+canonical=$(__sanitize "$canonical")
+alternate=$(__sanitize "$alternate")
 
 # A candidate reuses a live session when the name exists; bare names
 # additionally require the session's path to sit inside this directory.

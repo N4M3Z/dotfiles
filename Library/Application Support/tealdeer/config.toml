@@ -1,0 +1,9 @@
+# tealdeer config. Chezmoi-managed; canonical source at
+# dotfiles/Library/Application Support/tealdeer/config.toml.
+#
+# Intentionally empty of settings: custom pages deploy to the
+# OS-convention default (~/Library/Application Support/tealdeer/pages/,
+# chezmoi-managed from the sibling pages/ source dir), so no
+# custom_pages_dir override is needed. The old pointer at
+# forge-provision/docs/tldr-pages + scripts/configure/tldr-pages.sh is
+# retired.
