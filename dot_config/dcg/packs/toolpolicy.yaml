@@ -15,6 +15,12 @@ description: |
 keywords:
   - grep
   - find
+  - .env
+  - id_rsa
+  - id_ed25519
+  - .pem
+  - .key
+  - Keychains
 
 destructive_patterns:
   - name: grep-use-rg
@@ -39,6 +45,23 @@ destructive_patterns:
     executables:
       - find
 
+  - name: casual-secret-read
+    pattern: '^(cat|less|more|head|tail|bat)\s+[^|;&]*(\.env\b|id_rsa\b|id_ed25519\b|\.pem\b|\.key\b|/Library/Keychains)'
+    severity: high
+    description: Read secret material deliberately, never casually.
+    explanation: |
+      Key files and environment files hold credentials. An agent that
+      needs one value must name the reason and the exact variable, and
+      the user reads or pastes it. Bulk reads leak whole credential
+      sets into context and logs.
+    executables:
+      - cat
+      - less
+      - more
+      - head
+      - tail
+      - bat
+
 safe_patterns:
   - name: grep-version-probe
     pattern: '^grep\s+--(version|help)\b'
@@ -46,3 +69,6 @@ safe_patterns:
   - name: find-version-probe
     pattern: '^find\s+--(version|help)\b'
     description: Version and help probes stay allowed.
+  - name: env-example-read
+    pattern: '^(cat|less|more|head|tail|bat)\s+[^|;&]*\.env\.(example|sample|template)\b'
+    description: Example environment files carry no secrets.
