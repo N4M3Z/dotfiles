@@ -47,7 +47,9 @@ store_roots() {
     awk '/^  [^ ]/ { id = $1; sub(/:$/, "", id) }
          $1 == "local_path:" { print id "\t" $2 }' "$reg" \
         | while IFS="$tab" read -r id path; do
-            [ -d "$path/openspec/changes" ] || continue
+            if [ ! -d "$path/openspec/changes" ] && [ ! -d "$path/docs/changes" ]; then
+                continue
+            fi
             hit=""
             for nm in $2; do
                 case "$id" in "$nm"|"$nm"-*) hit=1; break ;; esac
@@ -78,7 +80,10 @@ footprint() {
     done | awk 'NF && !seen[$0]++')
     {
         printf '%s\n' "$repos" | while IFS= read -r r; do
-            [ -n "$r" ] && [ -d "$r/openspec/changes" ] && printf '%s\t%s\n' "$(basename "$r")" "$r"
+            [ -n "$r" ] || continue
+            if [ -d "$r/openspec/changes" ] || [ -d "$r/docs/changes" ]; then
+                printf '%s\t%s\n' "$(basename "$r")" "$r"
+            fi
         done
         store_roots "$rnames" "$rnames $onames"
     } | awk -F '\t' 'NF && !seen[$2]++'
@@ -86,21 +91,38 @@ footprint() {
 
 # Pipe, not a heredoc: heredocs need a temp file, and a denied temp
 # write (sandboxed or odd TMPDIR contexts) would blank the segment.
+# Both change roots count: openspec/changes (the openspec tree) and
+# docs/changes (the rune-native tree). A proposal.md guard keeps
+# unrelated docs directories out. The pane's own repo sorts first,
+# then recency (tasks.md edits count as activity), so the segment
+# shows the change you sit in, and a foreign change carries its
+# repo label as a prefix.
+pane_root=$(jj root 2>/dev/null || git rev-parse --show-toplevel 2>/dev/null || pwd)
+pane_name=$(basename "$pane_root")
 changes=$(footprint | while IFS="$tab" read -r label r; do
-    [ -n "$r" ] && [ -d "$r/openspec/changes" ] || continue
-    for c in "$r/openspec/changes"/*/; do
-        [ -d "$c" ] || continue
-        [ "$(basename "$c")" = "archive" ] && continue
-        printf '%s\t%s\n' "$(stat -f %m "$c" 2>/dev/null || echo 0)" "$c"
+    [ -n "$r" ] || continue
+    for root in "$r/openspec/changes" "$r/docs/changes"; do
+        [ -d "$root" ] || continue
+        for c in "$root"/*/; do
+            [ -d "$c" ] || continue
+            [ "$(basename "$c")" = "archive" ] && continue
+            [ -f "${c}proposal.md" ] || continue
+            m=$(stat -f %m "$c" 2>/dev/null || echo 0)
+            mt=$(stat -f %m "${c}tasks.md" 2>/dev/null || echo 0)
+            [ "$mt" -gt "$m" ] && m=$mt
+            p=0
+            [ "$label" = "$pane_name" ] && p=1
+            printf '%s\t%s\t%s\t%s\n' "$p" "$m" "$label" "$c"
+        done
     done
-done | sort -rn)
+done | sort -t "$tab" -k1,1rn -k2,2rn | awk -F "\t" '!seen[$4]++')
 if [ -z "$changes" ]; then
     # Bare cog: the click target stays present with no open change.
     printf '⛭'
     exit 0
 fi
 count=$(printf '%s\n' "$changes" | grep -c .)
-active=$(printf '%s\n' "$changes" | head -1 | cut -f2)
+active=$(printf '%s\n' "$changes" | head -1 | cut -f4)
 
 name=$(basename "$active")
 [ "${#name}" -gt 19 ] && name="$(printf '%.18s' "$name")…"
