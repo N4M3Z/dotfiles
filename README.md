@@ -26,6 +26,11 @@ dotfiles/
 │       ├── config.toml           → ~/.claude/ccline/config.toml
 │       ├── models.toml           → ~/.claude/ccline/models.toml
 │       └── themes/powerline-tokyo-night.toml
+├── dot_cursor/
+│   ├── sandbox.json.tmpl         → ~/.cursor/sandbox.json (agent sandbox paths and domains)
+│   ├── modify_cli-config.json.tmpl → ~/.cursor/cli-config.json (approval, sandbox, Shell allowlist)
+│   ├── modify_hooks.json.tmpl    → ~/.cursor/hooks.json (dcg first in beforeShellExecution)
+│   └── hooks/executable_dcg-pre-shell.sh → ~/.cursor/hooks/dcg-pre-shell.sh
 ├── private_dot_ssh/              → ~/.ssh/ (mode 700)
 │   ├── private_config            → ~/.ssh/config (mode 600)
 │   ├── symlink_hosts.tmpl        → ~/.ssh/hosts symlink to dotfiles-private

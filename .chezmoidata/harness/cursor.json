@@ -1,0 +1,58 @@
+{
+  "harness": {
+    "cursor": {
+      "sandbox": {
+        "type": "workspace_readwrite",
+        "additionalReadwritePaths": [
+          "~/Developer",
+          "~/Atlas",
+          "~/Agents",
+          "~/Data/State",
+          "~/Data/Benchmarks",
+          "~/.cache/gh",
+          "~/.cache/prek",
+          "~/.cache/uv",
+          "~/.cargo/registry",
+          "~/.config/jj/repos",
+          "~/.config/rune",
+          "~/.openspec",
+          "~/Library/Caches/rune"
+        ],
+        "additionalReadonlyPaths": [],
+        "disableTmpWrite": false,
+        "networkPolicy": {
+          "default": "deny",
+          "allow": [
+            "localhost",
+            "127.0.0.1",
+            "github.com",
+            "*.github.com",
+            "raw.githubusercontent.com",
+            "objects.githubusercontent.com",
+            "pkg-containers.githubusercontent.com",
+            "registry.npmjs.org",
+            "crates.io",
+            "static.crates.io",
+            "index.crates.io",
+            "formulae.brew.sh",
+            "ghcr.io",
+            "pypi.org",
+            "*.pypi.org",
+            "files.pythonhosted.org",
+            "semgrep.dev",
+            "*.semgrep.dev",
+            "gitlab.protontech.ch"
+          ],
+          "deny": []
+        }
+      },
+      "cli": {
+        "approvalMode": "auto-review",
+        "sandbox": {
+          "mode": "enabled",
+          "networkAccess": "user_config_with_defaults"
+        }
+      }
+    }
+  }
+}

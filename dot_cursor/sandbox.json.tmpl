@@ -1,0 +1,4 @@
+{{- /* Sandbox policy is shared: edit .chezmoidata/harness/cursor.json, not this file. */ -}}
+{{- /* Cursor merges this with its built-in defaults (Settings > Agents > Approvals & Execution: "sandbox.json + Defaults"). */ -}}
+{{- /* Paths are absolute: Cursor does not document tilde expansion. */ -}}
+{{ .harness.cursor.sandbox | toPrettyJson | replace "\"~/" (printf "\"%s/" .chezmoi.homeDir) }}

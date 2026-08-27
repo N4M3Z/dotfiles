@@ -1,0 +1,26 @@
+#!/bin/bash
+# chezmoi modify_ script for ~/.cursor/hooks.json.
+#
+# The live file arrives on stdin; stdout becomes the new contents on every
+# `chezmoi apply`. This pins the dcg bridge first in beforeShellExecution and
+# leaves every other hook (git-ai checkpoints, project tooling) untouched.
+#
+# dcg reads Claude-shaped input, so Cursor's {command, cwd} payload goes
+# through ~/.cursor/hooks/dcg-pre-shell.sh. Never register bare `dcg`: hook
+# shells may lack ~/.local/bin on PATH and the guard would fail open.
+# Source: https://github.com/N4M3Z/dotfiles
+set -o pipefail
+umask 077
+
+bridge='{{ .chezmoi.homeDir }}/.cursor/hooks/dcg-pre-shell.sh'
+
+# --slurp turns empty stdin (target absent) into [] so the merge starts from {}.
+jq --slurp --arg bridge "$bridge" '
+  (.[0] // {})
+  | .version = (.version // 1)
+  | .hooks = (.hooks // {})
+  | .hooks.beforeShellExecution =
+      ([{command: $bridge, failClosed: true}]
+       + ((.hooks.beforeShellExecution // [])
+          | map(select((.command | tostring | test("dcg-pre-shell")) | not))))
+'
