@@ -2,10 +2,9 @@
   "harness": {
     "codex": {
       "model_provider": "openai",
-      "model_reasoning_effort": "high",
+      "model_reasoning_effort": "ultra",
       "approval_policy": "on-request",
-      "sandbox_mode": "workspace-write",
-      "default_permissions": "workspace-local",
+      "default_permissions": "Nexus",
       "approvals_reviewer": "auto_review",
       "check_for_update_on_startup": false,
       "analytics": {
@@ -56,7 +55,7 @@
         }
       },
       "permissions": {
-        "workspace-local": {
+        "Nexus": {
           "filesystem": {
             ":root": "read",
             ":tmpdir": "write",
@@ -68,11 +67,14 @@
             "~/.cargo/credentials.toml": "deny",
             "~/.cache/gh": "write",
             "~/.cache/prek": "write",
+            "~/.cache/semgrep_version": "write",
             "~/.cargo/registry": "write",
             "~/.codex/skills": "write",
             "~/.config/containers": "deny",
             "~/.config/gcloud": "deny",
             "~/.config/gh": "read",
+            "~/.config/jj/repos": "write",
+            "~/.openspec": "write",
             "~/.config/op": "deny",
             "~/.docker/config.json": "deny",
             "~/.gem/credentials": "deny",

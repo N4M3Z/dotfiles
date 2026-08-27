@@ -18,10 +18,24 @@ umask 077
 policy=$(mktemp "${TMPDIR:-/tmp}/codex-policy.XXXXXX") || exit 1
 trap 'command rm -f "$policy"' EXIT
 
+{{- /* auto_review.policy is shared prose: edit .chezmoidata/harness/automode.json, not this file. */ -}}
+{{- $auto := .automode -}}
+{{- $mine := .automode.append.codex -}}
+{{- $lines := list -}}
+{{- $lines = append $lines "Routine:" -}}
+{{- range concat $auto.allow $mine.allow }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
+{{- $lines = concat $lines (list "" "Ask first:") -}}
+{{- range concat $auto.soft_deny $mine.soft_deny }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
+{{- $lines = concat $lines (list "" "Never:") -}}
+{{- range concat $auto.hard_deny $mine.hard_deny }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
+{{- $lines = concat $lines (list "" "Environment:") -}}
+{{- range concat $auto.environment $mine.environment }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
+{{- $codex := deepCopy .harness.codex -}}
+{{- $_ := set $codex "auto_review" (dict "policy" (printf "%s\n" (join "\n" $lines))) }}
 cat > "$policy" <<'FORGE_POLICY'
-{{ .harness.codex | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir }}
+{{ $codex | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir }}
 FORGE_POLICY
 
 yq -p=toml -o=json '.' - \
-    | jq --slurpfile policy "$policy" '((. // {}) | del(.profile, .profiles)) * $policy[0]' \
+    | jq --slurpfile policy "$policy" '((. // {}) | .permissions.Nexus = ((.permissions["workspace-local"] // {}) * (.permissions.Nexus // {})) | del(.profile, .profiles, .permissions["workspace-local"], .sandbox_mode, .sandbox_workspace_write)) * $policy[0]' \
     | yq -p=json -o=toml '.' -
