@@ -28,7 +28,7 @@
   "attribution": {
     "commit": "Co-Authored-By: Martin Zeman <N4M3Z@users.noreply.github.com>"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "claude-fable-5-1[1m]",
   "enableAllProjectMcpServers": false,
   "hooks": {
     "PreToolUse": [
@@ -37,6 +37,15 @@
           {
             "type": "command",
             "command": "sh {{ .chezmoi.homeDir }}/.sd/hook PreToolUse"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
           }
         ]
       },
@@ -65,6 +74,15 @@
           {
             "type": "command",
             "command": "sh {{ .chezmoi.homeDir }}/.sd/hook PostToolUse"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
           }
         ]
       }
@@ -194,6 +212,7 @@
         "~/.local/share/openspec",
         "~/.semgrep",
         "~/Library/Caches/",
+        "/opt/homebrew",
         "~/Data/Memex",
         "~/Data/Sessions",
         "~/Data/SessionVersions",
@@ -277,7 +296,8 @@
       "rtk pi *"
     ]
   },
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
+  "remoteControlAtStartup": true,
   "tui": "fullscreen",
   "voice": {
     "enabled": true,
