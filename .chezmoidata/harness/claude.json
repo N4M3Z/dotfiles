@@ -21,6 +21,7 @@
           "Bash(trash:*)",
           "Bash(/usr/bin/trash:*)",
           "Read(*/.claude/skills/**)",
+          "Read(*/.agents/skills/**)",
           "Edit(~/.claude/plans/*)",
           "Bash(ls *)",
           "Bash(rg *)",
