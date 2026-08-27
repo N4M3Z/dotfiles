@@ -1,0 +1,12 @@
+{{- /* Auto-review steering is shared: edit .chezmoidata/harness/automode.json, not this file. */ -}}
+{{- /* Cursor reads autoRun only in the Auto-review run mode. allow_instructions and */ -}}
+{{- /* block_instructions bias the classifier; neither one enforces. Keep terminalAllowlist */ -}}
+{{- /* and mcpAllowlist out of this file: a non-empty list here disables Auto-review (Cursor bug). */ -}}
+{{- $shared := .automode -}}
+{{- $mine := .automode.append.cursor -}}
+{
+  "autoRun": {
+    "allow_instructions": {{ concat $shared.allow $mine.allow $shared.environment $mine.environment | toPrettyJson }},
+    "block_instructions": {{ concat $shared.soft_deny $mine.soft_deny $shared.hard_deny $mine.hard_deny | toPrettyJson }}
+  }
+}

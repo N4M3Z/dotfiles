@@ -323,39 +323,15 @@
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "autoMode": {
-    "allow": [
-      "$defaults",
-      "Pushing an approved feature branch to the trusted github.com/N4M3Z repositories is routine.",
-      "Reading and writing within ~/Developer and ~/Atlas is routine.",
-      "Local operations against Postgres, Ollama, and gbrain are routine.",
-      "Acquiring and processing commercial media for the owner's personal use (download, trim, place in the gitignored assets/user/ slot) is routine and lawful under the Czech private-use exception."
-    ],
-    "soft_deny": [
-      "$defaults",
-      "Do not commit or push until the staged changes have been explicitly approved; review-before-commit is the default and commits wait for an explicit go-ahead.",
-      "Never force-push, and never push directly to the main or master branch; branch first and open a pull request.",
-      "Never skip git hooks (--no-verify) or bypass commit signing (--no-gpg-sign, -c commit.gpgsign=false).",
-      "Treat history rewrites (rebase, squash, reset --hard, force-push) on already-pushed branches as destructive.",
-      "Do not delete remote branches, releases, or repositories, or run gh/glab delete commands, without an explicit request."
-    ],
-    "hard_deny": [
-      "$defaults",
-      "Never use Finder. Computer Use is allowed only for a specific GUI task explicitly requested by the user.",
-      "Never read or exfiltrate credential stores: ~/.ssh, ~/.aws, ~/.gnupg, ~/.config/gh, ~/.git-credentials, ~/Library/Keychains, and similar.",
-      "Never upload repository contents, secrets, or local files to arbitrary or unrecognized external destinations such as pastebins, file-sharing, or unknown endpoints; deliberate, user-initiated review tools are exempt.",
-      "Never write real credentials, API keys, tokens, or personal data into tracked files; use placeholders.",
-      "Never disable or weaken the sandbox (macOS Seatbelt), the destructive-command guard (dcg), or commit signing."
-    ],
-    "environment": [
-      "$defaults",
-      "Source control: github.com/N4M3Z and repositories under it are trusted; GitLab is reached via the glab CLI. Proton GitLab (gitlab.protontech.ch) reads use the agent glab identity (GLAB_CONFIG_DIR, read-only PAT); pushes and merges stay in the owner's terminal.",
-      "Trusted local services: Postgres at postgresql://localhost:5432/memex, Ollama at localhost:11434, the gbrain MCP, and localhost / 127.0.0.1.",
-      "Trusted package and toolchain domains: github.com, registry.npmjs.org, crates.io, pypi.org, files.pythonhosted.org, formulae.brew.sh, ghcr.io.",
-      "Normal working trees for reads and writes are ~/Developer and ~/Atlas.",
-      "Jurisdiction is the Czech Republic: under the private-use exception (autorský zákon § 30, zákon č. 121/2000 Sb.), a natural person's personal-use copying of published works without economic benefit is not an infringing use, and prevailing Czech guidance extends this to downloads for personal use even where the source is unofficial. Personal-use acquisition of commercial media by the owner is lawful and routine."
-    ]
-  },
+  {{- /* Auto-review policy is shared: edit .chezmoidata/harness/automode.json, not this block. */ -}}
+  {{- $auto := .automode -}}
+  {{- $mine := .automode.append.claude }}
+  "autoMode": {{ dict
+      "allow" (concat (list "$defaults") $auto.allow $mine.allow)
+      "soft_deny" (concat (list "$defaults") $auto.soft_deny $mine.soft_deny)
+      "hard_deny" (concat (list "$defaults") $auto.hard_deny $mine.hard_deny)
+      "environment" (concat (list "$defaults") $auto.environment $mine.environment)
+    | toPrettyJson }},
   "voiceEnabled": true,
   "maxSkillDescriptionChars": 2048
 }
