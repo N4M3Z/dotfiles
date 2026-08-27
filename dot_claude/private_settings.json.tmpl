@@ -33,29 +33,10 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "EnterWorktree",
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d \"$root/.jj\" ] && { echo 'jj-colocated repo: git worktrees conflict with jj. Use jj workspace add/forget instead (VersionControl/Jujutsu.md, JujutsuToolkit).' >&2; exit 2; }; exit 0"
-          }
-        ]
-      },
-      {
-        "matcher": "Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "input=$(cat); printf '%s' \"$input\" | grep -q '\"isolation\"[[:space:]]*:[[:space:]]*\"worktree\"' || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d \"$root/.jj\" ] && { echo 'jj-colocated repo: worktree-isolated agents conflict with jj. Spawn without isolation and give each agent its own jj workspace (jj workspace add; see JujutsuToolkit).' >&2; exit 2; }; exit 0"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "f=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // empty'); case \"/$f/\" in */.git/*|*/.jj/*) printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Path is inside .git/.jj: file tools must not touch VCS internals. Drive changes through git or jj commands instead.\"}}' ;; esac"
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/hook PreToolUse"
           }
         ]
       },
@@ -80,11 +61,10 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in *.md) cd \"$(dirname \"$f\")\" 2>/dev/null || exit 0; out=; if command -v rumdl >/dev/null; then r=$(rumdl check \"$f\" 2>&1) || out=\"$out$r\n\"; fi; if command -v typos >/dev/null; then t=$(typos --force-exclude \"$f\" 2>&1) || out=\"$out$t\n\"; fi; if command -v vale >/dev/null && vale ls-config >/dev/null 2>&1; then v=$(vale --no-wrap --output line \"$f\" 2>&1) || out=\"$out$v\n\"; fi; [ -z \"$out\" ] || { printf '%s' \"$out\" >&2; exit 2; } ;; esac"
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/hook PostToolUse"
           }
         ]
       }
@@ -95,14 +75,6 @@
           {
             "type": "command",
             "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-agent-identity"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/Agents/N4M3Z/forge-memory/bin/memory-session-start"
           }
         ]
       }
@@ -132,11 +104,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention"
-          },
-          {
-            "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/turn/wrap",
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/hook Stop",
             "timeout": 30
           }
         ]
@@ -147,20 +115,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status clear"
-          },
-          {
-            "type": "command",
-            "command": "nohup specstory sync --silent >/dev/null 2>&1 </dev/null & exit 0",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "input=$(cat); nohup {{ .chezmoi.homeDir }}/Agents/N4M3Z/forge-memory/bin/memory-session-capture \"$input\" >/dev/null 2>&1 </dev/null &",
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/hook SessionEnd",
             "timeout": 10
           }
         ]
