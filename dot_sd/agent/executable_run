@@ -383,7 +383,7 @@ if [[ "$provider" == 'opencode' ]]; then
         exit 127
     fi
     "$sandbox_binary" sandbox \
-        --permission-profile workspace-local \
+        --permission-profile Nexus \
         --cd "$PWD" \
         -- "$real_binary" "${arguments[@]}"
 else
