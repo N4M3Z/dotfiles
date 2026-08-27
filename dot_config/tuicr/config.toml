@@ -28,7 +28,14 @@ diff_view = "unified"
 # the right margin and need horizontal scrolling (arrow keys or mouse).
 # On means long lines fold within the diff pane width. Toggle at runtime
 # with `:set wrap!`.
-wrap = false
+wrap = true
+
+# Fork-only key (N4M3Z/tuicr feat-gutter-wrap). "flow" reproduces stock
+# wrapping. "gutter" pre-expands wrapped lines, so continuation rows keep
+# the line-number gutter and the +/- prefix. The brew bottle warns on
+# this key and ignores it. The key is not merged upstream. Remove it if
+# the PR lands in a changed form.
+wrap_style = "gutter"
 
 # Open every session in single-file view (`:focus`). Pristine `--all-files`
 # mode forces this on regardless. Toggle at runtime with `:focus` / `:f` /
@@ -48,7 +55,8 @@ single_file_view = true
 # ascends to the parent. Falls through to plain horizontal scroll
 # when the file list isn't at the boundary. `Enter` / `Space` still
 # toggle folders regardless of this flag.
-arrow_tree_navigation = true
+# Commented out: pending upstream PR #370; not to be used until it lands.
+# arrow_tree_navigation = true
 
 # Vim-style scroll padding. Keeps 5 lines visible above and below the
 # cursor when navigating, so context survives near hunk boundaries.
