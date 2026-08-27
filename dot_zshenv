@@ -58,3 +58,14 @@ export PATH="${BUN_INSTALL}/bin:${PATH}"
 # chezmoi (source: dot_sd/); the dispatcher and completion default to ~/sd,
 # so this export is what points every shell at the real location (PROV-0024).
 export SD_ROOT="${HOME}/.sd"
+
+# Autoloaded functions: personal (project, atlas) and prezto module functions
+# (trash, ...). Prezto puts these directories on fpath for interactive shells
+# only. A non-interactive shell (Claude Code Bash tool) inherits the autoload
+# stubs from the shell snapshot but not fpath, so the stubs fail with "function
+# definition file not found". Set fpath for all shells.
+fpath=(
+    "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/functions"
+    "${ZDOTDIR:-$HOME}"/.zsh/modules/*/functions(N)
+    $fpath
+)
