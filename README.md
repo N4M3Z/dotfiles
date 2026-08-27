@@ -29,6 +29,7 @@ dotfiles/
 ├── dot_cursor/
 │   ├── sandbox.json.tmpl         → ~/.cursor/sandbox.json (agent sandbox paths and domains)
 │   ├── modify_cli-config.json.tmpl → ~/.cursor/cli-config.json (approval, sandbox, Shell allowlist)
+│   ├── permissions.json.tmpl     → ~/.cursor/permissions.json (Auto-review steering from harness/automode.json)
 │   ├── modify_hooks.json.tmpl    → ~/.cursor/hooks.json (dcg first in beforeShellExecution)
 │   └── hooks/executable_dcg-pre-shell.sh → ~/.cursor/hooks/dcg-pre-shell.sh
 ├── private_dot_ssh/              → ~/.ssh/ (mode 700)
