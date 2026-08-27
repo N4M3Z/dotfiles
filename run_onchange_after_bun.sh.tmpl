@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Runs on chezmoi apply whenever this file changes, making `chezmoi apply` the
+# one converge command for global Bun packages. Bun owns every npm-distributed
+# CLI here; npm itself stays installed (Homebrew node) but ships nothing.
+# `bun install -g` is idempotent: a re-install of a current package is a no-op.
+#
+# Claude Code and Codex are not listed on purpose. Both use their vendor's
+# native installer, which self-updates; their npm packages are only wrappers.
+{{ if eq .chezmoi.os "darwin" -}}
+set -euo pipefail
+
+if ! command -v bun >/dev/null 2>&1; then
+    echo "run_onchange_after_bun: bun not installed, skipping" >&2
+    exit 0
+fi
+
+packages=(
+    # Claude Code status-line renderer; settings.json statusLine points at ~/.bun/bin/ccline.
+    "@cometix/ccline"
+    # Terminal usage tables from local Claude Code / Codex transcripts.
+    "ccusage"
+    # Obsidian Web Clipper extraction engine as a CLI (binary: defuddle).
+    "defuddle-cli"
+    # Local-first knowledge-brain CLI (Postgres + pgvector).
+    "github:garrytan/gbrain"
+    # Headless Obsidian vault access for scripts.
+    "obsidian-headless"
+    # Prompt-pipe proxy; pinned because harness settings reference its wire format.
+    "pxpipe-proxy@0.7.1"
+    # OpenSpec CLI, moved from npm -g.
+    "@fission-ai/openspec"
+    # Headless browser CLI, moved from npm -g.
+    "browse"
+)
+
+for package in "${packages[@]}"; do
+    echo "bun:install ${package}"
+    bun install -g "${package}"
+done
+{{- end }}
