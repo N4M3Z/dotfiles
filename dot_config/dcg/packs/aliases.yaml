@@ -1,0 +1,81 @@
+# MACHINE-LOCAL pack: this guard exists because THIS machine's dotzsh
+# (modules/utility/init.zsh) aliases cp/mv/rm to -i forms. Do not sync
+# it to machines without those aliases; keep it out of chezmoi.
+#
+# The problem: an interactive alias turns `mv a b` into `mv -i a b`,
+# which prompts on overwrite. In automation nobody answers, the prompt
+# consumes the next line of stdin, and the run hangs or corrupts.
+#
+# Why the fix is a flag and not `command`: `command mv` bypasses the
+# alias in a shell, but dcg matches its patterns against a normalized
+# command line with the `command` builtin and absolute-path prefixes
+# already stripped. A rule cannot tell `command mv` from `mv`, so a
+# safe pattern keyed on `command` never fires (proven with `dcg
+# explain` on 2026-09-02). The flag is visible to both the shell and the
+# guard: BSD cp/mv/rm honor the LAST of -f/-i/-n, so an appended -f
+# (overwrite) or -n (keep the target) overrides the alias's -i.
+# `command mv -f a b` therefore passes because of `-f`, not because of
+# `command`; the `command` prefix is optional.
+# Validate: dcg pack validate ~/.config/dcg/packs/aliases.yaml
+schema_version: 1
+id: user.aliases
+name: Interactive Alias Guard
+version: 1.2.0
+
+description: |
+  Blocks cp, mv, and rm without an explicit -f or -n disposition flag,
+  so the interactive -i aliases never prompt inside automation. The
+  flag, not a `command` prefix, is what the guard can see.
+
+keywords:
+  - cp
+  - mv
+  - rm
+
+destructive_patterns:
+  - name: cp-needs-flag
+    pattern: '(^|[;&|]\s*)cp\s'
+    severity: high
+    description: cp without -f or -n hits the interactive -i alias. Add -f to overwrite or -n to keep the target.
+    explanation: |
+      This machine aliases cp to `cp -i`, which prompts on overwrite and
+      eats the next stdin line in automation. Add an explicit flag: BSD
+      cp honors the last of -f/-i/-n, so the flag overrides the alias.
+      `cp -f src dst` overwrites, `cp -n src dst` keeps the target.
+      A `command` prefix alone does not pass: dcg strips it before
+      matching and cannot see it.
+    executables:
+      - cp
+
+  - name: mv-needs-flag
+    pattern: '(^|[;&|]\s*)mv\s'
+    severity: high
+    description: mv without -f or -n hits the interactive -i alias. Add -f to overwrite or -n to keep the target.
+    explanation: |
+      This machine aliases mv to `mv -i`, which prompts on overwrite and
+      eats the next stdin line in automation. Add an explicit flag: BSD
+      mv honors the last of -f/-i/-n, so the flag overrides the alias.
+      `mv -f src dst` overwrites, `mv -n src dst` keeps the target.
+      A `command` prefix alone does not pass: dcg strips it before
+      matching and cannot see it.
+    executables:
+      - mv
+
+  - name: rm-needs-flag
+    pattern: '(^|[;&|]\s*)rm\s'
+    severity: high
+    description: rm without -f hits the interactive -i alias. Add -f.
+    explanation: |
+      This machine aliases rm to `rm -i`, which prompts per file and
+      eats the next stdin line in automation. Add -f: BSD rm honors the
+      last of -f/-i, so the flag overrides the alias. `rm -f <file>`.
+      A `command` prefix alone does not pass: dcg strips it before
+      matching and cannot see it. The core.filesystem rules still apply
+      to recursive and forced deletes.
+    executables:
+      - rm
+
+safe_patterns:
+  - name: disposition-flag
+    pattern: '(^|[;&|]\s*)(cp|mv|rm)\s+(-\S+\s+)*-\S*[fn]\b'
+    description: An explicit -f or -n flag overrides the interactive -i alias (BSD last-flag-wins).
