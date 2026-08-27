@@ -1,0 +1,96 @@
+# Managed dot-folder guard. The harness trees (~/.claude, ~/.codex,
+# ~/.gemini, ~/.opencode and their project-level twins) are rune output
+# with .manifest fingerprints and .provenance sidecars. A hand edit
+# breaks the fingerprint and silently forks the deployed copy from the
+# deck. The sanctioned path: edit the deck, run `rune install`.
+# Validate: dcg pack validate ~/.config/dcg/packs/dotguard.yaml
+schema_version: 1
+id: user.dotguard
+name: Managed Dot-Folder Guard
+version: 1.0.0
+
+description: |
+  Blocks shell mutation of rune-managed harness trees, deployment
+  manifests, and provenance sidecars. Edit the deck source and run
+  `rune install`. Never hand-edit deployed output.
+
+keywords:
+  - claude
+  - codex
+  - gemini
+  - opencode
+  - manifest
+  - provenance
+
+destructive_patterns:
+  - name: mutate-harness-tree
+    pattern: '(^|[;&|]\s*)(command\s+)?(rm|mv|cp|tee|sd|truncate|ln|chmod|install)\b[^;&|]*\.(claude|codex|gemini|opencode)/(skills|rules|hooks|agents|commands|prompts)\b'
+    severity: high
+    description: Hand mutation of a rune-managed harness tree. Edit the deck, then run `rune install`.
+    explanation: |
+      Files under the harness trees carry .manifest fingerprints and
+      .provenance sidecars. A direct write forks the deployed copy from
+      the deck and breaks integrity checks. Edit the source rune in the
+      deck and redeploy with `rune install`. For foreign files that rune
+      does not manage (no sidecar), ask the user to run the command.
+
+  - name: sed-inplace-harness-tree
+    pattern: 'sed\s+(-\S+\s+)*-i[^;&|]*\.(claude|codex|gemini|opencode)/'
+    severity: high
+    description: In-place sed on a managed harness tree. Edit the deck, then run `rune install`.
+    explanation: |
+      In-place edits under a deployed harness tree break the manifest
+      fingerprint. Edit the source rune in the deck and redeploy.
+
+  - name: redirect-into-harness-tree
+    pattern: '>\|?\s*\S*\.(claude|codex|gemini|opencode)/(skills|rules|hooks|agents|commands|prompts)\b'
+    severity: high
+    description: Shell redirect writes into a managed harness tree. Edit the deck, then run `rune install`.
+    explanation: |
+      A redirect creates or truncates a file inside a rune-managed tree
+      and bypasses the manifest. Edit the deck source and redeploy.
+
+  - name: mutate-manifest-or-provenance
+    pattern: '(^|[;&|]\s*)(command\s+)?(rm|mv|cp|tee|sd|truncate)\b[^;&|]*(\.manifest\b|\.provenance/)'
+    severity: high
+    description: Direct write to a deployment manifest or provenance sidecar.
+    explanation: |
+      .manifest and .provenance/ are written only by the rune CLI. A
+      hand edit fabricates provenance. If a stale sidecar must go, ask
+      the user to run the command manually.
+
+  - name: sed-inplace-manifest-or-provenance
+    pattern: 'sed\s+(-\S+\s+)*-i[^;&|]*(\.manifest\b|\.provenance/)'
+    severity: high
+    description: In-place sed on a deployment manifest or provenance sidecar.
+    explanation: |
+      .manifest and .provenance/ are written only by the rune CLI.
+      Regenerate them with `rune install`.
+
+  - name: rune-install-force
+    pattern: '\brune\s+install\b[^;&|]*\s--force\b'
+    severity: medium
+    description: rune install --force replaces modified deployed files without review.
+    explanation: |
+      --force overwrites files whose fingerprints no longer match the
+      manifest. Diff the modified files first. Then ask the user to run
+      the force install manually.
+
+  - name: rune-clean-harness-target
+    pattern: '\brune\s+clean\b[^;&|]*(-t\s|--target\s)\S*\.(claude|codex|gemini|opencode)\b'
+    severity: high
+    description: rune clean against a harness tree can remove foreign files rune never deployed.
+    explanation: |
+      Global harness trees hold user tools that rune does not manage
+      (openspec skills, personal hooks, native rules). Ask the user to
+      run clean manually after they review the orphan list from
+      `rune doctor --verify`.
+
+safe_patterns:
+  - name: rune-managed-write
+    pattern: '^rune\s+(install|doctor|drift|status|validate|provenance)\b(?![^;&|]*--force)'
+    description: The rune CLI is the sanctioned writer for these trees.
+
+  - name: trash-restore
+    pattern: '(^|[;&|]\s*)(command\s+)?(cp|mv)\b[^;&|]*\.trash/'
+    description: Restoring a replaced file from rune's .trash is a recovery action.

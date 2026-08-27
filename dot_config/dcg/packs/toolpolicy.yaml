@@ -92,3 +92,6 @@ safe_patterns:
   - name: env-example-read
     pattern: '^(cat|less|more|head|tail|bat)\s+[^|;&]*\.env\.(example|sample|template)\b'
     description: Example environment files carry no secrets.
+  - name: sed-range-view
+    pattern: '\bsed\s+-n\s+.?[0-9]+,[0-9]+p.?\s'
+    description: A pure line-range view extracts nothing structural.
