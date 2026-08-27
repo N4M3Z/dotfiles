@@ -7,6 +7,7 @@ case "$(printf '%s' "$payload" | jq -r '.tool_name // empty')" in
 esac
 f=$(printf '%s' "$payload" | jq -r '.tool_input.file_path // empty')
 case "$f" in
+    */.claude/projects/*) exit 0 ;; # agent memory and session files carry no lint contract
     *.md) ;;
     *) exit 0 ;;
 esac
