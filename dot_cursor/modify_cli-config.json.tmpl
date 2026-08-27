@@ -1,0 +1,39 @@
+#!/bin/bash
+# chezmoi modify_ script for ~/.cursor/cli-config.json.
+#
+# The live file arrives on stdin; stdout becomes the new contents on every
+# `chezmoi apply`. Only the policy fields in .chezmoidata/harness/cursor.json
+# (approval mode, sandbox mode, network mode, and the Shell allow and deny
+# lists) are enforced. Everything the CLI writes itself (display, privacy
+# cache, model choice) passes through untouched.
+#
+# The Shell lists derive from the Claude Bash lists so one edit to
+# .chezmoidata/harness/claude.json changes both harnesses.
+# Source: https://github.com/N4M3Z/dotfiles
+set -o pipefail
+umask 077
+
+{{- /* Claude's legacy "cmd:*" spelling becomes Cursor's "cmd *". */ -}}
+{{- $allow := list -}}
+{{- range .harness.claude.permissions.allow -}}
+{{- if hasPrefix "Bash(" . -}}
+{{- $allow = append $allow (. | replace "Bash(" "Shell(" | replace ":*)" " *)") -}}
+{{- end -}}
+{{- end -}}
+{{- $deny := list -}}
+{{- range .harness.claude.permissions.deny -}}
+{{- if hasPrefix "Bash(" . -}}
+{{- $deny = append $deny (. | replace "Bash(" "Shell(" | replace ":*)" " *)") -}}
+{{- end -}}
+{{- end -}}
+{{- $policy := merge (dict "permissions" (dict "allow" (uniq $allow) "deny" (uniq $deny))) .harness.cursor.cli }}
+
+policy=$(mktemp "${TMPDIR:-/tmp}/cursor-cli-policy.XXXXXX") || exit 1
+trap 'command rm -f "$policy"' EXIT
+
+cat > "$policy" <<'CURSOR_POLICY'
+{{ $policy | toJson }}
+CURSOR_POLICY
+
+# --slurp turns empty stdin (target absent) into [] so the merge starts from {}.
+jq --slurp --slurpfile policy "$policy" '((.[0] // {}) | .version = (.version // 1)) * $policy[0]'
