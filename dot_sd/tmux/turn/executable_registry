@@ -1,0 +1,36 @@
+#!/bin/sh
+# Machine registry of repos in play, one absolute jj root per line.
+# Sources, merged: `workdirs.repos` manifests (vcstool format, keys
+# relative to ~) at ~/Agents/*/ and ~/Agents/*/*/ — a workshop
+# declares its working directories, named per the harness convention
+# (Claude add-dir, Codex writable roots); `vcs import` can clone the
+# same file on a fresh machine — plus the tmux server's panes.
+# jj has no native multi-repo registry and no submodule support, so
+# the workshop manifest is the authority. Non-jj paths are filtered
+# out. Run as: sd tmux turn registry
+# TURN_REGISTRY_REPOS overrides discovery (tests, scripting).
+if [ -n "${TURN_REGISTRY_REPOS:-}" ]; then
+    printf '%s\n' "$TURN_REGISTRY_REPOS"
+    exit 0
+fi
+command -v jj >/dev/null 2>&1 || exit 0
+{
+    for f in "$HOME"/Agents/*/workdirs.repos "$HOME"/Agents/*/*/workdirs.repos; do
+        [ -f "$f" ] || continue
+        awk -v home="$HOME" '
+            /^repositories:/ { r = 1; next }
+            r && /^[^[:space:]#]/ { r = 0 }
+            r && /^[[:space:]]{2}[^[:space:]].*:[[:space:]]*$/ {
+                key = $0
+                sub(/^[[:space:]]+/, "", key)
+                sub(/:[[:space:]]*$/, "", key)
+                print home "/" key
+            }
+        ' "$f"
+    done
+    tmux list-panes -a -F '#{pane_current_path}' 2>/dev/null | sort -u
+} | while IFS= read -r p; do
+    [ -d "$p" ] || continue
+    (cd "$p" 2>/dev/null && jj root 2>/dev/null)
+done | awk 'NF && !seen[$0]++'
+exit 0
