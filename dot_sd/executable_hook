@@ -1,17 +1,17 @@
 #!/bin/sh
 # Claude Code hook dispatcher. Settings carry one entry per event:
-#   sh ~/.sd/claude/hook <Event>
-# Behavior lives in ~/.sd/claude/hooks/<Event>.d/*.sh, one file per
+#   sh ~/.sd/hook <Event>
+# Behavior lives in ~/.sd/hooks/<Event>.d/*.sh, one file per
 # concern, run in name order. Each part receives the event payload on
 # stdin and speaks the normal hook protocol: JSON decisions on stdout,
 # a block reason on stderr with exit 2. The first part that exits
 # nonzero ends the run with that code. Parts filter themselves by
 # tool_name from the payload, so the settings matcher stays (all).
-# Inventory: ls ~/.sd/claude/hooks/*.d/
+# Inventory: ls ~/.sd/hooks/*.d/
 set -u
 
 event="${1:?usage: hook <Event>}"
-dir="$HOME/.sd/claude/hooks/$event.d"
+dir="$HOME/.sd/hooks/$event.d"
 [ -d "$dir" ] || exit 0
 
 payload=$(cat 2>/dev/null || true)

@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/hook PreToolUse"
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook PreToolUse"
           }
         ]
       },
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/hook PostToolUse"
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook PostToolUse"
           }
         ]
       }
@@ -104,7 +104,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/hook Stop",
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook Stop",
             "timeout": 30
           }
         ]
@@ -115,7 +115,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/claude/hook SessionEnd",
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook SessionEnd",
             "timeout": 10
           }
         ]
