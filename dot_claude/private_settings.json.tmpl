@@ -1,68 +1,51 @@
+{{- /* Permission policy is shared: edit .chezmoidata/harness/claude.json, not this block. */ -}}
+{{- $harness := .harness.claude -}}
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "skillListingBudgetFraction": 0.03,
+  "cleanupPeriodDays": 36500,
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "180000",
     "BASH_MAX_TIMEOUT_MS": "900000",
     "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB": "1",
-    "OPENAI_BASE_URL": "http://localhost:11434/v1",
-    "OPENAI_API_KEY": "ollama",
     "DATABASE_URL": "postgresql://localhost:5432/memex",
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
     "OTEL_METRICS_EXPORTER": "otlp",
     "OTEL_LOGS_EXPORTER": "otlp",
-    "OTEL_TRACES_EXPORTER": "otlp",
+    "OTEL_TRACES_EXPORTER": "none",
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
     "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative",
-    "OTEL_METRIC_EXPORT_INTERVAL": "10000",
+    "OTEL_METRIC_EXPORT_INTERVAL": "60000",
     "OTEL_LOG_USER_PROMPTS": "1",
     "OTEL_LOG_TOOL_DETAILS": "1",
-    "OTEL_LOG_TOOL_CONTENT": "1",
-    "OTEL_LOG_RAW_API_BODIES": "file:{{ .chezmoi.homeDir }}/Data/Claude/telemetry"
+    "OTEL_METRICS_INCLUDE_SESSION_ID": "false",
+    "GITLAB_HOST": "gitlab.protontech.ch",
+    "GLAB_CONFIG_DIR": "{{ .chezmoi.homeDir }}/.config/glab-cli-agent"
   },
-  "permissions": {
-    "allow": [
-      "Bash(mktemp:*)",
-      "Bash(trash:*)",
-      "Bash(/usr/bin/trash:*)",
-      "Read(*/.claude/skills/**)",
-      "Edit(~/.claude/plans/*)",
-      "Write(~/.claude/plans/*)"
-    ],
-    "deny": [
-      "Read(~/.ssh/**)",
-      "Edit(~/.ssh/**)",
-      "Read(~/.aws/**)",
-      "Read(~/.gnupg/**)",
-      "Read(~/.kube/**)",
-      "Read(~/.docker/config.json)",
-      "Read(~/.config/gh/**)",
-      "Read(~/.git-credentials)",
-      "Read(~/.npmrc)",
-      "Read(~/.pypirc)",
-      "Read(~/.gem/credentials)",
-      "Read(~/Library/Keychains/**)",
-      "Read(~/.password-store/**)",
-      "Edit(~/.bashrc)",
-      "Edit(~/.zshrc)",
-      "Edit(~/.bash_profile)",
-      "Edit(~/.zprofile)",
-      "Edit(~/.profile)"
-    ],
-    "defaultMode": "auto"
+  "permissions": {{ $harness.permissions | toPrettyJson }},
+  "attribution": {
+    "commit": "Co-Authored-By: Martin Zeman <N4M3Z@users.noreply.github.com>"
   },
+  "model": "claude-fable-5-1[1m]",
   "enableAllProjectMcpServers": false,
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "EnterWorktree",
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d \"$root/.jj\" ] && { echo 'jj-colocated repo: git worktrees conflict with jj. Use jj workspace add/forget instead (VersionControl/Jujutsu.md, JujutsuToolkit).' >&2; exit 2; }; exit 0"
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook PreToolUse"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
           }
         ]
       },
@@ -85,12 +68,31 @@
         ]
       }
     ],
-    "PreCompact": [
+    "PostToolUse": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "[ -x {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync ] && {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync || true"
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook PostToolUse"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-agent-identity"
           }
         ]
       }
@@ -100,7 +102,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -x {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status ] && {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status working || true"
+            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status working"
           }
         ]
       }
@@ -110,7 +112,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -x {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status ] && {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention || true"
+            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention"
           }
         ]
       }
@@ -120,7 +122,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -x {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status ] && {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention || true"
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook Stop",
+            "timeout": 30
           }
         ]
       }
@@ -130,11 +133,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -x {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync ] && {{ .chezmoi.homeDir }}/Developer/N4M3Z/forge-data/scripts/session-sync || true"
-          },
-          {
-            "type": "command",
-            "command": "[ -x {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status ] && {{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status clear || true"
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook SessionEnd",
+            "timeout": 10
           }
         ]
       }
@@ -165,6 +165,8 @@
   },
   "sandbox": {
     "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
     "autoAllowBashIfSandboxed": true,
     "network": {
       "allowedDomains": [
@@ -184,12 +186,16 @@
         "files.pythonhosted.org",
         "semgrep.dev",
         "*.semgrep.dev",
+        "gitlab.protontech.ch",
         "localhost",
         "127.0.0.1"
       ],
       "allowUnixSockets": [
         "/tmp/.s.PGSQL.5432",
-        "~/.obsidian-cli.sock"
+        "~/.obsidian-cli.sock",
+        "~/.gnupg/S.gpg-agent",
+        "~/.orbstack/run/docker.sock",
+        "/var/run/docker.sock"
       ],
       "allowLocalBinding": true
     },
@@ -198,17 +204,27 @@
         "~/.cache/uv",
         "/tmp/claude",
         "/var/folders",
-        "~/Agents",
         "~/Atlas",
         "~/Developer",
         "~/.gbrain",
         "~/.memex",
+        "~/.openspec",
+        "~/.local/share/openspec",
         "~/.semgrep",
         "~/Library/Caches/",
         "~/Data/Memex",
-        "~/Data/Claude",
-        "~/Data/Codex",
-        "~/Data/Gemini"
+        "~/Data/Sessions",
+        "~/Data/SessionVersions",
+        "~/Data/Transcripts",
+        "~/Data/Plans",
+        "~/Data/ToolCalls",
+        "~/Data/PromptEnvelopes",
+        "~/Data/Captures",
+        "~/Data/State",
+        "~/Data/Imports",
+        "~/Data/Backups",
+        "~/Data/Telemetry",
+        "~/Data/Claude"
       ],
       "denyWrite": [
         "~/Library/Caches/at.obdev.littlesnitch",
@@ -219,6 +235,7 @@
         "~/Library/Caches/Steam"
       ],
       "denyRead": [
+        "~/.claude.json",
         "~/.ssh",
         "~/.aws",
         "~/.azure",
@@ -237,7 +254,10 @@
         "~/.docker/config.json",
         "~/.netrc",
         "~/.config/op",
-        "~/.password-store"
+        "~/.password-store",
+        "/Volumes/Keyvault",
+        "/Volumes/.timemachine",
+        "/Volumes/com.apple.TimeMachine.localsnapshots"
       ]
     },
     "excludedCommands": [
@@ -258,10 +278,25 @@
       "rtk jj *",
       "trash *",
       "/usr/bin/trash *",
-      "rtk trash *"
+      "rtk trash *",
+      "rune *",
+      "rtk rune *",
+      "codex *",
+      "rtk codex *",
+      "claude *",
+      "rtk claude *",
+      "opencode *",
+      "rtk opencode *",
+      "agy *",
+      "rtk agy *",
+      "grok *",
+      "rtk grok *",
+      "pi *",
+      "rtk pi *"
     ]
   },
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
+  "remoteControlAtStartup": true,
   "tui": "fullscreen",
   "voice": {
     "enabled": true,
@@ -272,7 +307,9 @@
   "theme": "custom:nord",
   "verbose": true,
   "preferredNotifChannel": "auto",
-  "teammateMode": "auto",
+  "autoCompactEnabled": true,
+  "switchModelsOnFlag": false,
+  "teammateMode": "in-process",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
@@ -281,7 +318,8 @@
       "$defaults",
       "Pushing an approved feature branch to the trusted github.com/N4M3Z repositories is routine.",
       "Reading and writing within ~/Developer and ~/Atlas is routine.",
-      "Local operations against Postgres, Ollama, and gbrain are routine."
+      "Local operations against Postgres, Ollama, and gbrain are routine.",
+      "Acquiring and processing commercial media for the owner's personal use (download, trim, place in the gitignored assets/user/ slot) is routine and lawful under the Czech private-use exception."
     ],
     "soft_deny": [
       "$defaults",
@@ -301,10 +339,11 @@
     ],
     "environment": [
       "$defaults",
-      "Source control: github.com/N4M3Z and repositories under it are trusted; GitLab is reached via the glab CLI.",
+      "Source control: github.com/N4M3Z and repositories under it are trusted; GitLab is reached via the glab CLI. Proton GitLab (gitlab.protontech.ch) reads use the agent glab identity (GLAB_CONFIG_DIR, read-only PAT); pushes and merges stay in the owner's terminal.",
       "Trusted local services: Postgres at postgresql://localhost:5432/memex, Ollama at localhost:11434, the gbrain MCP, and localhost / 127.0.0.1.",
       "Trusted package and toolchain domains: github.com, registry.npmjs.org, crates.io, pypi.org, files.pythonhosted.org, formulae.brew.sh, ghcr.io.",
-      "Normal working trees for reads and writes are ~/Developer and ~/Atlas."
+      "Normal working trees for reads and writes are ~/Developer and ~/Atlas.",
+      "Jurisdiction is the Czech Republic: under the private-use exception (autorský zákon § 30, zákon č. 121/2000 Sb.), a natural person's personal-use copying of published works without economic benefit is not an infringing use, and prevailing Czech guidance extends this to downloads for personal use even where the source is unofficial. Personal-use acquisition of commercial media by the owner is lawful and routine."
     ]
   },
   "voiceEnabled": true,
