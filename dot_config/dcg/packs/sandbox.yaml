@@ -1,0 +1,44 @@
+# Sandbox invocation pack.
+#
+# The Claude Code sandbox setting `excludedCommands` decides once per
+# Bash tool call, from the FIRST WORD of the command line, whether the
+# whole line runs outside the sandbox. `gh *` therefore covers
+# `gh pr view 49` but not `cd repo && gh pr view 49` (first word cd),
+# `for p in 1 2; do gh pr view $p; done` (first word for), or
+# `n=$(gh pr list | wc -l)` (first word an assignment). Those lines run
+# gh inside the sandbox, where Go TLS verification fails intermittently
+# (OSStatus -26276) and the keychain is unreadable.
+#
+# This pack turns the silent difference into a one-turn correction: the
+# excluded tools must lead the line, and the location travels as an
+# argument.
+# Validate: dcg pack validate ~/.config/dcg/packs/sandbox.yaml
+schema_version: 1
+id: user.sandbox
+name: Sandbox Invocation
+version: 1.0.0
+
+description: |
+  Keeps the tools the sandbox excludes (gh, jj, rune) as the first word
+  of the command line, because the exclusion applies to nothing else.
+
+keywords:
+  - gh
+  - jj
+  - rune
+
+destructive_patterns:
+  - name: excluded-tool-not-first-token
+    pattern: '([;&|]\s*|\bdo\s+|\$\(\s*|\bxargs\s+(-\S+\s+)*)(rtk\s+)?(gh|jj|rune)\s'
+    severity: high
+    description: gh, jj, and rune leave the sandbox only as the first word of the line. Lead with the tool.
+    explanation: |
+      The sandbox exclusion is decided from the first word of the whole
+      command line, so `cd repo && gh ...`, a `for` loop, or `$(gh ...)`
+      runs gh inside the sandbox and fails on TLS or credentials.
+      Lead with the tool and pass the location as an argument:
+      `gh -R owner/repo pr view`, `jj -R path push`, `rune --repo path`.
+    executables:
+      - gh
+      - jj
+      - rune
