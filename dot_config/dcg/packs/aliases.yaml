@@ -1,0 +1,71 @@
+# MACHINE-LOCAL pack: this guard exists because THIS machine's dotzsh
+# (modules/utility/init.zsh) aliases cp/mv/rm to -i forms. Do not sync
+# it to machines without those aliases; keep it out of chezmoi.
+# Interactive-alias pack. The interactive shell aliases cp, mv, and rm
+# to prompting forms (-i). A prompt in automation eats the next stdin
+# line and hangs or corrupts the run. dcg redirects the agent to an
+# explicit -f or -n form. BSD cp/mv/rm: the last of -f/-i/-n wins, so
+# an appended -f overrides the alias's -i.
+# NOTE: dcg matches patterns against the normalized command with the
+# `command` builtin and absolute-path prefixes stripped. A safe pattern
+# keyed on the literal `command` token never fires. The sanctioned form
+# is therefore the flag, not the prefix: `command rm -f` passes because
+# of `-f`, not because of `command`.
+# Validate: dcg pack validate ~/.config/dcg/packs/aliases.yaml
+schema_version: 1
+id: user.aliases
+name: Interactive Alias Guard
+version: 1.1.0
+
+description: |
+  Blocks cp, mv, and rm without an explicit -f or -n disposition flag
+  so the interactive -i aliases never prompt inside automation.
+
+keywords:
+  - cp
+  - mv
+  - rm
+
+destructive_patterns:
+  - name: cp-needs-flag
+    pattern: '(^|[;&|]\s*)cp\s'
+    severity: high
+    description: cp without -f or -n hits the interactive -i alias. Run `command cp -f` (or -n) instead.
+    explanation: |
+      The interactive shell aliases cp to `cp -i`, which prompts on
+      overwrite and eats the next stdin line in automation. Append an
+      explicit disposition flag; the last of -f/-i/-n wins on BSD:
+      `command cp -f src dst` to overwrite, `command cp -n src dst`
+      to keep the target.
+    executables:
+      - cp
+
+  - name: mv-needs-flag
+    pattern: '(^|[;&|]\s*)mv\s'
+    severity: high
+    description: mv without -f or -n hits the interactive -i alias. Run `command mv -f` (or -n) instead.
+    explanation: |
+      The interactive shell aliases mv to `mv -i`, which prompts on
+      overwrite and eats the next stdin line in automation. Append an
+      explicit disposition flag; the last of -f/-i/-n wins on BSD:
+      `command mv -f src dst` to overwrite, `command mv -n src dst`
+      to keep the target.
+    executables:
+      - mv
+
+  - name: rm-needs-flag
+    pattern: '(^|[;&|]\s*)rm\s'
+    severity: high
+    description: rm without -f hits the interactive -i alias. Run `command rm -f` instead.
+    explanation: |
+      The interactive shell aliases rm to `rm -i`, which prompts per
+      file and eats the next stdin line in automation. Append -f:
+      `command rm -f <file>`. The core.filesystem rules still apply
+      to recursive and forced deletes.
+    executables:
+      - rm
+
+safe_patterns:
+  - name: disposition-flag
+    pattern: '(^|[;&|]\s*)(cp|mv|rm)\s+(-\S+\s+)*-\S*[fn]\b'
+    description: An explicit -f or -n flag overrides the interactive -i alias (BSD last-flag-wins).

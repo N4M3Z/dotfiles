@@ -1,0 +1,33 @@
+# Sandbox invocation pack. sandbox.excludedCommands in the Claude
+# settings template matches the first token only: `cd repo && gh ...`
+# runs gh inside the sandbox, where Go TLS verification fails
+# intermittently (OSStatus -26276) and the keychain is unreadable.
+# Validate: dcg pack validate ~/.config/dcg/packs/sandbox.yaml
+schema_version: 1
+id: user.sandbox
+name: Sandbox Invocation
+version: 1.0.0
+
+description: |
+  Keeps the tools the sandbox excludes (gh, jj, rune) as the first
+  token of the command line, so the exclusion applies.
+
+keywords:
+  - gh
+  - jj
+  - rune
+
+destructive_patterns:
+  - name: excluded-tool-not-first-token
+    pattern: '([;&|]\s*|\bdo\s+|\$\(\s*|\bxargs\s+(-\S+\s+)*)(rtk\s+)?(gh|jj|rune)\s'
+    severity: high
+    description: gh, jj, and rune leave the sandbox only as the first token. Lead with the tool.
+    explanation: |
+      Lead with the tool and pass the location as an argument:
+      `gh -R owner/repo pr view`, `jj -R path push`, `rune --repo path`.
+      A chained or looped form stays sandboxed and fails on TLS or
+      credentials.
+    executables:
+      - gh
+      - jj
+      - rune
