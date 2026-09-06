@@ -102,7 +102,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status working"
+            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook UserPromptSubmit",
+            "timeout": 10
           }
         ]
       }

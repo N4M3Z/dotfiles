@@ -1,0 +1,84 @@
+#!/bin/sh
+# Prompt checkpoint for turn-scoped review; run as:
+#   sd claude turn checkpoint [begin|snapshot|clear]
+# Mirrors the Claude Code and Codex checkpoint model: every user prompt
+# marks a baseline, and "the turn" is everything after it. The
+# baseline is the jj working-copy commit id right after a snapshot,
+# recorded per repository under ~/.local/state/claude-turn. jj keeps
+# that commit reachable through the op log, so `jj diff --from <id>
+# --to @` renders the turn later with no wrap, no marker, and no
+# history. Covers the session footprint: the prompt's repository plus
+# every jj repository open in the same tmux session, so a cross-repo
+# edit shows on that repository's pane too.
+# Wired as Claude Code hooks (UserPromptSubmit: begin; Stop: snapshot;
+# SessionEnd: clear). Payload on stdin (session_id, cwd). Always
+# exits 0: a hook failure must never block a prompt.
+#   begin     snapshot the footprint and record the baseline (default)
+#   snapshot  snapshot only, so review surfaces see the turn's edits
+#   clear     drop the baselines this session wrote (the session ended)
+# State row: <commit_id> TAB <session_id> TAB <epoch>.
+# CLAUDE_TURN_STATE overrides the state directory (tests, scripting).
+mode="${1:-begin}"
+command -v jj >/dev/null 2>&1 || exit 0
+payload=$(cat 2>/dev/null || true)
+sid=$(printf '%s' "$payload" | jq -r '.session_id // empty' 2>/dev/null)
+cwd=$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)
+[ -n "$cwd" ] || cwd="${CLAUDE_PROJECT_DIR:-$PWD}"
+state="${CLAUDE_TURN_STATE:-$HOME/.local/state/claude-turn}"
+tab=$(printf '\t')
+
+repos() {
+    {
+        (cd "$cwd" 2>/dev/null && jj root 2>/dev/null)
+        if [ -n "${TMUX:-}" ]; then
+            tmux list-panes -s -F '#{pane_current_path}' 2>/dev/null | sort -u \
+                | while IFS= read -r p; do
+                    [ -d "$p" ] || continue
+                    (cd "$p" 2>/dev/null && jj root 2>/dev/null)
+                done
+        fi
+    } | awk 'NF && !seen[$0]++'
+}
+
+key() { printf '%s' "$1" | tr '/' '_'; }
+
+# Snapshot the working copy and print its commit id. jj refuses on a
+# stale lock or an oversized new file: print nothing, skip the repo.
+snapshot() {
+    (cd "$1" 2>/dev/null && jj log -r @ --no-graph -T commit_id 2>/dev/null)
+}
+
+case "$mode" in
+    begin)
+        mkdir -p "$state" 2>/dev/null || exit 0
+        own=$(cd "$cwd" 2>/dev/null && jj root 2>/dev/null)
+        repos | while IFS= read -r r; do
+            [ -n "$r" ] || continue
+            f="$state/$(key "$r")"
+            # A foreign repo keeps another live session's baseline: two
+            # sessions in one tmux session must not reset each other's
+            # turn mid-flight. The prompt's own repo always resets.
+            if [ "$r" != "$own" ] && [ -f "$f" ]; then
+                IFS="$tab" read -r _ owner _ < "$f"
+                [ -n "$owner" ] && [ "$owner" != "$sid" ] && continue
+            fi
+            id=$(snapshot "$r")
+            [ -n "$id" ] || continue
+            printf '%s\t%s\t%s\n' "$id" "$sid" "$(date +%s)" > "$f"
+        done
+        ;;
+    snapshot)
+        repos | while IFS= read -r r; do
+            [ -n "$r" ] && snapshot "$r" >/dev/null
+        done
+        ;;
+    clear)
+        [ -n "$sid" ] && [ -d "$state" ] || exit 0
+        for f in "$state"/*; do
+            [ -f "$f" ] || continue
+            IFS="$tab" read -r _ owner _ < "$f"
+            [ "$owner" = "$sid" ] && rm -f "$f"
+        done
+        ;;
+esac
+exit 0

@@ -31,6 +31,16 @@ Non-Goals:
 - **`jj new` for described changes, `jj commit` for undescribed ones**: automation must never overwrite a curated description.
 - **Each repo's own hook wraps only its own repo**: cross-repo wrapping would race the other sessions; the multi-repo layer stays read-only aggregation.
 - **Status segment uses `--ignore-working-copy`**: the segment renders every status interval; skipping the snapshot avoids lock contention with live sessions. Freshness comes from the sessions' own jj operations.
+- **Prompt checkpoint, not the working copy, scopes the diffstat**: Claude Code checkpoints before every
+  user prompt, and the Codex app's review pane offers "Last turn" beside the git scopes. The segment
+  mirrors that: a UserPromptSubmit hook (`sd claude turn checkpoint begin`) snapshots each footprint
+  repo and records the working-copy commit id, the Stop hook snapshots again, and the segment renders
+  `jj diff --from <checkpoint> --to @`. jj keeps the superseded commit reachable through the op log,
+  so no wrap, marker, or history is needed. The whole-working-copy stat showed 66040+ on a
+  never-committed tree, which is the git-vs-turn gap this fixes. The checkpoint row carries the
+  owning session id: a prompt resets only its own repo and foreign rows it owns, so two sessions in
+  one tmux session never reset each other's baseline. The row is one file per repo under
+  `~/.local/state/claude-turn`, cleared at SessionEnd; a stale row degrades to the bare `±`.
 - **Shift+Enter forwards Ctrl+J (`terminal::SendKeystroke`)**: Zed's keymap parser rejects raw control bytes in strings, so a CSI-u `SendText` binding cannot be stored. Ctrl+J is Claude Code's universal newline.
 - **Summary card via Stop-hook `systemMessage`**: the only supported way to render an end-of-turn card inside the Claude Code conversation.
 

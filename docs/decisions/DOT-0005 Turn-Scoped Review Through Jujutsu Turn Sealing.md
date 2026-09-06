@@ -63,7 +63,21 @@ The session footprint spans repositories: `sd tmux turn repos` derives the opted
 - Bad: turn granularity mixes concurrent manual edits into the same sealed change.
 - Bad: an extra jj operation runs at every turn end in opted-in repositories.
 
+## Amendment 2026-09-07: prompt checkpoints scope the diffstat
+
+The `±` segment and the picker's first row now diff from a prompt checkpoint, not from the whole
+working-copy change. A never-committed tree rendered its full size (66040+) on every pane, because
+the working copy is the git scope, not the turn scope. A UserPromptSubmit hook records each footprint
+repository's working-copy commit id after a snapshot; the segment renders `jj diff --from <id> --to @`.
+This is the Claude Code checkpoint model (a checkpoint before every prompt) and the Codex review pane's
+"Last turn" scope, expressed in jj. Turn sealing stays opt-in for repositories that want the boundary
+in history; the checkpoint needs no marker and touches no history. The checkpoint rows live under
+`~/.local/state/claude-turn`, one file per repository with the owning session id, and clear at
+SessionEnd. That is the one state file this decision now carries.
+
 ## More Information
 
 - Implementation: openspec change `turn-review-parity`.
+- Claude Code checkpointing: <https://code.claude.com/docs/en/checkpointing>
+- Codex review pane scopes: <https://learn.chatgpt.com/docs/code-review>
 - Codex turn-diff ref problems: https://github.com/openai/codex/discussions/9618
