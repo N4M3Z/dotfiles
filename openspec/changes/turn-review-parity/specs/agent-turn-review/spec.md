@@ -46,18 +46,43 @@ The Stop hook SHALL print a summary card into the conversation for each wrapped 
 - WHEN the hook wraps a turn
 - THEN it prints a `systemMessage` JSON object that contains the turn diffstat and names the review and undo entry points
 
+### Requirement: Prompt checkpoint
+
+A UserPromptSubmit hook SHALL record a checkpoint for each Jujutsu repository in the session footprint
+before the turn starts. The checkpoint is the working-copy commit id after a snapshot, stored per
+repository under the XDG state directory with the owning session id. This mirrors the Claude Code
+checkpoint model, where every user prompt marks the baseline and the turn is everything after it.
+No marker file, wrap, or repository history is involved.
+
+#### Scenario: Prompt in a Jujutsu repository
+
+- WHEN the user submits a prompt while the working directory is in a Jujutsu repository
+- THEN the hook snapshots the working copy and records its commit id as the checkpoint of that repository
+
+#### Scenario: Foreign repository owned by another session
+
+- WHEN a footprint repository already holds a checkpoint from a different live session
+- THEN the hook leaves that checkpoint in place, so the other session's turn keeps its baseline
+
+#### Scenario: Session end
+
+- WHEN the session ends
+- THEN the hook removes the checkpoints that this session recorded
+
 ### Requirement: Status-bar turn diffstat
 
-The tmux status bar SHALL show the working-copy diffstat of the active pane's Jujutsu repository.
+The tmux status bar SHALL show the diffstat of the active pane's Jujutsu repository since its prompt
+checkpoint. The segment never shows the whole uncommitted working copy: a never-committed tree
+would render its full size on every pane.
 
-#### Scenario: Repository with changes
+#### Scenario: Turn with edits
 
-- WHEN the pane's directory is in a Jujutsu repository whose working-copy change has insertions or deletions
-- THEN the segment shows them in the form "± N+ M-"
+- WHEN the pane's repository has a checkpoint and the diff from it to the working copy has insertions or deletions
+- THEN the segment shows them in the form "N+ M-"
 
-#### Scenario: Clean repository
+#### Scenario: Empty turn or no checkpoint
 
-- WHEN the working-copy change is empty
+- WHEN the diff since the checkpoint is empty, or no checkpoint exists for the repository
 - THEN the segment shows a bare "±" so the review click target stays present
 
 #### Scenario: Foreign directory
@@ -73,6 +98,11 @@ A click on the status-bar diffstat segment SHALL open a review of the working tr
 
 - WHEN the user left-clicks the diffstat segment
 - THEN a full-screen popup lists the working copy and recent changes as steps, and the selected step opens in tuicr
+
+#### Scenario: This-turn step
+
+- WHEN the review popup opens for a repository that holds a prompt checkpoint
+- THEN the first step is the diff from the checkpoint to the working copy, the same scope as the segment
 
 #### Scenario: Fresh diff on click
 
@@ -130,7 +160,7 @@ discovery. The marker file gates wrapping only and no state file exists.
 
 #### Scenario: Spillover indicator
 
-- WHEN another opted-in repository in the footprint has pending changes
+- WHEN another Jujutsu repository in the same tmux session has a non-empty turn since its checkpoint
 - THEN the diffstat segment appends the count of such repositories
 
 #### Scenario: Footprint on the turn card

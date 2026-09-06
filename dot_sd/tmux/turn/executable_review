@@ -16,6 +16,11 @@
 # export, right before tuicr opens, so tuicr sees the current state.
 # The working-copy row's +/- stat reflects the last snapshot, not
 # live unsaved edits; tuicr -w shows the truth after the pick.
+# The first row of a repo with a prompt checkpoint (sd claude turn
+# checkpoint) is "this turn": the diff from the checkpoint to @, the
+# same scope as the ± segment and the Claude Code /rewind boundary.
+# tuicr has no from/to range for jj, so that row renders through
+# `jj diff` in the pager; the working-copy and change rows open tuicr.
 # The .jj/turn-wrap marker gates wrapping only, never review
 # visibility. TURN_WRAP_REPOS overrides discovery (tests, scripting).
 d="${1:-$PWD}"
@@ -25,6 +30,16 @@ if ! command -v fzf >/dev/null 2>&1 || ! command -v jj >/dev/null 2>&1; then
     exec tuicr -w
 fi
 own=$(jj root 2>/dev/null)
+tab=$(printf '\t')
+state="${CLAUDE_TURN_STATE:-$HOME/.local/state/claude-turn}"
+
+# Print the checkpoint commit id recorded for the repo in $1, if any.
+checkpoint() {
+    f="$state/$(printf '%s' "$1" | tr '/' '_')"
+    [ -f "$f" ] || return 0
+    IFS="$tab" read -r ckpt _ < "$f"
+    printf '%s' "$ckpt"
+}
 
 repos() {
     if [ -n "${TURN_WRAP_REPOS:-}" ]; then
@@ -64,6 +79,19 @@ repo_steps() {
                 }
                 if (p + m > 0) printf " %s+ %s-", p, m
             }')
+        ckpt=$(checkpoint "$1")
+        if [ -n "$ckpt" ]; then
+            tstat=$(jj diff --from "$ckpt" --to @ --stat --ignore-working-copy 2>/dev/null | tail -1 | awk '
+                /changed/ {
+                    p = 0; m = 0
+                    for (i = 1; i <= NF; i++) {
+                        if ($i ~ /^insertion/) p = $(i - 1)
+                        if ($i ~ /^deletion/)  m = $(i - 1)
+                    }
+                    if (p + m > 0) printf " %s+ %s-", p, m
+                }')
+            printf '%s\tturn:%s\t%s  this turn (since the prompt checkpoint)%s\n' "$1" "$ckpt" "$name" "$tstat"
+        fi
         printf '%s\tcurrent\t%s  working copy (uncommitted)%s\n' "$1" "$name" "$stat"
         jj log --ignore-working-copy -r "ancestors(@-, ${2:-8}) ~ immutable()" --no-graph \
             -T 'change_id.short() ++ "\t" ++ commit_id.short() ++ "\t" ++ if(description, description.first_line(), "(no description)") ++ "\n"' 2>/dev/null \
@@ -94,7 +122,12 @@ rev=${rest%%	*}
 cd "$root" 2>/dev/null || exit 0
 # Snapshot and git-export the picked repo only, so tuicr sees now.
 jj log -r @ --no-graph -T '' >/dev/null 2>&1
-if [ "$rev" = "current" ]; then
-    exec tuicr -w
-fi
+case "$rev" in
+    current) exec tuicr -w ;;
+    turn:*)
+        # Checkpoint-to-@ range: jj renders it, less holds it open.
+        jj diff --from "${rev#turn:}" --to @ --color always 2>&1 | less -+F -R
+        exit 0
+        ;;
+esac
 exec tuicr -r "$rev"

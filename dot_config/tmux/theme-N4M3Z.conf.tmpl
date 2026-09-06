@@ -49,7 +49,8 @@ set -g status-left "#{?client_prefix,#[fg=#1d1d1d#,bg=#f9e2af#,bold] ⌘ #[defau
 setw -g window-status-format '#[fg=#8a8a8a] #{?#{==:#{@agent},attention},#[fg=#f9e2af bold]◉ #[fg=#8a8a8a nobold],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#8a8a8a],}}#I:#W #[fg=#585b70]✕#[default] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
 setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},attention},#[fg=#f9e2af]◉ #[fg=#{@accent}],#{?#{==:#{@agent},working},#[fg=#89b4fa]● #[fg=#{@accent}],}}#I:#W #[fg=#585b70]✕#[default] #{?window_end_flag,#[range=user|neww]#[fg=#585b70][+]#[norange] ,}'
 
-# Right: ± turn diffstat (-> review picker) · jj state (-> jjui) · git
+# Right: ± turn diffstat since the prompt checkpoint (-> review
+# picker; the session name feeds its footprint) · jj state (-> jjui) · git
 # state (-> gitui) · dim cwd basename (-> glow) · Δ (-> Zed Project
 # Diff via sd zed diff) · ⛭ openspec (-> spec picker) · 󰃭 clock
 # (click -> cal) · accent block with battery, CPU, MEM (-> btop).
@@ -62,5 +63,5 @@ setw -g window-status-current-format '#[fg=#{@accent},bold] #{?#{==:#{@agent},at
 # the eyes.
 set -g @cpu_percentage_format '%2.0f%%'
 set -g @ram_percentage_format '%2.0f%%'
-set -g status-right "#[range=user|review]#[fg=#f9e2af]#(sh ~/.sd/tmux/turn/diff '#{pane_current_path}')#[norange]  #[range=user|jj]#[fg=#a6adc8]#(sh ~/.sd/tmux/bar/jj '#{pane_current_path}')#[norange] #[range=user|git]#[fg=#7f849c]#(sh ~/.sd/tmux/bar/git '#{pane_current_path}')#[norange]  #[range=user|glow]#[fg=#6f6f6f]#{b:pane_current_path}#[norange] #[range=user|zed]#[fg=#7f849c]Δ#[norange]  #[range=user|spec]#[fg=#94a3b8]#(sh ~/.sd/openspec/stat '#{pane_current_path}' '#{session_name}')#[norange]  #[range=user|cal]#[fg=#8a8a8a]󰃭#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] #(sh ~/.sd/tmux/bar/battery)  CPU #{cpu_percentage}  MEM #{ram_percentage} #[norange]"
+set -g status-right "#[range=user|review]#[fg=#f9e2af]#(sh ~/.sd/tmux/turn/diff '#{pane_current_path}' '#{session_name}')#[norange]  #[range=user|jj]#[fg=#a6adc8]#(sh ~/.sd/tmux/bar/jj '#{pane_current_path}')#[norange] #[range=user|git]#[fg=#7f849c]#(sh ~/.sd/tmux/bar/git '#{pane_current_path}')#[norange]  #[range=user|glow]#[fg=#6f6f6f]#{b:pane_current_path}#[norange] #[range=user|zed]#[fg=#7f849c]Δ#[norange]  #[range=user|spec]#[fg=#94a3b8]#(sh ~/.sd/openspec/stat '#{pane_current_path}' '#{session_name}')#[norange]  #[range=user|cal]#[fg=#8a8a8a]󰃭#[norange]  #[range=user|btop]#[fg=#1d1d1d,bg=#{@accent},bold] #(sh ~/.sd/tmux/bar/battery)  CPU #{cpu_percentage}  MEM #{ram_percentage} #[norange]"
 run-shell '~/.config/tmux/plugins/tmux-cpu/cpu.tmux'

@@ -4,6 +4,10 @@
 
 - [x] 1.1 Add `dot_sd/claude/turn/executable_wrap` (wrap + summary card with footprint counts); verify with the scratch-repo cases: empty turn, undescribed turn, described turn, no marker, elsewhere aggregation.
 - [x] 1.2 Add `dot_sd/tmux/turn/executable_diff` (status diffstat + spillover count); verify it prints "± N+ M-" with changes, a bare "±" when clean, and "⁺N" for other dirty footprint repos.
+- [x] 1.5 Add `dot_sd/claude/turn/executable_checkpoint` (prompt checkpoint: begin, snapshot, clear)
+  with the UserPromptSubmit, Stop, and SessionEnd hook parts; rescope the diffstat and the picker's
+  first row to the checkpoint; verify with scratch repos: bare "±" right after a prompt, "N+ M-"
+  after edits, a second session leaves a foreign checkpoint alone, clear removes only the session's rows.
 - [x] 1.3 Add `dot_sd/claude/executable_appshot`; verify `sh -n` passes and the script prints a path only for a non-empty capture.
 - [x] 1.4 Add `dot_sd/tmux/turn/executable_repos` (pane-footprint derivation) and `dot_sd/tmux/turn/executable_review` (multi-repo step picker); verify with the stubbed fzf and tuicr tests: first row, cross-repo working copy, cross-repo change.
 
