@@ -23,9 +23,12 @@ ignore_paths = [
 
 # Workshop jargon: tools, forks, and names the stock dictionaries lack.
 words = [
+    "LLM",
+    "PKM",
     "agavra",
     "chezmoi",
     "codebook",
+    "frontmatter",
     "gitui",
     "jjui",
     "jujutsu",
