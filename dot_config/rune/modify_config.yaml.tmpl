@@ -1,4 +1,21 @@
-deck: /Users/N4M3Z/Developer/runedeck/deck
+#!/bin/bash
+# chezmoi modify_ script for ~/.config/rune/config.yaml.
+#
+# The live file arrives on stdin; stdout becomes the new contents on every
+# `chezmoi apply`. Everything below RUNE_CONFIG is enforced. The one exception
+# is the `setup:` block, which `rune setup` writes into this same file to
+# record completed steps; that block is preserved from the live file so a
+# deploy never re-triggers first-run setup on a machine that already did it.
+# Source: https://github.com/N4M3Z/dotfiles
+set -o pipefail
+umask 077
+
+desired=$(mktemp "${TMPDIR:-/tmp}/rune-config.XXXXXX") || exit 1
+live=$(mktemp "${TMPDIR:-/tmp}/rune-live.XXXXXX") || exit 1
+trap 'command rm -f "$desired" "$live"' EXIT
+
+cat > "$desired" <<'RUNE_CONFIG'
+deck: {{ .chezmoi.homeDir }}/Developer/runedeck/deck
 ontology:
     domain: Technology
     skeleton: ~/Developer/runedeck/skeleton
@@ -115,3 +132,14 @@ launch:
         opencode:
             lumo:
                 model: lumo-opencode
+RUNE_CONFIG
+
+cat > "$live"
+
+# yq eval-all sees both documents; copy setup across only when the live file
+# has one. An empty live file (fresh machine) yields no second document.
+if [ -s "$live" ] && [ "$(yq '.setup // "none"' "$live")" != "none" ]; then
+    yq eval-all 'select(fileIndex == 0) * {"setup": select(fileIndex == 1).setup}' "$desired" "$live"
+else
+    cat "$desired"
+fi
