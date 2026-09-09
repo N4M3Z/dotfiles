@@ -2,6 +2,7 @@ agavra
 btop
 chezmoi
 codebook
+frontmatter
 fzf
 gitui
 gitleaks
@@ -10,6 +11,7 @@ jj
 jjui
 jujutsu
 keymap
+lifecycle
 memex
 moxide
 multibuffer

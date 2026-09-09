@@ -50,3 +50,10 @@
 [credential "https://gist.github.com"]
     helper =
     helper = !"{{ $gh }}" auth git-credential
+
+; git-ai streams git's trace2 events to its daemon socket so it can attribute
+; commits to the agent session that produced them. The installer appends this
+; block itself; declaring it here keeps chezmoi apply from removing it.
+[trace2]
+    eventTarget = af_unix:stream:{{ .chezmoi.homeDir }}/.git-ai/internal/daemon/trace2.sock
+    eventNesting = 0

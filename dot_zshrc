@@ -34,6 +34,15 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 # LM Studio CLI (lms)
 [ -d "${HOME}/.lmstudio/bin" ] && export PATH="${PATH}:${HOME}/.lmstudio/bin"
 
+# git-ai CLI. The hooks call it by absolute path; this is for interactive use.
+# Appended, not prepended: the installer's prepend is not needed here.
+[ -d "${HOME}/.git-ai/bin" ] && export PATH="${PATH}:${HOME}/.git-ai/bin"
+
+# grok completions only. Keep ~/.grok/bin off PATH: ~/.local/bin/grok wraps
+# the vendor binary through harness-run (DOT-0004), and the installer's
+# PATH prepend would shadow that wrapper. Prezto runs compinit.
+[ -d "${HOME}/.grok/completions/zsh" ] && fpath=("${HOME}/.grok/completions/zsh" $fpath)
+
 # p10k config saved as fallback. Loaded only when p10k is the active prompt
 # (currently inactive: zpreztorc prompt theme = 'off' and starship init above).
 # Uncomment to switch back to p10k:
