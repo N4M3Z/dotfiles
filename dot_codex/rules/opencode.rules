@@ -1,0 +1,16 @@
+# Codex execution policy: run opencode outside the sandbox.
+#
+# opencode is a local coding harness. It writes its own state under ~/.local/share/opencode, loads
+# plugins from ~/.config/opencode, reads the keychain through the tools it spawns, and talks to
+# model providers over the network. Inside the Codex sandbox each of those fails on the first
+# denied path or domain. This rule lets a matching command run outside the sandbox without a
+# prompt, the same effect as the `opencode *` entry in the Claude Code `sandbox.excludedCommands`.
+# Codex applies the most restrictive matching decision, so a `prompt` or `forbidden` rule elsewhere
+# still wins. Check with: codex execpolicy check --pretty --rules ~/.codex/rules/opencode.rules -- opencode run hi
+prefix_rule(
+    pattern = ["opencode"],
+    decision = "allow",
+    justification = "opencode needs its data directory, its plugins, the keychain, and provider network access",
+    match = ["opencode run -m proton-lumo/auto hi", ["opencode", "--version"]],
+    not_match = ["opencodex", "npx opencode"],
+)

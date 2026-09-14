@@ -117,6 +117,8 @@
       "docker *",
       "gh *",
       "rtk gh *",
+      "opencode *",
+      "rtk opencode *",
       "brew *",
       "rtk brew *",
       "container *",
