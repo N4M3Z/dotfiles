@@ -21,7 +21,7 @@
       "Never disable or weaken the sandbox (macOS Seatbelt), the destructive-command guard (dcg), or commit signing."
     ],
     "environment": [
-      "Source control: github.com/N4M3Z and repositories under it are trusted; GitLab is reached via the glab CLI. Proton GitLab (gitlab.protontech.ch) reads use the agent glab identity (GLAB_CONFIG_DIR, read-only PAT); pushes and merges stay in the owner's terminal.",
+      "Source control: github.com/N4M3Z and repositories under it are trusted; GitLab is reached via the glab CLI. Proton GitLab (gitlab.protontech.ch) is reached with the owner's glab keychain token and glab as git's credential helper, the same way gh serves github.com; pushes and merges stay in the owner's terminal.",
       "Trusted local services: Postgres at postgresql://localhost:5432/memex, Ollama at localhost:11434, the gbrain MCP, and localhost / 127.0.0.1.",
       "Trusted package and toolchain domains: github.com, registry.npmjs.org, crates.io, pypi.org, files.pythonhosted.org, formulae.brew.sh, ghcr.io.",
       "Normal working trees for reads and writes are ~/Developer and ~/Atlas.",
