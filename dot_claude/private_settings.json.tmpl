@@ -21,8 +21,7 @@
     "OTEL_LOG_USER_PROMPTS": "1",
     "OTEL_LOG_TOOL_DETAILS": "1",
     "OTEL_METRICS_INCLUDE_SESSION_ID": "false",
-    "GITLAB_HOST": "gitlab.protontech.ch",
-    "GLAB_CONFIG_DIR": "{{ .chezmoi.homeDir }}/.config/glab-cli-agent"
+    "GITLAB_HOST": "gitlab.protontech.ch"
   },
   "permissions": {{ $harness.permissions | toPrettyJson }},
   "attribution": {
@@ -267,6 +266,10 @@
       "docker *",
       "gh *",
       "rtk gh *",
+      "glab *",
+      "rtk glab *",
+      "git *",
+      "rtk git *",
       "brew *",
       "rtk brew *",
       "container *",

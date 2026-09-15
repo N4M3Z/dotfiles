@@ -1,4 +1,5 @@
 {{- $gh := lookPath "gh" | default "gh" -}}
+{{- $glab := lookPath "glab" | default "glab" -}}
 ; ~/.gitconfig — Chezmoi-managed; canonical source at
 ; dotfiles/dot_gitconfig.tmpl, deploys to ~/.gitconfig.
 ;
@@ -50,6 +51,12 @@
 [credential "https://gist.github.com"]
     helper =
     helper = !"{{ $gh }}" auth git-credential
+
+; Same pattern for Proton GitLab: glab serves the token it keeps in the
+; keychain, so git needs no separate credential store for that host.
+[credential "https://gitlab.protontech.ch"]
+    helper =
+    helper = !"{{ $glab }}" auth git-credential
 
 ; git-ai streams git's trace2 events to its daemon socket so it can attribute
 ; commits to the agent session that produced them. The installer appends this
