@@ -1,0 +1,27 @@
+.chezmoidata/harness/automode.json
+  s_879ce021fea91c::t_3bb757da1ad572 24
+dot_claude/private_settings.json.tmpl
+  s_879ce021fea91c::t_7a05289a27a8a3 24
+  s_879ce021fea91c::t_2cc597c23b3c99 269-272
+dot_gitconfig.tmpl
+  s_879ce021fea91c::t_713b212bb163db 55-60
+  s_879ce021fea91c::t_af6aacfa2f09fb 2
+run_onchange_after_glab.sh.tmpl
+  s_879ce021fea91c::t_d7e9d2795c4238 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bbaec3534df4f7228f4e24661ea8acc5cb0d512e",
+  "prompts": {},
+  "sessions": {
+    "s_879ce021fea91c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a5875df5-5c1a-422f-854b-9dae284c027a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Martin Zeman <N4M3Z@users.noreply.github.com>"
+    }
+  }
+}
