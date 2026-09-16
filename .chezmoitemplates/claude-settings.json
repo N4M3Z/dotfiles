@@ -29,8 +29,7 @@
       "Bash(trash:*)",
       "Bash(/usr/bin/trash:*)",
       "Read(*/.claude/skills/**)",
-      "Edit(~/.claude/plans/*)",
-      "Write(~/.claude/plans/*)"
+      "Edit(~/.claude/plans/*)"
     ],
     "deny": [
       "Read(~/.ssh/**)",
