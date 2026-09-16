@@ -11,7 +11,14 @@ backend = "gpg"
 # below signs the pushed commits in one batch instead. This reduces everything
 # to one touch per push, and pushed commits are still marked as "verified".
 behavior = "drop"
-key = "0x29DD2145CE7A818929459B2649F08103D3DA399E"
+# The key is the one git signs with. Provisioning detects it from the inserted
+# YubiKey and writes it to the global git config; jj does not read git's config
+# at runtime, so the value is copied in when chezmoi applies this file. With no
+# key in git yet, the line is omitted and jj falls back to gpg's default key.
+{{- $signingKey := output "git" "config" "--global" "--default" "" "--get" "user.signingkey" | trim }}
+{{- if $signingKey }}
+key = {{ $signingKey | quote }}
+{{- end }}
 
 [git]
 sign-on-push = true
