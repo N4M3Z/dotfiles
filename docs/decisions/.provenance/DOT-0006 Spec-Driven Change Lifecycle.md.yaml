@@ -1,0 +1,45 @@
+provenance:
+  _type: https://in-toto.io/Statement/v1
+  predicateType: https://slsa.dev/provenance/v1
+  subject:
+  - name: docs/decisions/DOT-0006 Spec-Driven Change Lifecycle.md
+    digest:
+      sha256: e47ca0a6e8a3d337b356c41e12c5ed0ef92e4a55ecb761bcdb4b4f1d32fd6100
+  predicate:
+    buildDefinition:
+      buildType: adopt/v1
+      externalParameters:
+        source: ''
+        upstream_url: https://github.com/runedeck/deck/blob/main/docs/decisions/CORE-0019%20Spec-Driven%20Change%20Lifecycle.md
+        upstream_commit: ''
+        transforms_applied:
+        - align
+      resolvedDependencies:
+      - name: upstream
+        uri: https://github.com/runedeck/deck/blob/main/docs/decisions/CORE-0019%20Spec-Driven%20Change%20Lifecycle.md
+        digest:
+          sha256: 0facb9e506e60e620b4ceac1f4db6e1a5175508cf7520b883a70e375dc17ba64
+    runDetails:
+      builder:
+        id: rune-cli
+        version:
+          rune: 0.5.0
+      metadata:
+        startedOn: 2026-09-20T22:21:20.646586+00:00
+        review: reviewed
+        reviewer: Martin Zeman <N4M3Z@users.noreply.github.com>
+        completedOn: 2026-09-20T22:21:40.597739+00:00
+        summary: 8 keep, 4 adapt
+        replacements:
+        - block: DOT-0006 Spec-Driven Change Lifecycle.md:1
+          sha256: f5e17fcd109b39c9e1b19ce8137e650e977d05764a0d0c39153deea6b3d4b2eb
+          path: replacements/f5e17fcd109b39c9e1b19ce8137e650e977d05764a0d0c39153deea6b3d4b2eb
+        - block: DOT-0006 Spec-Driven Change Lifecycle.md:4
+          sha256: 0596ac02425217d2902f5a3b34f647589d0d99b7004fb24a65eacdc38a6632a3
+          path: replacements/0596ac02425217d2902f5a3b34f647589d0d99b7004fb24a65eacdc38a6632a3
+        - block: DOT-0006 Spec-Driven Change Lifecycle.md:9
+          sha256: 83b7f4d9a3afcde4742e2b874c7315d19369df708e3267924ec42ad0da9c168f
+          path: replacements/83b7f4d9a3afcde4742e2b874c7315d19369df708e3267924ec42ad0da9c168f
+        - block: DOT-0006 Spec-Driven Change Lifecycle.md:11
+          sha256: f9015eecaf3a3bfc5aa79dc4fbb0ff253c42117bb86dd34458175788b09aeb7c
+          path: replacements/f9015eecaf3a3bfc5aa79dc4fbb0ff253c42117bb86dd34458175788b09aeb7c

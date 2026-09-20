@@ -1,0 +1,29 @@
+---
+title: Spec-Driven Change Lifecycle
+description: 'Behavior enters this repository through the spec-driven lifecycle: a proposal, delta specifications, and an archive into one canonical tree under docs/.'
+type: adr
+category: architecture
+tags:
+- architecture
+- specifications
+- openspec
+status: accepted
+created: 2026-08-27
+updated: 2026-09-20
+author: '@N4M3Z'
+project: dotfiles
+related:
+- CORE-0019 Spec-Driven Change Lifecycle
+responsible:
+- '@N4M3Z'
+accountable:
+- '@N4M3Z'
+consulted:
+- claude-fable-5-1
+- gpt-6-astra
+informed: []
+upstream:
+- https://github.com/runedeck/deck/blob/main/docs/decisions/CORE-0019%20Spec-Driven%20Change%20Lifecycle.md
+- https://github.com/Fission-AI/OpenSpec
+change: native-spec-root-adoption
+---

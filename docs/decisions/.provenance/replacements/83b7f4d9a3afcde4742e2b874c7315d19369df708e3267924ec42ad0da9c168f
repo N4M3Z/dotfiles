@@ -1,0 +1,7 @@
+- A change MUST live under `docs/changes/<id>/` with a proposal, a task list, and a delta specification for each capability.
+- A requirement MUST use MUST language with at least one WHEN and THEN scenario.
+- Archive MUST merge the delta into `docs/specs/` and MUST move the change directory to `docs/changes/archive/`. The canonical tree is the one truth.
+- Archive is the act that accepts a change. OpenSpec has no status field and no accepted state, and this repository adds none. Archive MUST NOT run for a change without a record.
+- `rune spec` is the native implementation over `docs/`, and the OpenSpec CLI operates on the same tree. One tree serves both, with no mirror.
+- A repository MUST NOT carry an `openspec/` or `docs/openspec/` tree beside `docs/`, and MUST NOT set `spec.root` to move the tree elsewhere. `rune spec import --openspec` brings a stray tree home.
+- Validation has layers: the spec grammar through the spec tooling, the document frame through mdschema, and the prose through the chosen linters.
