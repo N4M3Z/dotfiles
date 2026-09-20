@@ -21,6 +21,10 @@ cat > "$policy" <<'FORGE_POLICY'
 {{ .harness.grok | toJson }}
 FORGE_POLICY
 
+# The deep-merge (*) adds and overwrites but never removes, so a deny rule
+# retired from grok.json would linger in the live file forever. The policy owns
+# the permission map outright: replace it after the merge so retired entries
+# drop out on the next apply.
 yq -p=toml -o=json '.' - \
-    | jq --slurpfile policy "$policy" '(. // {}) * $policy[0]' \
+    | jq --slurpfile policy "$policy" '((. // {}) * $policy[0]) | .permission = $policy[0].permission' \
     | yq -p=json -o=toml '.' -

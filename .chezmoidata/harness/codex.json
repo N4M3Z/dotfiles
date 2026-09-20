@@ -104,12 +104,19 @@
             "~/.rune.lock": "write",
             "~/.claude/skills/WorkflowInterface": "write",
             "~/.claude/.manifest": "write",
-            "~/.claude/..manifest.*.*.tmp": "write",
             "~/.codex/.manifest": "write",
-            "~/.codex/..manifest.*.*.tmp": "write",
             "~/.opencode/skills/WorkflowInterface": "write",
             "~/.opencode/.manifest": "write",
-            "~/.opencode/..manifest.*.*.tmp": "write"
+            "~/.Trash": "write",
+            "~/.bash_profile": "read",
+            "~/.bashrc": "read",
+            "~/.profile": "read",
+            "~/.zprofile": "read",
+            "~/.zshrc": "read",
+            "~/.config/chezmoi": "write",
+            "~/.config/rune": "write",
+            "~/Data/Benchmarks": "write",
+            "~/Documents": "write"
           },
           "network": {
             "enabled": true,

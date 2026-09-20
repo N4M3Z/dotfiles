@@ -36,6 +36,10 @@ cat > "$policy" <<'FORGE_POLICY'
 {{ $codex | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir }}
 FORGE_POLICY
 
+# The deep-merge (*) adds and overwrites but never removes, so a filesystem grant
+# retired from codex.json would linger in the live file forever. The policy owns
+# permissions.Nexus.filesystem outright: after the merge, replace that subtree
+# with the policy's copy so retired entries drop out on the next apply.
 yq -p=toml -o=json '.' - \
-    | jq --slurpfile policy "$policy" '((. // {}) | .permissions.Nexus = ((.permissions["workspace-local"] // {}) * (.permissions.Nexus // {})) | del(.profile, .profiles, .permissions["workspace-local"], .sandbox_mode, .sandbox_workspace_write)) * $policy[0]' \
+    | jq --slurpfile policy "$policy" '(((. // {}) | .permissions.Nexus = ((.permissions["workspace-local"] // {}) * (.permissions.Nexus // {})) | del(.profile, .profiles, .permissions["workspace-local"], .sandbox_mode, .sandbox_workspace_write)) * $policy[0]) | .permissions.Nexus.filesystem = $policy[0].permissions.Nexus.filesystem' \
     | yq -p=json -o=toml '.' -

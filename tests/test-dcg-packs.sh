@@ -67,6 +67,12 @@ require_allow 'brew --prefix cliproxyapi'
 # user.aliases: interactive -i aliases need an explicit flag
 require_block 'rm /tmp/x' user.aliases:rm-needs-flag
 require_block 'mv /tmp/a /tmp/b' user.aliases:mv-needs-flag
+require_block 'cd /tmp && rm x' user.aliases:rm-needs-flag
+# A flag passes, including after a chain separator and after other options.
+require_allow 'rm -f /tmp/x'
+require_allow 'cd /tmp && rm -f x'
+require_allow 'mv -n /tmp/a /tmp/b'
+require_allow 'cp -v -f /tmp/a /tmp/b'
 
 if [ "${failures}" -ne 0 ]; then
     echo "${failures} failure(s)"
