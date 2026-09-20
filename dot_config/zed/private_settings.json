@@ -354,8 +354,9 @@
     "typst": true,
     // Mermaid diagrams in markdown.
     "mermaid": true,
-    // Inline dependency versions in manifests (Cargo.toml etc.).
-    "dependi": true,
+    // Inline dependency versions in manifests (Cargo.toml etc.). Registry
+    // id of Depsy, the renamed successor of dependi (frozen upstream).
+    "depsy-lsp": true,
     "jq": true,
     "kdl": true,
     "git-firefly": true,

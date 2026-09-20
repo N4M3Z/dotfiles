@@ -1,0 +1,5 @@
+- Review has a target it can test, and each requirement can name the check that enforces it.
+- A small change carries the full ceremony: a proposal, a delta, and a record. The owner chose that cost, because a record states what the change wants.
+- The `status` field in a proposal is a note for readers. The tools read task checkboxes and the archive location, so the field can disagree with them.
+- `rune spec archive` matches requirement headings by exact text. A canonical heading that was recased by hand duplicates on the next archive. It does not yet move a record or assign an id, an open task in the cli repository.
+- The tree moved from `openspec/` to `docs/` on 2026-09-21, and every complete change was archived into `docs/specs/`.

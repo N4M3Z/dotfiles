@@ -6,3 +6,11 @@
 .specstory/debug/
 .specstory/statistics.json
 .openspec-store/
+
+# rune spec runtime state, parallel checkouts, quarantine, caches
+.trash/
+.rune-transaction/
+.rune-archive.lock
+.interop/
+__pycache__/
+.rumdl_cache/

@@ -6,7 +6,7 @@ Defines provider routing by launch surface while preserving direct vendor featur
 
 ### Requirement: Desktop applications use direct vendor services
 
-The configuration SHALL keep Codex Desktop on OpenAI authentication and Claude Desktop on Anthropic authentication.
+The configuration MUST keep Codex Desktop on OpenAI authentication and Claude Desktop on Anthropic authentication.
 
 The configuration MUST NOT enable third-party inference for either desktop application.
 
@@ -24,9 +24,9 @@ The configuration MUST NOT enable third-party inference for either desktop appli
 
 ### Requirement: Managed terminal harnesses use CLIProxyAPI by default
 
-The managed terminal `codex` and `claude` launchers SHALL select CLIProxyAPI unless the user selects a direct route.
+The managed terminal `codex` and `claude` launchers MUST select CLIProxyAPI unless the user selects a direct route.
 
-Rune launches for these harnesses SHALL use the same route contract.
+Rune launches for these harnesses MUST use the same route contract.
 
 #### Scenario: Terminal Codex starts with proxy routing enabled
 
@@ -47,7 +47,7 @@ Rune launches for these harnesses SHALL use the same route contract.
 
 ### Requirement: Proxy routing stays local to each terminal process
 
-The proxy setup SHALL inject provider routing when a managed terminal launcher starts.
+The proxy setup MUST inject provider routing when a managed terminal launcher starts.
 
 Shell startup MUST NOT export vendor endpoint or vendor authentication overrides for unrelated processes.
 
@@ -59,9 +59,9 @@ Shell startup MUST NOT export vendor endpoint or vendor authentication overrides
 
 ### Requirement: Direct and proxied routes share harness state
 
-Route selection SHALL preserve each harness configuration home and local session-storage location.
+Route selection MUST preserve each harness configuration home and local session-storage location.
 
-The Codex configuration merge SHALL preserve unrelated profiles and application-managed settings.
+The Codex configuration merge MUST preserve unrelated profiles and application-managed settings.
 
 #### Scenario: Codex changes routes
 
@@ -76,11 +76,11 @@ The Codex configuration merge SHALL preserve unrelated profiles and application-
 
 ### Requirement: One command can bypass the proxy
 
-The `noproxy` command SHALL select direct vendor routing for one child process.
+The `noproxy` command MUST select direct vendor routing for one child process.
 
-It SHALL remove credential and provider overrides that outrank the required vendor login.
+It MUST remove credential and provider overrides that outrank the required vendor login.
 
-It SHALL NOT change the saved proxy state for later commands.
+It MUST NOT change the saved proxy state for later commands.
 
 #### Scenario: One Claude command uses direct authentication
 
@@ -96,9 +96,9 @@ It SHALL NOT change the saved proxy state for later commands.
 
 ### Requirement: The user can persistently disable terminal proxy routing
 
-The `cliproxy off` command SHALL make managed terminal harnesses use their direct routes.
+The `cliproxy off` command MUST make managed terminal harnesses use their direct routes.
 
-The `cliproxy on` command SHALL restore proxy-default routing for later managed terminal processes.
+The `cliproxy on` command MUST restore proxy-default routing for later managed terminal processes.
 
 #### Scenario: Proxy routing is disabled
 
@@ -132,9 +132,9 @@ A failed CLIProxyAPI request MUST NOT retry through the direct vendor service.
 
 ### Requirement: Direct Claude supports Remote Control
 
-The direct Claude route SHALL allow full-scope Claude.ai authentication to remain active.
+The direct Claude route MUST allow full-scope Claude.ai authentication to remain active.
 
-The route SHALL remove proxy, API-key, setup-token, cloud-provider, profile, and feature-evaluation overrides that block Remote Control.
+The route MUST remove proxy, API-key, setup-token, cloud-provider, profile, and feature-evaluation overrides that block Remote Control.
 
 #### Scenario: Remote Control starts in server mode
 
@@ -151,7 +151,7 @@ The route SHALL remove proxy, API-key, setup-token, cloud-provider, profile, and
 
 ### Requirement: Direct Claude supports Claude in Chrome
 
-The direct Claude route SHALL preserve Claude in Chrome when Anthropic account and extension requirements are satisfied.
+The direct Claude route MUST preserve Claude in Chrome when Anthropic account and extension requirements are satisfied.
 
 #### Scenario: Chrome integration starts
 
@@ -166,9 +166,9 @@ The direct Claude route SHALL preserve Claude in Chrome when Anthropic account a
 
 ### Requirement: Route status is explicit
 
-The `cliproxy status` command SHALL report the route for each managed terminal harness and desktop application.
+The `cliproxy status` command MUST report the route for each managed terminal harness and desktop application.
 
-It SHALL report proxy health without printing any credential.
+It MUST report proxy health without printing any credential.
 
 #### Scenario: Status is requested
 
@@ -179,7 +179,7 @@ It SHALL report proxy health without printing any credential.
 
 ### Requirement: Credentials remain untracked and absent from arguments
 
-Tracked files SHALL contain credential variable names only.
+Tracked files MUST contain credential variable names only.
 
 Launchers MUST pass proxy credentials through the environment and MUST NOT place them in process arguments.
 
@@ -191,11 +191,11 @@ Launchers MUST pass proxy credentials through the environment and MUST NOT place
 
 ### Requirement: Accounting follows the selected route
 
-Proxied terminal requests SHALL remain visible to CLIProxyAPI accounting.
+Proxied terminal requests MUST remain visible to CLIProxyAPI accounting.
 
-Direct requests SHALL remain outside CLIProxyAPI accounting.
+Direct requests MUST remain outside CLIProxyAPI accounting.
 
-Route selection SHALL NOT relocate local harness session data.
+Route selection MUST NOT relocate local harness session data.
 
 #### Scenario: A proxied terminal request completes
 

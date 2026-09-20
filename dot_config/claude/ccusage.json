@@ -1,0 +1,33 @@
+{
+  "$schema": "https://ccusage.com/config-schema.json",
+  "defaults": {
+    "pricingOverrides": {
+      "lumo-max": {
+        "inputCostPerToken": 0.000003,
+        "outputCostPerToken": 0.000006,
+        "cacheReadInputTokenCost": 0.000001
+      },
+      "lumo-thinking": {
+        "inputCostPerToken": 0.000003,
+        "outputCostPerToken": 0.000006,
+        "cacheReadInputTokenCost": 0.000001
+      },
+      "lumo-lite": {
+        "inputCostPerToken": 0.000001,
+        "outputCostPerToken": 0.000004
+      },
+      "lumo-fast": {
+        "inputCostPerToken": 0.000001,
+        "outputCostPerToken": 0.000004
+      },
+      "gemma-4-26B-A4B-it-QAT-MLX-4bit": {
+        "inputCostPerToken": 0,
+        "outputCostPerToken": 0
+      },
+      "qwen2.5-coder:7b": {
+        "inputCostPerToken": 0,
+        "outputCostPerToken": 0
+      }
+    }
+  }
+}

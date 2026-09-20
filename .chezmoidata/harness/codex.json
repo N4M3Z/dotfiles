@@ -100,7 +100,16 @@
               ".git": "read",
               ".agents": "read",
               ".codex": "read"
-            }
+            },
+            "~/.rune.lock": "write",
+            "~/.claude/skills/WorkflowInterface": "write",
+            "~/.claude/.manifest": "write",
+            "~/.claude/..manifest.*.*.tmp": "write",
+            "~/.codex/.manifest": "write",
+            "~/.codex/..manifest.*.*.tmp": "write",
+            "~/.opencode/skills/WorkflowInterface": "write",
+            "~/.opencode/.manifest": "write",
+            "~/.opencode/..manifest.*.*.tmp": "write"
           },
           "network": {
             "enabled": true,

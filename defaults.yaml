@@ -1,0 +1,4 @@
+# dotfiles deploys no runes. The module manifest exists so rune's adoption review
+# and doctor can run on docs/decisions/, and this file satisfies the module
+# layout they expect.
+{}

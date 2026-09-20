@@ -9,7 +9,7 @@ with an end-of-turn summary card, one-click review entry points, and screenshot 
 
 ### Requirement: Turn wrapping on turn end
 
-The Stop hook SHALL wrap the working-copy change of an opted-in Jujutsu repository
+The Stop hook MUST wrap the working-copy change of an opted-in Jujutsu repository
 when a Claude Code turn ends with file changes.
 
 #### Scenario: Turn with changes in an opted-in repository
@@ -39,7 +39,7 @@ when a Claude Code turn ends with file changes.
 
 ### Requirement: End-of-turn summary card
 
-The Stop hook SHALL print a summary card into the conversation for each wrapped turn.
+The Stop hook MUST print a summary card into the conversation for each wrapped turn.
 
 #### Scenario: Wrapped turn card
 
@@ -48,7 +48,7 @@ The Stop hook SHALL print a summary card into the conversation for each wrapped 
 
 ### Requirement: Prompt checkpoint
 
-A UserPromptSubmit hook SHALL record a checkpoint for each Jujutsu repository in the session footprint
+A UserPromptSubmit hook MUST record a checkpoint for each Jujutsu repository in the session footprint
 before the turn starts. The checkpoint is the working-copy commit id after a snapshot, stored per
 repository under the XDG state directory with the owning session id. This mirrors the Claude Code
 checkpoint model, where every user prompt marks the baseline and the turn is everything after it.
@@ -71,7 +71,7 @@ No marker file, wrap, or repository history is involved.
 
 ### Requirement: Status-bar turn diffstat
 
-The tmux status bar SHALL show the diffstat of the active pane's Jujutsu repository since its prompt
+The tmux status bar MUST show the diffstat of the active pane's Jujutsu repository since its prompt
 checkpoint. The segment never shows the whole uncommitted working copy: a never-committed tree
 would render its full size on every pane.
 
@@ -92,7 +92,7 @@ would render its full size on every pane.
 
 ### Requirement: One-click review
 
-A click on the status-bar diffstat segment SHALL open a review of the working tree.
+A click on the status-bar diffstat segment MUST open a review of the working tree.
 
 #### Scenario: Segment click
 
@@ -116,7 +116,7 @@ A click on the status-bar diffstat segment SHALL open a review of the working tr
 
 ### Requirement: Review scope keybindings
 
-Zed SHALL open a review multibuffer for each supported diff scope from the `space g` namespace.
+Zed MUST open a review multibuffer for each supported diff scope from the `space g` namespace.
 
 #### Scenario: Scope keys
 
@@ -125,7 +125,7 @@ Zed SHALL open a review multibuffer for each supported diff scope from the `spac
 
 ### Requirement: Screenshot into the prompt
 
-A tmux binding SHALL capture a window screenshot and paste its file path into the active pane.
+A tmux binding MUST capture a window screenshot and paste its file path into the active pane.
 
 #### Scenario: Window capture
 
@@ -139,7 +139,7 @@ A tmux binding SHALL capture a window screenshot and paste its file path into th
 
 ### Requirement: Session footprint
 
-Review surfaces SHALL cover the session footprint, not only the pane's repository.
+Review surfaces MUST cover the session footprint, not only the pane's repository.
 Discovery is tiered: the current tmux session's pane repositories and the opted-in marker
 repositories always appear, and jj op-log recency adds a bounded tail of recently active
 repositories as the agent-work safety net. The machine-wide registry does not feed review
