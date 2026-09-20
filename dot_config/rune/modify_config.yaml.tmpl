@@ -32,7 +32,10 @@ launch:
     models:
         sol:
             id: gpt-5.6-sol
-            context: 270000
+            context: 272000
+        astra:
+            id: gpt-6-astra
+            context: 272000
         lumo:
             id: lumo-max
             context: 131072
@@ -48,6 +51,9 @@ launch:
         grok:
             id: grok-4.6
             context: 500000
+        kimi:
+            id: kimi-k3
+            context: 262144
         opus:
             id: claude-opus-5
             context: 200000
@@ -86,8 +92,28 @@ launch:
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "grok-composer-2.5-fast"
+            kimi:
+                model: kimi
+                args:
+                    - "--settings"
+                    - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "kimi-k2.7-code-highspeed"
             sol-run:
                 model: sol
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "gpt-5.6-luna"
+            astra:
+                model: astra
+                args:
+                    - "--settings"
+                    - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
                 env:
                     ANTHROPIC_BASE_URL: "https://cliproxy.internal"
                     ANTHROPIC_AUTH_TOKEN:
@@ -122,16 +148,19 @@ launch:
                     - 'model="gpt-5.6-sol"'
                     - "--config"
                     - 'model_reasoning_effort="ultra"'
-            sol-run:
-                model: sol
+            astra:
+                model: astra
                 args:
                     - "--config"
-                    - 'model="gpt-5.6-sol"'
+                    - 'model="gpt-6-astra"'
                     - "--config"
                     - 'model_reasoning_effort="ultra"'
         opencode:
             lumo:
                 model: lumo-opencode
+        grok:
+            grok:
+                model: grok
 RUNE_CONFIG
 
 cat > "$live"
