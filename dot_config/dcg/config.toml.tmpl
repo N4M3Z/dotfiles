@@ -1,0 +1,48 @@
+# dcg configuration, deployed by chezmoi together with the packs beside it.
+# https://github.com/Dicklesworthstone/destructive_command_guard
+
+[general]
+# dcg's version is pinned by its installer; skip background update checks.
+check_updates = false
+# self_heal_hook stays on (its default): it idempotently re-asserts the PreToolUse
+# hook if a harness drops it mid-session. The same hook is sourced in the chezmoi
+# settings, so the two agree on a fixed point and the file stops changing.
+
+[packs]
+# core.* (filesystem, git) is always on and cannot be disabled. system.disk is on
+# by default; containers.docker is added for this machine's container workflow.
+enabled = [
+    "system.disk",
+    "containers.docker",
+]
+# Custom packs auto-load from these globs (per-user, then per-project).
+custom_paths = [
+    "~/.config/dcg/packs/*.yaml",
+    ".dcg/packs/*.yaml",
+]
+
+# Policy: a repository's .dcg.toml can only add enforcement, so a per-rule deny
+# set there wins over anything below. The rules that redirect to a tool relax
+# to a warning on a host where that tool is missing, so the command runs and
+# the denial text still teaches the replacement. Each tool relaxes only its
+# own rules: rg missing leaves the find rules enforced, yq missing leaves the
+# JSON rule enforced. Where a tool exists, no entry is rendered and the rule's
+# default deny holds. `lookPath` is read at `chezmoi apply`, so re-apply
+# after installing or removing one of these tools. Needs dcg 0.14 or newer
+# (0.5.x ignores [policy]). The rune packs themselves come from each
+# repository's .dcg/packs/, loaded through custom_paths above.
+[policy.rules]
+{{- if not (lookPath "rg") }}
+"rune.search:grep-use-rg" = "warn"
+"rune.search:grep-alt-forms" = "warn"
+{{- end }}
+{{- if not (lookPath "fd") }}
+"rune.search:find-use-fd" = "warn"
+"rune.search:find-alt-forms" = "warn"
+{{- end }}
+{{- if not (lookPath "yq") }}
+"rune.parsers:yaml-needs-yq" = "warn"
+{{- end }}
+{{- if not (lookPath "jq") }}
+"rune.parsers:json-needs-jq" = "warn"
+{{- end }}

@@ -1,6 +1,5 @@
-# MACHINE-LOCAL pack: this guard exists because THIS machine's dotzsh
-# (modules/utility/init.zsh) aliases cp/mv/rm to -i forms. Do not sync
-# it to machines without those aliases; keep it out of chezmoi.
+# This guard exists because dotzsh (modules/utility/init.zsh) aliases
+# cp/mv/rm to -i forms. Deploy it only to hosts that carry those aliases.
 #
 # The problem: an interactive alias turns `mv a b` into `mv -i a b`,
 # which prompts on overwrite. In automation nobody answers, the prompt
@@ -16,11 +15,18 @@
 # (overwrite) or -n (keep the target) overrides the alias's -i.
 # `command mv -f a b` therefore passes because of `-f`, not because of
 # `command`; the `command` prefix is optional.
+#
+# The flag check lives inside each destructive pattern as a negative
+# lookahead, not in a separate safe pattern. dcg evaluates a chained
+# line (`cd x && rm -f y`) per segment, and a safe pattern was not
+# consulted on the segment the destructive rule matched, so `rm -f`
+# after `&&` was blocked while bare `rm -f` passed (2026-09-21). The
+# engine is fancy_regex, which supports lookarounds.
 # Validate: dcg pack validate ~/.config/dcg/packs/aliases.yaml
 schema_version: 1
 id: user.aliases
 name: Interactive Alias Guard
-version: 1.2.0
+version: 1.3.1
 
 description: |
   Blocks cp, mv, and rm without an explicit -f or -n disposition flag,
@@ -34,7 +40,7 @@ keywords:
 
 destructive_patterns:
   - name: cp-needs-flag
-    pattern: '(^|[;&|]\s*)cp\s'
+    pattern: '(^|[;&|]\s*)cp(?!(\s+-\S+)*\s+-\S*[fn]\b)\s'
     severity: high
     description: cp without -f or -n hits the interactive -i alias. Add -f to overwrite or -n to keep the target.
     explanation: |
@@ -48,7 +54,7 @@ destructive_patterns:
       - cp
 
   - name: mv-needs-flag
-    pattern: '(^|[;&|]\s*)mv\s'
+    pattern: '(^|[;&|]\s*)mv(?!(\s+-\S+)*\s+-\S*[fn]\b)\s'
     severity: high
     description: mv without -f or -n hits the interactive -i alias. Add -f to overwrite or -n to keep the target.
     explanation: |
@@ -62,7 +68,7 @@ destructive_patterns:
       - mv
 
   - name: rm-needs-flag
-    pattern: '(^|[;&|]\s*)rm\s'
+    pattern: '(^|[;&|]\s*)rm(?!(\s+-\S+)*\s+-\S*[fn]\b)\s'
     severity: high
     description: rm without -f hits the interactive -i alias. Add -f.
     explanation: |
@@ -74,8 +80,3 @@ destructive_patterns:
       to recursive and forced deletes.
     executables:
       - rm
-
-safe_patterns:
-  - name: disposition-flag
-    pattern: '(^|[;&|]\s*)(cp|mv|rm)\s+(-\S+\s+)*-\S*[fn]\b'
-    description: An explicit -f or -n flag overrides the interactive -i alias (BSD last-flag-wins).

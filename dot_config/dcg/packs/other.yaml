@@ -1,0 +1,31 @@
+# Host catch-all pack. One-off rules for this machine that fit no other pack
+# and no runedeck repository go here. A rule that turns out to matter in every
+# repository moves to the skeleton (.dcg/packs/, SKEL-0009). Replaces
+# forge.yaml, whose only rule guarded a CLI that is no longer used.
+# Validate: dcg pack validate ~/.config/dcg/packs/other.yaml
+# Schema: https://github.com/Dicklesworthstone/destructive_command_guard/blob/main/docs/pack.schema.yaml
+schema_version: 1
+id: user.other
+name: Host Other Rules
+version: 1.0.0
+
+description: |
+  Host-local rules that fit no other pack. Add a destructive pattern with
+  a name, a fancy-regex pattern, a severity, and an explanation that tells
+  the agent what to run instead.
+
+keywords:
+  - pbcopy
+  - pbpaste
+
+destructive_patterns:
+  # The sandbox blocks the pasteboard, and the harness has its own /copy.
+  # An agent that pipes into pbcopy gets an error it then works around.
+  - name: pbcopy-in-sandbox
+    pattern: '\bpb(copy|paste)\b'
+    severity: low
+    description: The sandbox has no pasteboard. Put the text in a fenced block and let the user run /copy.
+    explanation: |
+      pbcopy and pbpaste fail under the command sandbox. Print the text in
+      a fenced code block instead; the harness copies it from outside the
+      sandbox with /copy.

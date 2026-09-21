@@ -48,25 +48,29 @@ require_allow() {
     fi
 }
 
-# rune.toolpolicy
-require_block 'grep -R TODO .' rune.toolpolicy:grep-use-rg
-require_block 'find . -name "*.md"' rune.toolpolicy:find-use-fd
-require_allow 'git grep TODO'
+# The rune.* packs (search, parsers, secrets, push, provenance, rtk, homebrew)
+# live in every runedeck repository under .dcg/packs/ and are replayed by
+# that repository's scripts/test-dcg-packs. Only the host packs stay here.
 
-# rune.homebrew: a pipe after brew kills its lazy gem install
-require_block 'brew info cliproxyapi | head' rune.homebrew:brew-no-pipe
-require_block 'brew info x| head' rune.homebrew:brew-no-pipe
-require_block 'cd /tmp && brew audit f.rb 2>&1 | head -5' rune.homebrew:brew-no-pipe
-require_allow 'brew info cliproxyapi > /tmp/brew.txt 2>&1'
-require_allow 'brew info --json=v2 x >| /tmp/brew.json 2>&1'
-require_allow 'brew info --json=v2 x > /tmp/brew.json 2>&1; jq ".a | .b" /tmp/brew.json'
-require_allow 'brew a && b | c'
-require_allow 'brew --version'
-require_allow 'brew --prefix cliproxyapi'
+# user.secrets: a casual secret read is denied from any directory
+require_block 'cat ~/.env' user.secrets:casual-secret-read
+require_block 'head ~/.ssh/id_rsa' user.secrets:casual-secret-read
+require_block 'cat .env.example .env' user.secrets:casual-secret-read
+require_allow 'cat .env.example'
 
 # user.aliases: interactive -i aliases need an explicit flag
 require_block 'rm /tmp/x' user.aliases:rm-needs-flag
 require_block 'mv /tmp/a /tmp/b' user.aliases:mv-needs-flag
+require_block 'cd /tmp && rm x' user.aliases:rm-needs-flag
+# A flag passes, including after a chain separator and after other options.
+require_allow 'rm -f /tmp/x'
+require_allow 'cd /tmp && rm -f x'
+require_allow 'mv -n /tmp/a /tmp/b'
+require_allow 'cp -v -f /tmp/a /tmp/b'
+# Extra whitespace must not defeat the flag check (the lookahead consumes it).
+require_allow 'cp  -f /tmp/a /tmp/b'
+require_allow 'cd /tmp &&  rm  -f x'
+require_block 'cp  /tmp/a /tmp/b' user.aliases:cp-needs-flag
 
 if [ "${failures}" -ne 0 ]; then
     echo "${failures} failure(s)"
