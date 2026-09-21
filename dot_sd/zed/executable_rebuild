@@ -141,16 +141,20 @@ if jj bookmark list dev-build | grep -q '^dev-build'; then
 fi
 # A run that dies mid-integration leaves bookmark-less duplicates and merge
 # changes that the abandon above cannot find, and the heads() merge below
-# would absorb them as stray parents. Anything mutable on the tip is build
-# output by definition, so sweep it all before duplicating.
-jj_sync abandon -r "descendants(${tip}) & mutable()"
+# would absorb them as stray parents. Sweep everything mutable on the tip
+# EXCEPT the patch chain itself: when the PR stack has been rebased onto
+# the preview tip (a preview-only build fix, for instance), the chain is a
+# mutable descendant too, and sweeping it destroys the bookmarks.
+jj_sync abandon -r "descendants(${tip}) & mutable() ~ ::(${branch_union})"
 # Duplicate each bookmark-bounded stack. A bare head duplicates one commit,
 # while `~ immutable()` drops pushed patch layers after they gain remote refs.
 for branch in "${BRANCHES[@]}"; do
     jj_sync duplicate "${PATCH_ROOT}::${branch}" -d "${tip}"
 done
-# Merge the duplicated chain heads (children() would grab chain roots).
-jj_sync new "heads(descendants(${tip}) & mutable())" -m "${MERGE_MESSAGE}"
+# Merge the duplicated chain heads (children() would grab chain roots). The
+# chain itself is excluded for the same reason as in the sweep: when it sits
+# on the tip, its head would otherwise become a second, identical parent.
+jj_sync new "heads(descendants(${tip}) & mutable() ~ ::(${branch_union}))" -m "${MERGE_MESSAGE}"
 jj_sync bookmark set dev-build -r @
 
 # Preview branches carry RELEASE_CHANNEL=preview, which would bundle a
