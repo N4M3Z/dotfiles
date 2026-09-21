@@ -33,7 +33,9 @@ if command -v vale >/dev/null && vale ls-config >/dev/null 2>&1; then
     # format flattens both. The flag overrides a project MinAlertLevel
     # so suggestions still arrive as advice.
     v=$(vale --minAlertLevel=suggestion --output=JSON "$f" 2>&1)
-    if [ -n "$v" ] && printf '%s' "$v" | jq -e 'type == "object"' >/dev/null 2>&1; then
+    # A findings object maps paths to arrays. A runtime error (a style
+    # missing from StylesPath) is an object with a Code field instead.
+    if [ -n "$v" ] && printf '%s' "$v" | jq -e 'type == "object" and (has("Code") | not)' >/dev/null 2>&1; then
         lines=$(printf '%s' "$v" | jq -r --arg f "$f" '
             to_entries[] | .value[] |
             "\($f):\(.Line):\(.Span[0]) \(.Severity) \(.Check): \(.Message)"
