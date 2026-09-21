@@ -189,7 +189,8 @@
           "Bash(glab ci retry *)",
           "Bash(glab ci cancel *)",
           "Bash(glab label *)",
-          "Bash(glab release *)"
+          "Bash(glab release *)",
+          "Bash(dangerouslyDisableSandbox:true)"
         ],
         "deny": [
           "Bash(git push --force *)",

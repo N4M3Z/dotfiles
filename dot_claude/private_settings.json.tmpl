@@ -32,6 +32,15 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ .chezmoi.homeDir }}/.local/bin/dcg"
+          }
+        ]
+      },
+      {
         "hooks": [
           {
             "type": "command",
@@ -45,15 +54,6 @@
           {
             "type": "command",
             "command": "{{ .chezmoi.homeDir }}/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "dcg"
           }
         ]
       },
@@ -163,10 +163,23 @@
       }
     }
   },
+  {{- /*
+  allowUnsandboxedCommands stays true on purpose (2026-09-22). The sandbox
+  denies what the signing and forge ceremony needs: the YubiKey pinentry and
+  gpg-agent for `jj sign`, the keychain for `gh` over TLS, Apple Events for
+  `trash`, a nested sandbox for `grok` and `codex`, and the jj lock files of
+  a colocated repo. With this false, every such step fails with -26276 or
+  "Operation not permitted" and the owner runs it by hand. With it true a
+  session may ask for one command outside the sandbox; the request still goes
+  through the permission prompt. The `Bash(dangerouslyDisableSandbox:true)`
+  allow rule below matches command text, not the request flag, so it grants
+  nothing on its own. Known limit: a session that lies in the request text
+  is not stopped here. dcg and the permission prompt are the guard.
+  */}}
   "sandbox": {
     "enabled": true,
     "failIfUnavailable": true,
-    "allowUnsandboxedCommands": false,
+    "allowUnsandboxedCommands": true,
     "autoAllowBashIfSandboxed": true,
     "network": {
       "allowedDomains": [
@@ -194,6 +207,7 @@
         "/tmp/.s.PGSQL.5432",
         "~/.obsidian-cli.sock",
         "~/.gnupg/S.gpg-agent",
+        "~/.gnupg/S.dirmngr",
         "~/.orbstack/run/docker.sock",
         "/var/run/docker.sock"
       ],
@@ -286,19 +300,12 @@
       "/usr/bin/trash *",
       "rtk trash *",
       "rune *",
-      "rtk rune *",
       "codex *",
-      "rtk codex *",
       "claude *",
-      "rtk claude *",
       "opencode *",
-      "rtk opencode *",
       "agy *",
-      "rtk agy *",
       "grok *",
-      "rtk grok *",
-      "pi *",
-      "rtk pi *"
+      "pi *"
     ]
   },
   "effortLevel": "high",

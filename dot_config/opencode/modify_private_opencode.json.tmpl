@@ -20,4 +20,8 @@ cat > "$policy" <<'FORGE_POLICY'
 {{ .harness.opencode | toJson }}
 FORGE_POLICY
 
-jq -n --slurpfile policy "$policy" '((try input) // {}) * $policy[0]'
+# The deep-merge (*) adds and overwrites but never removes, so a permission rule
+# retired from opencode.json would linger in the live file forever. The policy
+# owns the permission map outright: replace it after the merge so retired
+# entries drop out on the next apply.
+jq -n --slurpfile policy "$policy" '(((try input) // {}) * $policy[0]) | .permission = $policy[0].permission'

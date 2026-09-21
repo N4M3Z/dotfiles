@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Prove each harness still loads its config after apply. A modify_ template can
+# emit a file the app rejects (a glob in a write grant stopped the Codex desktop
+# app at sign-in once), and the app reports that as a network error hours later.
+# Failing here turns that into a failed `chezmoi apply` with the parser's own
+# message. Each probe is skipped when its binary is absent.
+#
+# codex: `codex mcp list` exits non-zero and prints the `Caused by` line on a
+# parse error; `codex doctor` exits 0 and buries the same failure in its report.
+# claude: `claude doctor` reads settings with no trust prompt.
+set -o pipefail
+
+status=0
+
+if command -v codex >/dev/null 2>&1; then
+    if ! output=$(codex mcp list 2>&1); then
+        echo "fail:harness-config (codex config does not load)" >&2
+        printf '%s\n' "$output" | grep -A2 'Caused by' >&2
+        status=1
+    fi
+fi
+
+if command -v claude >/dev/null 2>&1; then
+    if ! claude doctor >/dev/null 2>&1; then
+        echo "fail:harness-config (claude doctor reports a problem; run it for detail)" >&2
+        status=1
+    fi
+fi
+
+exit "$status"
