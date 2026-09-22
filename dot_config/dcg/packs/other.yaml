@@ -17,6 +17,7 @@ description: |
 keywords:
   - pbcopy
   - pbpaste
+  - gh
 
 destructive_patterns:
   # The sandbox blocks the pasteboard, and the harness has its own /copy.
@@ -29,3 +30,27 @@ destructive_patterns:
       pbcopy and pbpaste fail under the command sandbox. Print the text in
       a fenced code block instead; the harness copies it from outside the
       sandbox with /copy.
+
+  # `gh *` is excluded from the command sandbox, but the exclusion covers a
+  # bare command only. Inside a pipe, a command substitution, or a loop the
+  # whole line runs sandboxed, where Go cannot reach trustd and every TLS
+  # handshake fails with OSStatus -26276 (claude-code#34876, closed). Block
+  # the chained forms so the fix is obvious instead of a mystery TLS error.
+  - name: gh-in-pipeline
+    pattern: '(?:^|[\s(;&])(?:rtk\s+)?gh\s+(?:[^|''"\n]|''[^'']*''|"[^"]*")*\|'
+    severity: medium
+    description: gh runs sandboxed inside a pipe and fails TLS. Filter with --jq or --json and run gh alone.
+    explanation: |
+      The sandbox exclusion for gh applies to a bare command. A pipe after gh
+      puts the whole line in the sandbox, where Go TLS verification fails.
+      Use `gh ... --json <fields> --jq '<filter>'` for the filtering, or write
+      the output to a file in a separate call.
+  - name: gh-in-loop
+    pattern: '\b(?:for|while)\b[^\n]*\b(?:rtk\s+)?gh\s'
+    severity: medium
+    description: gh runs sandboxed inside a loop and fails TLS. Run one bare gh per call.
+    explanation: |
+      A loop runs the whole line inside the sandbox, where gh cannot verify
+      TLS. Run gh alone with -R owner/repo, capture the output in a file, and
+      loop over the file in a second call. dcg evaluates a $( ) substitution
+      on its own, so that form is not caught here: the same rule applies.
