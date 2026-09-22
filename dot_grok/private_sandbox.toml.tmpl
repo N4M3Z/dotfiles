@@ -76,10 +76,11 @@
       (printf "%s/Library/Caches/Steam" $home)
 }}
 
-# workspace-local: the profile `rune launch grok@grok` and the config
-# [sandbox] table name. The built-in workspace base already grants the
-# session cwd, /tmp, /var/folders and ~/.grok for the session store.
-[profiles.workspace-local]
+# workspace-local is the default profile for Grok and `rune launch grok@grok`.
+# Nexus uses the same policy for explicit `grok --sandbox Nexus` launches.
+# The workspace base grants the session cwd, /tmp, /var/folders and ~/.grok.
+{{ range $profile := list "workspace-local" "Nexus" -}}
+[profiles.{{ $profile }}]
 extends = "workspace"
 read_write = [
 {{- range $readWrite }}
@@ -96,6 +97,8 @@ deny = [
   "{{ . }}",
 {{- end }}
 ]
+
+{{ end -}}
 
 # review-local: read everywhere except the deny list, write only ~/.grok.
 [profiles.review-local]
