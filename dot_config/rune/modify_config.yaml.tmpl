@@ -102,13 +102,6 @@ launch:
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "kimi-k2.7-code-highspeed"
-            sol-run:
-                model: sol
-                env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
-                    ANTHROPIC_AUTH_TOKEN:
-                        from_env: CLIPROXY_API_KEY
-                    ANTHROPIC_SMALL_FAST_MODEL: "gpt-5.6-luna"
             astra:
                 model: astra
                 args:
@@ -119,13 +112,6 @@ launch:
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "gpt-5.6-luna"
-            lumo-run:
-                model: lumo
-                env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
-                    ANTHROPIC_AUTH_TOKEN:
-                        from_env: CLIPROXY_API_KEY
-                    ANTHROPIC_SMALL_FAST_MODEL: "lumo-lite"
             main:
                 model: fable-main
                 env:
