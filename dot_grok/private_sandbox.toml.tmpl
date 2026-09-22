@@ -1,53 +1,107 @@
+# Grok sandbox profiles, rendered by chezmoi into ~/.grok/sandbox.toml.
+#
+# The profile format (extends, read_only, read_write, deny, restrict_network)
+# is the one the grok README documents under "Sandbox > Custom Profiles".
+# Paths are literal directories, no globs. Grok has no per-domain network
+# allowlist: restrict_network is all or nothing for child processes, so the
+# workspace profiles keep the child network open and rely on the Claude
+# allowlist only where Claude runs. The grok API hosts are in-process and
+# never blocked by the sandbox.
+#
+# Keep the lists in step with the Claude sandbox block in
+# dot_claude/private_settings.json.tmpl: read_write mirrors allowWrite,
+# read_only mirrors denyWrite, deny mirrors denyRead.
+# Source: https://github.com/N4M3Z/dotfiles
+{{- $home := .chezmoi.homeDir -}}
+{{- $deny := list
+      (printf "%s/.claude.json" $home)
+      (printf "%s/.ssh" $home)
+      (printf "%s/.aws" $home)
+      (printf "%s/.azure" $home)
+      (printf "%s/.cargo/credentials.toml" $home)
+      (printf "%s/.config/containers" $home)
+      (printf "%s/.config/gcloud" $home)
+      (printf "%s/.config/gh" $home)
+      (printf "%s/.config/op" $home)
+      (printf "%s/.docker/config.json" $home)
+      (printf "%s/.gem/credentials" $home)
+      (printf "%s/.git-credentials" $home)
+      (printf "%s/.gnupg" $home)
+      (printf "%s/.kube" $home)
+      (printf "%s/.netrc" $home)
+      (printf "%s/.npm" $home)
+      (printf "%s/.npmrc" $home)
+      (printf "%s/.password-store" $home)
+      (printf "%s/.pypirc" $home)
+      (printf "%s/Library/Keychains" $home)
+      "/Volumes/Keyvault"
+      "/Volumes/.timemachine"
+      "/Volumes/com.apple.TimeMachine.localsnapshots"
+-}}
+{{- $readWrite := list
+      (printf "%s/Agents" $home)
+      (printf "%s/.cache/uv" $home)
+      (printf "%s/.local/share/Trash" $home)
+      "/tmp/claude"
+      "/var/folders"
+      (printf "%s/Atlas" $home)
+      (printf "%s/Developer" $home)
+      (printf "%s/.gbrain" $home)
+      (printf "%s/.memex" $home)
+      (printf "%s/.openspec" $home)
+      (printf "%s/.local/share/openspec" $home)
+      (printf "%s/.semgrep" $home)
+      (printf "%s/Library/Caches" $home)
+      "/opt/homebrew"
+      (printf "%s/Data/Memex" $home)
+      (printf "%s/Data/Sessions" $home)
+      (printf "%s/Data/SessionVersions" $home)
+      (printf "%s/Data/Transcripts" $home)
+      (printf "%s/Data/Plans" $home)
+      (printf "%s/Data/ToolCalls" $home)
+      (printf "%s/Data/PromptEnvelopes" $home)
+      (printf "%s/Data/Captures" $home)
+      (printf "%s/Data/State" $home)
+      (printf "%s/Data/Imports" $home)
+      (printf "%s/Data/Backups" $home)
+      (printf "%s/Data/Telemetry" $home)
+      (printf "%s/Data/Claude" $home)
+-}}
+{{- $readOnly := list
+      (printf "%s/Library/Caches/at.obdev.littlesnitch" $home)
+      (printf "%s/Library/Caches/at.obdev.littlesnitch.softwareupdate" $home)
+      (printf "%s/Library/Caches/Proton AG" $home)
+      (printf "%s/Library/Caches/PassKit" $home)
+      (printf "%s/Library/Caches/CloudKit" $home)
+      (printf "%s/Library/Caches/Steam" $home)
+}}
+
+# workspace-local: the profile `rune launch grok@grok` and the config
+# [sandbox] table name. The built-in workspace base already grants the
+# session cwd, /tmp, /var/folders and ~/.grok for the session store.
 [profiles.workspace-local]
 extends = "workspace"
+read_write = [
+{{- range $readWrite }}
+  "{{ . }}",
+{{- end }}
+]
+read_only = [
+{{- range $readOnly }}
+  "{{ . }}",
+{{- end }}
+]
 deny = [
-  "{{ .chezmoi.homeDir }}/.ssh",
-  "{{ .chezmoi.homeDir }}/.aws",
-  "{{ .chezmoi.homeDir }}/.azure",
-  "{{ .chezmoi.homeDir }}/.cargo/credentials.toml",
-  "{{ .chezmoi.homeDir }}/.config/containers",
-  "{{ .chezmoi.homeDir }}/.config/gcloud",
-  "{{ .chezmoi.homeDir }}/.config/gh",
-  "{{ .chezmoi.homeDir }}/.config/op",
-  "{{ .chezmoi.homeDir }}/.docker/config.json",
-  "{{ .chezmoi.homeDir }}/.gem/credentials",
-  "{{ .chezmoi.homeDir }}/.git-credentials",
-  "{{ .chezmoi.homeDir }}/.gnupg",
-  "{{ .chezmoi.homeDir }}/.kube",
-  "{{ .chezmoi.homeDir }}/.netrc",
-  "{{ .chezmoi.homeDir }}/.npm",
-  "{{ .chezmoi.homeDir }}/.npmrc",
-  "{{ .chezmoi.homeDir }}/.password-store",
-  "{{ .chezmoi.homeDir }}/.pypirc",
-  "{{ .chezmoi.homeDir }}/Library/Keychains",
-  "/Volumes/Keyvault",
-  "/Volumes/.timemachine",
-  "/Volumes/com.apple.TimeMachine.localsnapshots"
+{{- range $deny }}
+  "{{ . }}",
+{{- end }}
 ]
 
+# review-local: read everywhere except the deny list, write only ~/.grok.
 [profiles.review-local]
 extends = "read-only"
 deny = [
-  "{{ .chezmoi.homeDir }}/.ssh",
-  "{{ .chezmoi.homeDir }}/.aws",
-  "{{ .chezmoi.homeDir }}/.azure",
-  "{{ .chezmoi.homeDir }}/.cargo/credentials.toml",
-  "{{ .chezmoi.homeDir }}/.config/containers",
-  "{{ .chezmoi.homeDir }}/.config/gcloud",
-  "{{ .chezmoi.homeDir }}/.config/gh",
-  "{{ .chezmoi.homeDir }}/.config/op",
-  "{{ .chezmoi.homeDir }}/.docker/config.json",
-  "{{ .chezmoi.homeDir }}/.gem/credentials",
-  "{{ .chezmoi.homeDir }}/.git-credentials",
-  "{{ .chezmoi.homeDir }}/.gnupg",
-  "{{ .chezmoi.homeDir }}/.kube",
-  "{{ .chezmoi.homeDir }}/.netrc",
-  "{{ .chezmoi.homeDir }}/.npm",
-  "{{ .chezmoi.homeDir }}/.npmrc",
-  "{{ .chezmoi.homeDir }}/.password-store",
-  "{{ .chezmoi.homeDir }}/.pypirc",
-  "{{ .chezmoi.homeDir }}/Library/Keychains",
-  "/Volumes/Keyvault",
-  "/Volumes/.timemachine",
-  "/Volumes/com.apple.TimeMachine.localsnapshots"
+{{- range $deny }}
+  "{{ . }}",
+{{- end }}
 ]

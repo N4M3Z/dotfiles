@@ -159,8 +159,13 @@ launch:
             lumo:
                 model: lumo-opencode
         grok:
+            # The profile is defined in ~/.grok/sandbox.toml (dot_grok/private_sandbox.toml.tmpl).
+            # An explicit flag keeps headless runs sandboxed even when the wrapper is bypassed.
             grok:
                 model: grok
+                args:
+                    - "--sandbox"
+                    - "workspace-local"
 RUNE_CONFIG
 
 cat > "$live"
