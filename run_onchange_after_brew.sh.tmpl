@@ -25,5 +25,12 @@ if ! command -v brew >/dev/null 2>&1; then
     exit 0
 fi
 
-bash "$BUNDLE_SCRIPT"
+# A dead cask or a store timeout must not abort the rest of the apply. The
+# script runs after the files, but chezmoi then reports the whole apply as
+# failed and the owner reads that as nothing landed. Report and exit 0; the
+# bundle runs again on the next Brewfile change.
+if ! bash "$BUNDLE_SCRIPT"; then
+    echo "run_onchange_after_brew: brew bundle failed; the apply continues, fix the Brewfile entry named above" >&2
+fi
+exit 0
 {{- end }}
