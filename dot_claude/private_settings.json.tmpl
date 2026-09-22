@@ -166,9 +166,10 @@
   {{- /*
   allowUnsandboxedCommands stays true on purpose (2026-09-22). The sandbox
   denies what the signing and forge ceremony needs: the YubiKey pinentry and
-  gpg-agent for `jj sign`, the keychain for `gh` over TLS, Apple Events for
-  `trash`, a nested sandbox for `grok` and `codex`, and the jj lock files of
-  a colocated repo. With this false, every such step fails with -26276 or
+  gpg-agent for `jj sign`, the keychain for `gh` over TLS, a nested sandbox
+  for `grok` and `codex`, and the jj lock files of a colocated repo. `trash`
+  is not on that list: ~/.local/bin/trash writes the FreeDesktop layout under
+  ~/.local/share/Trash, which allowWrite covers, so it runs sandboxed. With this false, every such step fails with -26276 or
   "Operation not permitted" and the owner runs it by hand. With it true a
   session may ask for one command outside the sandbox; the request still goes
   through the permission prompt. The `Bash(dangerouslyDisableSandbox:true)`
@@ -217,6 +218,7 @@
       "allowWrite": [
         "~/Agents",
         "~/.cache/uv",
+        "~/.local/share/Trash",
         "/tmp/claude",
         "/var/folders",
         "~/Atlas",
@@ -296,9 +298,6 @@
       "rtk orbctl *",
       "jj *",
       "rtk jj *",
-      "trash *",
-      "/usr/bin/trash *",
-      "rtk trash *",
       "rune *",
       "codex *",
       "claude *",

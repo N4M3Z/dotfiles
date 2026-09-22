@@ -1,0 +1,59 @@
+#!/bin/sh
+# trash: move files and directories to the trash, recoverable, on macOS and
+# Linux, without Finder, Apple Events, or a desktop session.
+#
+# Layout is the FreeDesktop trash specification on both systems: the item
+# goes to $TRASH/files/<name> and $TRASH/info/<name>.trashinfo records the
+# original path and the deletion time. `gio trash` is used when present, so
+# a Linux desktop sees the item in its own Trash. On macOS the same layout
+# under ~/.local/share/Trash keeps the item out of Finder's Trash window but
+# recoverable by path; Finder's Trash needs Apple Events, which a sandboxed
+# command cannot send.
+#
+# Exit 0 when every path was trashed, 1 on a missing path or a failed move,
+# 64 with no argument. Reference: https://www.freedesktop.org/wiki/Specifications/trash-spec/
+# Source: https://github.com/N4M3Z/dotfiles
+set -u
+
+if [ $# -eq 0 ]; then
+    echo 'usage: trash <path...>' >&2
+    exit 64
+fi
+
+if command -v gio >/dev/null 2>&1 && [ "$(uname -s)" = Linux ]; then
+    exec gio trash -- "$@"
+fi
+
+trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash"
+mkdir -p "$trash/files" "$trash/info" || exit 1
+status=0
+for path in "$@"; do
+    if [ ! -e "$path" ] && [ ! -L "$path" ]; then
+        echo "trash: no such file or directory: $path" >&2
+        status=1
+        continue
+    fi
+    case $path in
+        /*) absolute=$path ;;
+        *) absolute="$PWD/$path" ;;
+    esac
+    absolute=${absolute%/}
+    name=$(basename "$absolute")
+    target="$trash/files/$name"
+    n=1
+    while [ -e "$target" ] || [ -L "$target" ] || [ -e "$trash/info/$(basename "$target").trashinfo" ]; do
+        n=$((n + 1))
+        target="$trash/files/$name.$n"
+    done
+    # The info file first, so a crash between the two steps leaves a record
+    # and never an orphan in files/.
+    printf '[Trash Info]\nPath=%s\nDeletionDate=%s\n' "$absolute" "$(date +%Y-%m-%dT%H:%M:%S)" > "$trash/info/$(basename "$target").trashinfo" || { status=1; continue; }
+    if mv -n -- "$absolute" "$target"; then
+        :
+    else
+        rm -f "$trash/info/$(basename "$target").trashinfo"
+        echo "trash: could not move $path" >&2
+        status=1
+    fi
+done
+exit "$status"

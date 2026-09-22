@@ -19,7 +19,6 @@
           "WebFetch(domain:openspec.dev)",
           "Bash(mktemp:*)",
           "Bash(trash:*)",
-          "Bash(/usr/bin/trash:*)",
           "Read(*/.claude/skills/**)",
           "Read(*/.agents/skills/**)",
           "Edit(~/.claude/plans/*)",
