@@ -9,7 +9,9 @@
 
 printf '\033[2J\033[H'
 
-FORK=${FORK:-$HOME/Developer/N4M3Z/vale-ai-tells}
+# A checkout of the fork's bench/pilot-2026-09-22 branch, kept apart from the
+# PR checkout so a branch switch there cannot remove the scripts under test.
+FORK=${FORK:-$HOME/Developer/N4M3Z/vale-ai-tells-pilot}
 # The driver shows $RUNE as `rune` in the recording; the proof runs the
 # installed binary, so the two are the same word.
 RUNE=${RUNE:-rune}
@@ -18,23 +20,14 @@ SCRATCH=$(mktemp -d "${TMPDIR:-/tmp}/tells-proof.XXXXXX")
 trap 'command rm -rf "$SCRATCH"' EXIT
 export TYPE_DELAY=0 PAUSE_AFTER_COMMENT=0.5 PAUSE_AFTER_OUTPUT=0.5
 
-for profile in grok@grok kimi@claude lumo@opencode; do
+for profile in grok@grok kimi@claude lumo@opencode astra@codex; do
     scenario "$profile answers a one-word prompt"
-    comment "rune run --json with clean harness state is the transport every generator and judge uses: no user-level instruction file reaches the model. The answer is .text, the model that answered is .resolved_model."
-    run "rune run $profile --clean-harness-state --json --timeout 3m --repo $SCRATCH 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean_harness_state}'"
+    comment "rune run --clean --json is the transport every generator and judge uses: no user-level instruction file reaches the model. The answer is .text, the model that answered is .resolved_model."
+    run "rune run $profile --clean --json --timeout 3m --repo $SCRATCH 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean}'"
     expect '"text":"pong"'
     expect '"resolved_model":"[^"]+"'
-    expect '"clean_harness_state":true'
+    expect '"clean":true'
 done
-
-scenario "astra@codex answers a one-word prompt"
-comment "Unproven under clean state: rune 1823aa74 drops the codex provider when it copies config.toml into the clean CODEX_HOME, so the route answers only with the owner's real ~/.codex in scope. Reported to the cli repository. The scene records the gap."
-run "rune run astra@codex --clean-harness-state --json --timeout 3m --repo $SCRATCH 'Reply with exactly the word: pong' 2>&1 | jq -c '{kind, message: .details.message}'"
-expect '"kind":"configuration_error"'
-expect 'provider configuration not found'
-run "rune run astra@codex --json --timeout 3m --repo $SCRATCH 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean_harness_state}'"
-expect '"text":"pong"'
-expect '"clean_harness_state":false'
 
 scenario "Judge output is extracted"
 comment "A judge may wrap its JSON in prose or a fence. The extractor keeps the first object with an annotations array."

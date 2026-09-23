@@ -1,25 +1,23 @@
 
 # Scenario: grok@grok answers a one-word prompt
-# rune run --json with clean harness state is the transport every generator and judge uses: no user-level instruction file reaches the model. The answer is .text, the model that answered is .resolved_model.
-❯ rune run grok@grok --clean-harness-state --json --timeout 3m --repo /var/folders/mj/33qc2qzj3bv1nbphfn99f7k00000gn/T//tells-proof.XwEAJe 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean_harness_state}'
-{"text":"pong","resolved_model":"grok-4.7","clean_harness_state":true}
+# rune run --clean --json is the transport every generator and judge uses: no user-level instruction file reaches the model. The answer is .text, the model that answered is .resolved_model.
+❯ rune run grok@grok --clean --json --timeout 3m --repo /var/folders/mj/33qc2qzj3bv1nbphfn99f7k00000gn/T//tells-proof.3tM4vq 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean}'
+{"text":"pong","resolved_model":"grok-4.7","clean":true}
 
 # Scenario: kimi@claude answers a one-word prompt
-# rune run --json with clean harness state is the transport every generator and judge uses: no user-level instruction file reaches the model. The answer is .text, the model that answered is .resolved_model.
-❯ rune run kimi@claude --clean-harness-state --json --timeout 3m --repo /var/folders/mj/33qc2qzj3bv1nbphfn99f7k00000gn/T//tells-proof.XwEAJe 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean_harness_state}'
-{"text":"pong","resolved_model":"kimi-k3","clean_harness_state":true}
+# rune run --clean --json is the transport every generator and judge uses: no user-level instruction file reaches the model. The answer is .text, the model that answered is .resolved_model.
+❯ rune run kimi@claude --clean --json --timeout 3m --repo /var/folders/mj/33qc2qzj3bv1nbphfn99f7k00000gn/T//tells-proof.3tM4vq 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean}'
+{"text":"pong","resolved_model":"kimi-k3","clean":true}
 
 # Scenario: lumo@opencode answers a one-word prompt
-# rune run --json with clean harness state is the transport every generator and judge uses: no user-level instruction file reaches the model. The answer is .text, the model that answered is .resolved_model.
-❯ rune run lumo@opencode --clean-harness-state --json --timeout 3m --repo /var/folders/mj/33qc2qzj3bv1nbphfn99f7k00000gn/T//tells-proof.XwEAJe 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean_harness_state}'
-{"text":"pong","resolved_model":"proton-lumo/lumo-max","clean_harness_state":true}
+# rune run --clean --json is the transport every generator and judge uses: no user-level instruction file reaches the model. The answer is .text, the model that answered is .resolved_model.
+❯ rune run lumo@opencode --clean --json --timeout 3m --repo /var/folders/mj/33qc2qzj3bv1nbphfn99f7k00000gn/T//tells-proof.3tM4vq 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean}'
+{"text":"pong","resolved_model":"proton-lumo/lumo-max","clean":true}
 
 # Scenario: astra@codex answers a one-word prompt
-# Unproven under clean state: rune 1823aa74 drops the codex provider when it copies config.toml into the clean CODEX_HOME, so the route answers only with the owner's real ~/.codex in scope. Reported to the cli repository. The scene records the gap.
-❯ rune run astra@codex --clean-harness-state --json --timeout 3m --repo /var/folders/mj/33qc2qzj3bv1nbphfn99f7k00000gn/T//tells-proof.XwEAJe 'Reply with exactly the word: pong' 2>&1 | jq -c '{kind, message: .details.message}'
-{"kind":"configuration_error","message":"Codex provider configuration not found: openai"}
-❯ rune run astra@codex --json --timeout 3m --repo /var/folders/mj/33qc2qzj3bv1nbphfn99f7k00000gn/T//tells-proof.XwEAJe 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean_harness_state}'
-{"text":"pong","resolved_model":"gpt-6-astra","clean_harness_state":false}
+# rune run --clean --json is the transport every generator and judge uses: no user-level instruction file reaches the model. The answer is .text, the model that answered is .resolved_model.
+❯ rune run astra@codex --clean --json --timeout 3m --repo /var/folders/mj/33qc2qzj3bv1nbphfn99f7k00000gn/T//tells-proof.3tM4vq 'Reply with exactly the word: pong' 2>/dev/null | jq -c '{text, resolved_model, clean}'
+{"text":"pong","resolved_model":"gpt-6-astra","clean":true}
 
 # Scenario: Judge output is extracted
 # A judge may wrap its JSON in prose or a fence. The extractor keeps the first object with an annotations array.
@@ -28,11 +26,11 @@
 
 # Scenario: Grok judges a Grok document
 # judge.sh skips a document whose generator shares the judge's model family, so no model grades its own text.
-❯ grep -c 'family_of "$gen_profile")" = "$judge_family" ] && continue' /Users/N4M3Z/Developer/N4M3Z/vale-ai-tells/bench/scripts/judge.sh
+❯ grep -c 'family_of "$gen_profile")" = "$judge_family" ] && continue' /Users/N4M3Z/Developer/N4M3Z/vale-ai-tells-pilot/bench/scripts/judge.sh
 1
 
 # Scenario: Three judges, one agreement
 # The smoke fixture, one sentence per line because votes are keyed by line: two judges flag the parallelism sentence, one alone flags each of the other two. report.py confirms one and splits two.
-❯ cd /Users/N4M3Z/Developer/N4M3Z/vale-ai-tells && python3 bench/scripts/report.py smoke >/dev/null && latest=$(ls -d bench/results/smoke/*Z | tail -1) && jq -r '[(.[] | .sentence)] | length' $latest/confirmed.json && jq -r 'length' $latest/splits.json
+❯ cd /Users/N4M3Z/Developer/N4M3Z/vale-ai-tells-pilot && python3 bench/scripts/report.py smoke >/dev/null && latest=$(ls -d bench/results/smoke/*Z | tail -1) && jq -r '[(.[] | .sentence)] | length' $latest/confirmed.json && jq -r 'length' $latest/splits.json
 1
 2

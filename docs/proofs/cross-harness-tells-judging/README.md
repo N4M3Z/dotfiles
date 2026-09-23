@@ -2,11 +2,11 @@
 
 `record.sh` contains one scene per scenario of the `cross-harness-tells-judging` specification, in the
 grammar of `docs/proofs/driver.sh` (copied from the deck with `cast.py`). `proof.cast` is its recording
-on 2026-09-23 through `docs/proofs/cast.py`, exit 0 (`record-exit=0`). `proof.txt` is the transcript
+on 2026-09-24 with rune 0.6.0 through `docs/proofs/cast.py`, exit 0 (`record-exit=0`). `proof.txt` is the transcript
 `asciinema convert -f txt` wrote from it, and `proof.gif` the render.
 
 Transcript digest (`shasum -a 256 proof.txt`):
-`33605e188730d5e7bf2484a18b4eb06668a6a29b5ee11ee457f9c7614e09f2d3`
+`658ad6e9a191dd73dafc8c8fb008b719e5ba3e3073724dd768f312f6c5c97bf8`
 
 Scenes, in the order the specification lists them:
 
@@ -18,10 +18,9 @@ Scenes, in the order the specification lists them:
 - Grok judges a Grok document
 - Three judges, one agreement
 
-The three passing harness scenes run with `--clean-harness-state` and assert `clean_harness_state: true`
-in the answer. The astra scene records a gap: rune 1823aa74 drops the codex provider table when it copies
-`config.toml` into the clean `CODEX_HOME`, so the route answers only with the owner's real `~/.codex` in
-scope. The scene proves the failure shape and the fallback, and the fix is queued in the cli repository.
+The four harness scenes run with `rune run --clean` and assert `"clean":true` in the answer, so no
+user-level instruction file reached any model. The scenes read the fork's scripts from
+`~/Developer/N4M3Z/vale-ai-tells-pilot`, a worktree of `bench/pilot-2026-09-22` (override with `FORK`).
 
 Re-record after a change to the scenes or the candidate:
 

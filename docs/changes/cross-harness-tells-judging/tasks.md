@@ -2,8 +2,8 @@
 
 - [x] 1.1 Set the Grok model id to the current release in the rune config template.
 - [x] 1.2 Confirm `rune run --json` returns `text` and `resolved_model` for `grok@grok`.
-- [x] 1.3 Confirm the same for `kimi@claude` and `lumo@opencode`. `astra@codex` fails under clean state
-  (rune drops the codex provider table on copy, fix queued in cli) and is recorded as a gap scene.
+- [x] 1.3 Confirm the same for `kimi@claude`, `lumo@opencode`, and `astra@codex` under `rune run --clean`
+  (rune 0.6.0 fixed the codex provider copy).
 
 ## 2. Pipeline in the fork
 
