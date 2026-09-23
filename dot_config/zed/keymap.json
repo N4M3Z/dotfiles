@@ -20,6 +20,16 @@
             // s staged. d above is the full uncommitted set.
             "space g u": "git::ViewUnstagedChanges",
             "space g s": "git::ViewStagedChanges",
+            // Worktrees: w opens the picker (switch, create, delete with
+            // cmd-shift-backspace); W creates a detached checkout at HEAD
+            // under .worktrees/ with a generated name.
+            "space g w": "git::Worktree",
+            "space g W": ["git::CreateWorktree", { "worktree_name": null, "branch_target": { "kind": "current_branch" } }],
+            // Code actions on the diagnostic under the cursor: spelling
+            // suggestions, Harper/Codebook "add to dictionary", ignore.
+            // Same as cmd-. and vim g.; also in the right-click menu as
+            // "Show Code Actions".
+            "space .": "editor::ToggleCodeActions",
             "space o": "outline::Toggle",
             "space v": ["task::Spawn", { "task_name": "Open note in Obsidian" }],
             "space b": "editor::FindAllReferences",

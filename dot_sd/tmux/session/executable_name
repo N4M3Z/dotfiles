@@ -34,6 +34,22 @@ base=$(basename "$dir")
 canonical=""
 alternate=""
 
+# A linked checkout (git worktree under .worktrees/, jj workspace under
+# .workspaces/) is its own tree and gets its own session: <repo>/<name>.
+# Without this every checkout resolved to the main repo's session and a
+# terminal thread opened in a worktree attached the wrong tree.
+checkout=""
+for marker in .worktrees .workspaces; do
+    case "$dir" in
+        */"$marker"/*)
+            tail=${dir#*/"$marker"/}
+            checkout=${tail%%/*}
+            dir=${dir%%/"$marker"/*}
+            break
+            ;;
+    esac
+done
+
 for pair in $flat_roots; do
     root=${pair%=*}
     name=${pair#*=}
@@ -70,6 +86,14 @@ if [ -z "$canonical" ]; then
             canonical=$base
             ;;
     esac
+fi
+
+# The checkout suffix applies to every candidate, so a worktree never
+# matches the main repo's live session by its bare name either.
+if [ -n "$checkout" ]; then
+    canonical="$canonical/$checkout"
+    [ -n "$alternate" ] && alternate="$alternate/$checkout"
+    base="$(basename "$dir")/$checkout"
 fi
 
 # tmux target syntax reads a leading "." as a window separator, so a

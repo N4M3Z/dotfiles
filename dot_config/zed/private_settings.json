@@ -11,17 +11,31 @@
     "harper-ls": {
       "settings": {
         "harper-ls": {
-          "userDictPath": "~/.config/harper-ls/dictionary.txt"
+          "userDictPath": "~/.config/harper-ls/dictionary.txt",
+          // Headings are sentence case here (SentenceCase rule), so the
+          // "Try to use title case in headings" nag is noise.
+          "linters": {
+            "UseTitleCase": false
+          }
         }
       }
     }
   },
-  "markdown_preview_font_size": 16.0,
   "agent_ui_font_size": 16.0,
+  // Markdown preview typography (nested since 1.21).
+  "markdown_preview": {
+    "font_size": 16.0,
+    "font_family": "Atkinson Hyperlegible Next",
+    "code_font_family": "MesloLGS Nerd Font Mono",
+  },
   "bottom_dock_layout": "right_aligned",
   "soft_wrap": "editor_width",
-  // Format only git-modified lines on save; needs a 1.12+ build (sd zed rebuild).
-  // "format_on_save": "modifications",
+  // Format only the lines with unstaged changes on save (needs VCS + LSP
+  // range formatting, both present since 1.12).
+  "format_on_save": "modifications",
+  // direnv is not installed; the default "direct" logs a failed exec on
+  // every project open.
+  "load_direnv": "disabled",
   "allow_rewrap": "in_comments",
   "preferred_line_length": 120,
   "show_wrap_guides": false,
@@ -42,9 +56,6 @@
   "buffer_line_height": "comfortable",
   "buffer_font_size": 16.0,
   "buffer_font_family": "MesloLGSDZ Nerd Font",
-  // Markdown preview typography.
-  "markdown_preview_font_family": "Atkinson Hyperlegible Next",
-  "markdown_preview_code_font_family": "MesloLGS Nerd Font Mono",
   "proxy": "",
   "agent": {
     "dock": "right",
@@ -247,6 +258,22 @@
   "relative_line_numbers": "disabled",
   "cursor_blink": false,
 
+  // Leader discovery: after `space` (or any chord prefix) a which-key
+  // popup lists what each next key does. The status-bar countdown stays
+  // on as well; hovering it pauses the timeout.
+  "which_key": {
+    "enabled": true,
+    "delay_ms": 400,
+  },
+
+  // Git worktrees live inside the repo beside jj's .workspaces/, so both
+  // checkout kinds sit in one place. A path inside the root gets no
+  // extra project component, so this is <repo>/.worktrees/<name>.
+  "git": {
+    "worktree_directory": ".worktrees",
+    "show_worktree_name": true,
+  },
+
   "inlay_hints": {
     "enabled": true,
   },
@@ -369,6 +396,9 @@
       "indent_guides": {
         "enabled": false,
       },
+      // Prose wraps at min(editor width, 80); the global 120 is for code.
+      "soft_wrap": "bounded",
+      "preferred_line_length": 80,
     },
   },
 }
