@@ -8,13 +8,14 @@ const viewKey = Symbol.for("forge-obsidian.canvas-view-shortcuts");
 const scopeKey = Symbol.for("forge-obsidian.canvas-shortcut-scope");
 const commands = new Map([
   ["M", "New Markdown Card"],
-  ["B", "Toggle Library"],
+  ["L", "Toggle Library"],
   ["A", "universal-add-file"],
   ["K", "insert-link-to-element"],
   ["C", "Copy Selection as Image"],
   ["N", "Draft Markdown with Source"],
   ["Enter", "Slideshow"],
   ["Y", "Copy Selection for Agent"],
+  ["I", "Ask Agent"],
 ]);
 const id = (name) => `obsidian-excalidraw-plugin:${name}`;
 const fixture = () => {
@@ -28,7 +29,7 @@ const fixture = () => {
 };
 require("./helpers/excalidraw-script-lifecycle.cjs").testScriptLifecycle(script);
 
-test("all eight Cmd+Shift chords dispatch through Obsidian commands in the active drawing", async () => {
+test("all nine Cmd+Shift chords dispatch through Obsidian commands in the active drawing", async () => {
   const f = fixture(); await f.run();
   for (const [key, command] of commands) {
     const event = f.chord({ key });
@@ -39,7 +40,7 @@ test("all eight Cmd+Shift chords dispatch through Obsidian commands in the activ
     assert.equal(event.altKey, undefined);
     assert.equal(event.ctrlKey, undefined);
   }
-  assert.equal(f.commandCalls.length, 8);
+  assert.equal(f.commandCalls.length, 9);
   assert.deepEqual(f.parentKeys, []);
   assert.equal(f.listeners.size, 0);
   assert.equal(f.windowListeners.size, 0);
@@ -52,6 +53,51 @@ test("lowercase key names dispatch the same commands", async () => {
   for (const [key, command] of commands) {
     assert.equal(f.view.scope.handleKey(f.chord({ key: key.toLowerCase() })), false);
     assert.equal(f.commandCalls.at(-1), id(command));
+  }
+});
+
+test("Cmd+Shift+L opens Library and the old Cmd+Shift+B chord retains its parent route", async () => {
+  const f = fixture(); await f.run();
+  assert.equal(f.view.scope.handleKey(f.chord({ key: "L" })), false);
+  assert.deepEqual(f.commandCalls, [id("Toggle Library")]);
+  for (const key of ["B", "b"]) {
+    assert.equal(f.view.scope.handleKey(f.chord({ key })), true);
+  }
+  assert.deepEqual(f.commandCalls, [id("Toggle Library")]);
+  assert.deepEqual(f.parentKeys, ["B", "b"]);
+});
+
+test("Cmd+Shift+L passes to the parent when a Markdown editor has focus", async () => {
+  const f = fixture(); await f.run();
+  f.document.activeElement = { isContentEditable: true, closest: () => ({}) };
+  assert.equal(f.view.scope.handleKey(f.chord({ key: "L" })), true);
+  assert.deepEqual(f.commandCalls, []);
+  assert.deepEqual(f.parentKeys, ["L"]);
+});
+
+test("Cmd+Shift+I invokes Ask Agent and preserves plain I and Cmd+I", async () => {
+  const f = fixture(); await f.run();
+  assert.equal(f.view.scope.handleKey(f.chord({ key: "I" })), false);
+  assert.deepEqual(f.commandCalls, [id("Ask Agent")]);
+  for (const props of [
+    { key: "i", metaKey: false, shiftKey: false },
+    { key: "I", metaKey: false, shiftKey: true },
+    { key: "i", metaKey: true, shiftKey: false },
+  ]) assert.equal(f.view.scope.handleKey(f.chord(props)), true);
+  assert.deepEqual(f.commandCalls, [id("Ask Agent")]);
+  assert.deepEqual(f.parentKeys, ["i", "I", "i"]);
+});
+
+test("Cmd+Shift+I preserves Markdown editor and embedded card input", async () => {
+  for (const prepare of [
+    f => { f.document.activeElement = { isContentEditable: true, closest: () => ({}) }; },
+    f => { f.appState.activeEmbeddable = { state: "active" }; },
+    f => { f.document.querySelector = () => ({}); },
+  ]) {
+    const f = fixture(); await f.run(); prepare(f);
+    assert.equal(f.view.scope.handleKey(f.chord({ key: "I" })), true);
+    assert.deepEqual(f.commandCalls, []);
+    assert.deepEqual(f.parentKeys, ["I"]);
   }
 });
 
@@ -77,7 +123,7 @@ test("native text, arrow editors, active embeds, and dialogs preserve editor sho
       assert.equal(f.view.scope.handleKey(f.chord({ key })), true);
     }
     assert.deepEqual(f.commandCalls, []);
-    assert.equal(f.parentKeys.length, 8);
+    assert.equal(f.parentKeys.length, 9);
   }
 });
 
@@ -97,7 +143,7 @@ test("DOM editors, inputs, stale leaves, detached roots, and missing files prese
       assert.equal(f.view.scope.handleKey(f.chord({ key })), true);
     }
     assert.deepEqual(f.commandCalls, []);
-    assert.equal(f.parentKeys.length, 8);
+    assert.equal(f.parentKeys.length, 9);
   }
 });
 

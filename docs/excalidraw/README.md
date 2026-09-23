@@ -12,11 +12,13 @@ Text editors, dialogs, and embedded content retain their own shortcuts.
 | Action | Canvas shortcut |
 | --- | --- |
 | New Markdown card | Cmd+Shift+M |
-| Open or close Library | Cmd+Shift+B |
+| Open or close Library | Cmd+Shift+L |
 | Insert any file | Cmd+Shift+A |
 | Copy selected element reference | Cmd+Shift+K, then confirm Link |
 | Copy selection as PNG | Cmd+Shift+C |
 | Draft Markdown with source | Cmd+Shift+N |
+| Ask agent about selection | Cmd+Shift+I |
+| Add or edit a review comment | Cmd+Shift+U |
 | Start slideshow | Cmd+Shift+Enter |
 | Copy advanced JSON packet | Cmd+Shift+Y |
 
@@ -47,6 +49,26 @@ It replaces the former PDF++ binding with Cmd+Shift+K.
 All 13 previous Option-based bindings stop through these changes.
 Unrelated custom bindings remain, including editor shortcuts and Iconize's Cmd+Shift+J.
 Native Option-based Excalidraw controls remain available.
+
+## Review comments
+
+Press **Cmd+Shift+U** with canvas focus to comment on the selected object.
+The command palette also contains **Excalidraw: (Script) Review Comment**.
+Click a comment badge to edit it. Selecting its object also reopens a single comment through the shortcut.
+
+The nonblocking editor opens beside the source. Drag its header to move it.
+Tab cycles NOTE, SUGGESTION, ISSUE, and PRAISE. Shift+Tab reverses the cycle.
+Enter saves. Cmd/Ctrl+Enter inserts a newline at the caret. Shift+Enter also adds a line.
+Escape and Cancel discard the draft. Lifecycle cleanup retains unfinished drafts in memory for the same source.
+
+Comments persist in the source object's `customData["forge.review"]`, with format `tuicr-comment` and version 2.
+Each comment stores its ID, kind, body, and complete target-ID list.
+Legacy cards retain their text and ID when saved into the attached format.
+The selection exporter includes this metadata. The Zed `review-clip` exporter remains separate.
+
+**Review Comment Badges** draws small speech-bubble controls without changing scene geometry or existing links.
+Its first run requests autostart permission. Badges move with their objects and adjust to pan and zoom.
+The badges are editor decorations and do not appear in PNG or SVG exports.
 
 ## Native controls
 
@@ -81,7 +103,7 @@ and [macOS shortcuts](https://support.apple.com/en-us/102650).
 
 ## Installation
 
-This repository owns the custom scripts, CSS, settings merges, and empty drawing template.
+This repository owns the custom scripts, CSS, settings merges, empty drawing template, and instructional canvas bundle.
 Chezmoi maps `Atlas/` to `~/Atlas/` and `dot_obsidian/` to `.obsidian/`.
 The `.md` scripts contain JavaScript for the Excalidraw script engine.
 Runtime symbol names retain the `forge-obsidian` prefix to remove previously installed handlers.
@@ -102,26 +124,30 @@ chezmoi apply ~/Atlas
 Reopen Obsidian after deployment so it loads the settings and scripts together.
 The native modify templates merge selected JSON keys and retain unrelated preferences.
 They append script pins, palette pins, and enabled CSS snippets without duplicates.
-They do not store notes, library contents, API keys, workspace files, or session state.
+They do not store notes, user library contents, API keys, workspace files, or session state.
 Settings serialization can change JSON formatting.
 
-The empty dark template is the only managed drawing file.
+The empty dark template remains a managed drawing file.
+The managed ArchiMate library is a separate stencil file, described below.
 It starts with Excalifont and clean arrows.
 Theme matching makes drawings follow Obsidian's theme, so a light theme overrides the template's dark mode.
 
 The next apply restores managed settings from the templates.
+Ask Agent seeds its default profile once. Later applies preserve the profile saved in its dialog.
 To retain a GUI change, update its source template before the next apply.
 Do not add the whole live `.obsidian` directory to Chezmoi.
 Review Obsidian Sync's configuration selections before using a second machine.
 Chezmoi owns these selected settings. Sync can replicate the resulting files.
 
-Five autostart entries apply to every drawing:
+Six autostart entries apply to every drawing:
 
 - **Double Click Markdown** handles Cmd+double-click in empty space.
 - **Markdown Card Interaction** styles cards and lets Escape leave their editors.
 - **Canvas View Shortcuts** handles Cmd+E in drawing views.
-- **Canvas Command Shortcuts** registers the eight canvas command shortcuts.
+- **Canvas Command Shortcuts** registers the ten canvas command shortcuts.
 - **Slideshow** registers controls without starting playback.
+- **Link Appearance** colors linked objects blue and preserves the native link badge.
+- **Review Comment Badges** shows attached comments after its autostart permission is allowed.
 
 Open settings with Cmd+Comma and search **autostart** to inspect these entries.
 The path is **Excalidraw → Excalidraw Automate → Autostart scripts**.
@@ -134,9 +160,160 @@ The `Downloaded/` folder contains pinned upstream scripts and their icons.
 Their byte hashes and source URLs are in [upstream-files.json](upstream-files.json).
 [UPSTREAM-LICENSE](UPSTREAM-LICENSE) records their upstream AGPL-3.0 license.
 Review upstream changes before replacing these pinned copies.
-The appearance merge enables both CSS snippets from `Atlas/dot_obsidian/snippets/`.
+The appearance merge enables the CSS snippets from `Atlas/dot_obsidian/snippets/`.
+
+## Canvas bundle
+
+The bundle contains editable starter copies of three canvases:
+
+- **Excalidraw Feature Cheatsheet**: feature stations, practice space, and an Ask Agent example near the top.
+- **ArchiMate Starter**: seven types, three relationships, and an agent prompt beside the practice space.
+- **Excalidraw Authoring Lab**: a small native flow, an editable Markdown card, and the main authoring shortcuts.
+
+Use **Cmd+O** in Obsidian to open a canvas by name.
+Select the sample objects, then press **Cmd+Shift+I** to test Ask Agent.
+
+The bundle includes SVG previews, linked help notes, public video summaries, and the practice PDF.
+[canvas-bundle.json](canvas-bundle.json) lists the files and their source hashes.
+The source names use Chezmoi's [create_ attribute](https://www.chezmoi.io/reference/target-types/#create-file).
+Chezmoi installs absent files and preserves existing files, including practice edits, on later applies.
+Future source updates therefore require an explicit refresh of an existing canvas.
+Back up the existing drawing before replacing it with a newer seed.
+
+To capture an approved canvas revision, save it in Obsidian with **Cmd+S**.
+Copy its Markdown and regenerated SVG into the matching `create_` source files, then update their manifest hashes.
+Review its links and practice content before sharing it.
+The packaged notes use plain category and author metadata to avoid dependencies on personal index notes.
+
+## Novak–Cañas Concept Mapping library
+
+`Atlas/Excalidraw/Libraries/Novak–Cañas.excalidrawlib` contains four stencils: Concept, Relationship, Proposition, and Focus question.
+The set follows the [Novak–Cañas concept-mapping method](https://cmap.ihmc.us/docs/conceptmap.php).
+Start with a focus question. Use short concept labels.
+Label each connection so both concepts and the linking phrase form a meaningful statement.
+The Proposition example reads “Concept maps represent knowledge.”
+Use general concepts above specific concepts where helpful. Cycles and multiple roots are valid.
+Add labelled cross-links between branches when their relationship matters.
+Relationship labels remain free text. Review meaning before conversion into structured records.
+Excalifont, rounded boxes, and arrowheads are presentation choices, not required notation.
+
+Open Library with **Cmd+Shift+L**, then use the **Novak–Cañas** section.
+Drag a stencil into the drawing. Double-click a label to edit it, then press **Escape**.
+Ungroup a proposition with **Cmd+Shift+G** before moving its concepts separately.
+Personal Library stores your own saved objects in `local-library.excalidrawlib`.
+The six supplied generic stencils were replaced by Concept Mapping. Existing drawings keep their inserted copies.
+The local library remains outside the dotfiles bundle.
+
+## ArchiMate library
+
+`Atlas/Excalidraw/Libraries/ArchiMate Starter.excalidrawlib` contains seven types and three relationships.
+The types are Goal, Principle, Requirement, Artifact, Process, Application Component, and Data Object.
+Access uses a dotted open arrow. Realization uses a dotted hollow triangle. Association uses a solid line without heads.
+ArchiMate 4 consolidates the earlier domain-specific process types into Process.
+The type names follow [C260](https://www.everand.com/book/1029751722/ArchiMate-4-Specification).
+Glyph geometry follows the [Open Group reference cards](https://www.opengroup.org.cn/sites/default/files/N221C_%E6%97%A0%E6%B0%B4%E5%8D%B0%E7%89%88.pdf).
+This starter set does not provide model validation or claim complete ArchiMate 4 conformance.
+
+Excalidraw loads each library file from its configured library folder.
+The starter file remains separate from Novak–Cañas and the personal `local-library.excalidrawlib` file.
+Open Library with **Cmd+Shift+L**. The ten new stencils appear with the existing items.
+No import command or new autostart script is required.
+
+The maintained panel patch gives each imported file a separate section.
+The sections include **Personal Library**, **ArchiMate**, **Novak–Cañas**, and the four adopted libraries below.
+Search filters items across these sections. Native tiles retain their click, drag, selection, and delete controls.
+The previous **Excalidraw ArchiMate Library** CSS file remains inert.
+See the patch procedure below.
+
+The builder in [build-archimate-library.cjs](build-archimate-library.cjs) accepts a native ExcalidrawAutomate instance.
+Call it inside Obsidian, serialize its result, and review the managed library before deployment.
+Stable item IDs prevent duplicate catalog entries. Native insertion generates fresh element and group IDs.
+Each semantic label or relationship retains its type in `customData.archimate` when its visible label changes.
+The metadata contains no element IDs. Agents must validate endpoints and meaning before structured conversion.
+
+Goal, Principle, and Requirement use native grouped lines, text, and glyphs for their beveled outlines.
+Their labels do not wrap automatically. The other four types use native bound labels.
+All stencils use Excalifont and editable native objects.
+Blue and the native link badge retain their navigation meaning.
+
+The bundled `ArchiMate Starter` canvas contains the seven types and open practice space.
+The first frame of `Excalidraw Feature Cheatsheet` shows six example types.
+The stencil library remains managed source. Installed starter canvases remain editable vault content.
+
+## Adopted libraries
+
+Open Library with **Cmd+Shift+L**. Search across all sections or select an item from its section.
+
+| Section | Items | Source author | Use |
+| --- | ---: | --- | --- |
+| UML Activity | 16 | Krzysztof Koper | Actions, decisions, forks, joins, and swimlanes |
+| Interface Wireframes | 23 | Aleksandra Lazovic | Buttons, forms, navigation, and interface layouts |
+| User Journeys | 14 | Wiktoria Mielcarek / Braweria | Stages, touchpoints, emotions, and journey templates |
+| Gantt | 1 | ferminrp | A schedule template with editable task bars |
+
+These 54 items come from the [Excalidraw library repository](https://github.com/excalidraw/excalidraw-libraries).
+The [source manifest](library-sources.json) records the pinned revision, asset hashes, authors, and managed file paths.
+The upstream [MIT notice](excalidraw-libraries.LICENSE) applies to these assets.
+
+Each pack has a separate file in `Atlas/Excalidraw/Libraries`.
+The existing library manager loads them. The section patch groups them by filename. No additional runtime script is required.
+Excalidraw's native importer converts the older formats.
+Legacy items receive stable IDs and searchable names. Element IDs, groups, and source text remain intact.
+Excalifont labels fit within their original text bounds.
+The [normalizer](normalize-library.cjs) accepts the original asset and its pack entry from the source manifest.
+Run `normalizeLibrary(input, metadata, lib, ea)` inside Obsidian with the native Excalidraw library and an isolated ExcalidrawAutomate instance.
+Inserted items remain native editable objects. Some tiles insert a component sheet or a complete template.
+Use **Cmd+Shift+G** to ungroup a selected sheet before editing its parts separately.
+
+UML Activity supplies drawing shapes. It does not check UML semantics or provide a complete UML notation library.
+Gantt is a manual schedule. It does not calculate dates or dependencies.
+
+## Library section patch
+
+[patch-library-groups.cjs](patch-library-groups.cjs) changes the bundled renderer and library manager for Excalidraw **2.27.3**.
+It checks the version and exact affected source hashes before it writes a separate candidate file.
+It rejects unknown versions, changed source sections, and partial patches.
+It recognizes a complete existing patch without applying it twice.
+
+The manager adds temporary source-file metadata to imported items.
+The renderer groups native tiles by that source and preserves their callbacks.
+Shift-selection follows the visible group order, including filtered search results.
+Vault library writes remove the temporary metadata.
+The patch creates no autostart script or DOM observer.
+External exports can contain the temporary relative source path.
+After reimport, an item can retain its former heading until the library reloads.
+Published items without a source use the native **Excalidraw Library** section.
+
+Obsidian still owns the plugin installation. Dotfiles owns this reviewed transformer, not a copied plugin binary.
+Chezmoi does not apply this patch automatically. A plugin update can replace it.
+Review the new plugin source before extending patch support to another version.
+
+Create a candidate from the installed plugin:
+
+```sh
+node docs/excalidraw/patch-library-groups.cjs \
+  --input ~/Atlas/.obsidian/plugins/obsidian-excalidraw-plugin/main.js \
+  --output /tmp/excalidraw-library-groups.js
+```
+
+Save open drawings with **Cmd+S**, then quit Obsidian with **Cmd+Q**.
+Back up the installed `main.js` before replacing it with the candidate.
+Reopen Obsidian and check the sections with **Cmd+Shift+L**.
+To reverse the patch, quit Obsidian and restore that backup.
+The library files and existing drawings do not require conversion.
 
 ## Input behavior
+
+Link Appearance uses native link flags and the public scene subscription.
+It colors linked shapes and their bound labels with `#1971c2`.
+Brackets and text prefixes stay hidden. Native link badges remain visible.
+A bound label with one simple wiki destination gives its container the same destination.
+Explicit container links remain unchanged. Ambiguous labels do not receive an invented container destination.
+Native text has one color for the whole object. Linked images retain their image pixels.
+The script stores previous colors and derived-link ownership in namespaced `customData`.
+Removing a link restores owned colors. Text editing defers changes until editing ends.
+Derived updates use `captureUpdate: "NEVER"` and do not add an undo step.
+No keyboard handlers or private parser APIs are installed.
 
 Cmd+double-click requires empty canvas space and an unlocked selection tool.
 Objects, frame interiors, drawing tools, view mode, and active editors block card creation.
@@ -155,6 +332,26 @@ Set that script to **Manual start only**. Other scripts retain their settings.
 Close each existing drawing tab with Cmd+W, then reopen the drawing with Cmd+O.
 
 ## Agent handoff
+
+Select objects on the canvas.
+Press **Cmd+Shift+I** to open **Ask Agent**.
+Enter an instruction and a Rune profile.
+Enable Use as default to save that profile.
+Click Ask.
+
+The initial profile is `astra@codex`. Script settings also expose the Rune executable path and request timeout.
+The request includes selected text, bound labels, group and frame contents, links, and connections within the selection.
+It excludes image bytes and linked note contents. Paste screenshots separately when needed.
+The dialog closes during execution. The progress notice has a Cancel button.
+The reply becomes editable Excalifont text beside the selection. Cmd+Z removes the insertion.
+If the source changes, a recovery dialog retains the reply instead of inserting it.
+
+The script spawns `rune run` with separate arguments and sends the prompt through standard input.
+Rune resolves the selected profile with its normal harness configuration and read-only mode.
+Read-only mode prevents writes. It permits file reads. The prompt asks the agent to use only supplied data.
+If Rune is absent, only literal `claude` or `codex` profiles can use their direct CLI.
+Named profiles require Rune. A failed dispatched request never retries through another harness.
+Each request is independent. This script does not connect to an existing agent session.
 
 For ordinary review, copy a selection PNG with Cmd+Shift+C.
 Use Cmd+Shift+K, then confirm **Link** with Tab twice and Enter.
@@ -177,6 +374,57 @@ Graph traversal establishes an order, not causality. Review proposed relationshi
 
 ## Verification
 
+Library grouping checks on 2026-09-25 passed 11 patch tests and five stencil tests.
+The complete patched plugin passed its syntax check and an identical second patch application.
+After a window reload, **Cmd+Shift+L** showed Personal Library, ArchiMate, and Novak–Cañas.
+Desktop search returned the four Novak–Cañas items. Clicking Concept inserted native grouped objects with a bound label.
+The desktop drag test could not run: the computer-use service returned `noWindowsAvailable` twice.
+Unit tests verified the unchanged native drag callbacks and selected-item payload.
+The original plugin is recoverable from `~/Atlas/.trash/library-groups-20260925/main.js`.
+
+Concept Mapping checks on 2026-09-25 passed five stencil tests and 13 deployment tests.
+The native library loaded all four stencils. Desktop search for Concept Mapping showed only those four items.
+Personal Library showed its empty-state instruction after the six supplied starters moved to a recoverable backup.
+ArchiMate retained its ten stencils. All 285 existing Cheatsheet objects remained, with one new instruction.
+The bundle integrity gate reported zero failures and the same known link-scanner warning.
+
+Canvas bundle checks on 2026-09-24 passed all 13 deployment tests across 28 files.
+The tests cover fresh installation, source hashes, repeated applies, missing files, and preservation of user edits.
+A scoped live apply preserved all 28 existing files byte-for-byte.
+Obsidian loaded 285 Cheatsheet objects, 70 ArchiMate Starter objects, and 17 Authoring Lab objects.
+Every text object uses Excalifont. All object IDs and bindings passed checks.
+The link audit resolved all 189 Markdown and scene links, including 51 scene fragments and 20 escaped aliases.
+All original drawing objects remain.
+The bundle integrity gate reported zero failures. Its link scanner misreads escaped table aliases, PDF links, and code examples.
+
+Ask Agent checks on 2026-09-24 passed 195 script tests and nine deployment tests.
+The final default-profile change passed all 13 Ask Agent tests and the nine deployment tests again.
+Cmd+Shift+I opened the live dialog. A Rune `astra@codex` request inserted native Excalifont text beside the selection.
+Cmd+Z removed only the reply. Closing the test drawing dismissed its pending prompt and released the request lock.
+The saved default appeared in a new dialog. The cheatsheet retained its 274 objects and exported the new shortcut to SVG.
+Computer-use screenshots remained stale, so live API state confirmed these results.
+The new instructions passed Vale without findings. Their STE score was 1.01 findings per 100 words.
+`main@claude` failed. Gateway checks showed that its required models were absent. The setup retains all harness protections.
+
+Initial ArchiMate checks on 2026-09-24 confirmed 15 catalog items: nine new stencils and six unchanged originals.
+The nine stencils contain 28 native elements with unique IDs and valid text bindings.
+Native restoration retained all nine items and their semantic metadata.
+Saved-scene checks confirmed 64 objects in the starter and 274 in the cheatsheet.
+The cheatsheet update preserved every unrelated object. The user's Plain Text Wins file remained byte-identical.
+Native PNG exports passed visual inspection. Computer use still returned an older window view, so drag-and-drop remains unverified.
+The focused script suite passed 73 tests. All nine deployment tests passed.
+The changes remain uncommitted.
+
+Link Appearance checks on 2026-09-23 passed 19 focused tests and six native scene checks.
+The full script suite passed 178 tests. All nine Obsidian deployment tests passed.
+Native checks covered shape and label colors, undo, redo, and automatic startup after reopening.
+The two Source cards in Plain Text Wins received their matching wiki destinations and blue strokes.
+Its 81 objects and the cheatsheet's 261 objects retained their text, geometry, and bindings.
+Computer use returned stale window content, so mouse navigation and keyboard editing need a fresh visual check.
+The managed source remains in the existing `codex-obsidian-openlogi` Jujutsu workspace.
+The default Chezmoi source checkout currently points to an older revision without these Atlas files.
+Use this workspace explicitly until its changes reach the default checkout. This update has not been committed.
+
 Run these checks from the repository root:
 
 ```sh
@@ -188,7 +436,7 @@ Script tests use mocks. Chezmoi tests use temporary destinations and do not acce
 These checks do not establish desktop integration success.
 The deployment tests check merges, old binding removal, palette order, autostart preservation, source files, and idempotence.
 
-### Current GUI checks
+### Earlier GUI checks
 
 Live checks on 2026-09-23 confirmed Cmd+Shift+B for Library and Cmd+Shift+M for card creation.
 Escape deactivated the card. Cmd+Shift+C copied a 307 × 55 PNG with clipboard type `image/png`.

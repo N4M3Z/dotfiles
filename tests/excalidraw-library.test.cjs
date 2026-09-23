@@ -62,7 +62,7 @@ test("view mode gives the exact edit and Library shortcuts without changing mode
   await f.run();
   assert.deepEqual(f.calls, []);
   assert.equal(f.state.viewModeEnabled, true);
-  assert.deepEqual(f.notices, ["Press Cmd+E to enter edit mode, then press Cmd+Option+L for Library."]);
+  assert.deepEqual(f.notices, ["Press Cmd+E to enter edit mode, then press Cmd+Shift+L for Library."]);
 });
 
 test("inactive and detached drawing targets cannot toggle Library", async () => {

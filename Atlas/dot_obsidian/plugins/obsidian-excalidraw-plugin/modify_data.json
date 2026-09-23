@@ -25,6 +25,10 @@
 {{- $current = setValueAtPath (list "matchThemeTrigger") (fromJson `true`) $current -}}
 {{- $current = setValueAtPath (list "iframeMatchExcalidrawTheme") (fromJson `true`) $current -}}
 {{- $current = setValueAtPath (list "showLinkBrackets") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "linkPrefix") (fromJson `""`) $current -}}
+{{- $current = setValueAtPath (list "urlPrefix") (fromJson `""`) $current -}}
+{{- $current = setValueAtPath (list "linkOpacity") (fromJson `1`) $current -}}
+{{- $current = setValueAtPath (list "syncElementLinkWithText") (fromJson `false`) $current -}}
 {{- $current = setValueAtPath (list "allowCtrlClick") (fromJson `true`) $current -}}
 {{- $current = setValueAtPath (list "exportWithTheme") (fromJson `true`) $current -}}
 {{- $current = setValueAtPath (list "exportWithBackground") (fromJson `true`) $current -}}
@@ -40,7 +44,13 @@
 {{- $current = setValueAtPath (list "autostartScripts" "Canvas View Shortcuts") (fromJson `"allow"`) $current -}}
 {{- $current = setValueAtPath (list "autostartScripts" "Canvas Command Shortcuts") (fromJson `"allow"`) $current -}}
 {{- $current = setValueAtPath (list "autostartScripts" "Slideshow") (fromJson `"allow"`) $current -}}
+{{- $current = setValueAtPath (list "autostartScripts" "Link Appearance") (fromJson `"allow"`) $current -}}
 {{- $current = setValueAtPath (list "scriptEngineSettings" "Slideshow" "transitionDelay") (fromJson `500`) $current -}}
+{{- $scriptSettings := default (dict) (get $current "scriptEngineSettings") -}}
+{{- $askAgent := default (dict) (get $scriptSettings "Ask Agent") -}}
+{{- if not (hasKey $askAgent "defaultProfile") -}}
+{{- $current = setValueAtPath (list "scriptEngineSettings" "Ask Agent" "defaultProfile") (fromJson `{"value":"astra@codex","description":"Default Rune profile for Ask Agent."}`) $current -}}
+{{- end -}}
 {{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "useObsidianDefaults") (fromJson `false`) $current -}}
 {{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "backgroundMatchCanvas") (fromJson `false`) $current -}}
 {{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "backgroundMatchElement") (fromJson `true`) $current -}}

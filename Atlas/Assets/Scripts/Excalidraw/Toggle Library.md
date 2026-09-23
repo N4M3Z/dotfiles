@@ -1,6 +1,6 @@
 /*
 Open or close Library in the active Excalidraw canvas.
-Assign Cmd+Option+L to this script command in Obsidian Hotkeys.
+Use Cmd+Shift+L through Canvas Command Shortcuts.
 The public API identifies Library as the default sidebar's library tab.
 Active editors and dialogs retain control of their input.
 */
@@ -18,7 +18,7 @@ if (state.openDialog || state.editingTextElement || state.editingLinearElement |
   active?.closest?.('input, textarea, select, [contenteditable="true"], iframe, [role="dialog"]')) return;
 
 if (state.viewModeEnabled) {
-  new Notice("Press Cmd+E to enter edit mode, then press Cmd+Option+L for Library.");
+  new Notice("Press Cmd+E to enter edit mode, then press Cmd+Shift+L for Library.");
   return;
 }
 if (typeof api.toggleSidebar !== "function") {

@@ -37,12 +37,22 @@ PALETTE_COMMANDS = [
     ]
 ]
 CANVAS_SCRIPT_COMMANDS = [
+    "Ask Agent",
     "New Markdown Card",
     "Toggle Library",
     "Copy Selection as Image",
     "Draft Markdown with Source",
     "Slideshow",
     "Copy Selection for Agent",
+]
+CANVAS_SEEDS = [
+    f"{name}.{extension}"
+    for name in [
+        "Excalidraw Feature Cheatsheet",
+        "ArchiMate Starter",
+        "Excalidraw Authoring Lab",
+    ]
+    for extension in ["md", "svg"]
 ]
 
 
@@ -75,6 +85,18 @@ class ObsidianConfigTests(unittest.TestCase):
     def read(self, name):
         return json.loads((self.settings / name).read_text())
 
+    def bundle_seed_paths(self):
+        manifest = json.loads((ROOT / "docs/excalidraw/canvas-bundle.json").read_text())
+        paths = []
+        for record in manifest["files"]:
+            path = pathlib.Path(record["path"])
+            source = self.source / "Atlas" / path.with_name(f"create_{path.name}")
+            target = self.vault / path
+            self.assertTrue(source.is_file(), str(source.relative_to(self.source)))
+            self.assertFalse(source.with_name(path.name).exists(), record["path"])
+            paths.append((source, target))
+        return paths
+
     def run_chezmoi(self, command, name=None, succeeds=True):
         target = self.settings / name if name else self.vault
         result = subprocess.run(
@@ -95,6 +117,7 @@ class ObsidianConfigTests(unittest.TestCase):
             "autostartScriptFailures": {"Other script": "local failure"},
             "autostartScripts": {"Other script": "deny"},
             "scriptEngineSettings": {
+                "Ask Agent": {"defaultProfile": {"value": "custom@claude"}, "timeoutSeconds": 120},
                 "Slideshow": {"transitionDelay": 1200, "localOption": True},
                 "Other script": {"value": 42},
             },
@@ -111,10 +134,21 @@ class ObsidianConfigTests(unittest.TestCase):
         self.assertEqual(actual["autostartScripts"]["Other script"], "deny")
         self.assertEqual(actual["autostartScripts"]["Canvas View Shortcuts"], "allow")
         self.assertEqual(actual["autostartScripts"]["Canvas Command Shortcuts"], "allow")
+        self.assertEqual(actual["autostartScripts"]["Link Appearance"], "allow")
+        self.assertFalse(actual["showLinkBrackets"])
+        self.assertEqual(actual["linkPrefix"], "")
+        self.assertEqual(actual["urlPrefix"], "")
+        self.assertEqual(actual["linkOpacity"], 1)
+        self.assertFalse(actual["syncElementLinkWithText"])
         self.assertEqual(actual["scriptEngineSettings"]["Slideshow"], {
             "transitionDelay": 500, "localOption": True,
         })
         self.assertEqual(actual["scriptEngineSettings"]["Other script"], {"value": 42})
+        self.assertEqual(actual["scriptEngineSettings"]["Ask Agent"], {
+            "defaultProfile": {"value": "custom@claude"}, "timeoutSeconds": 120,
+        })
+        self.run_chezmoi("apply", PLUGIN)
+        self.assertEqual(self.read(PLUGIN), actual)
         self.assertEqual(actual["markdownImageSettings"]["defaults"]["width"], 650)
         self.assertTrue(actual["embeddableMarkdownDefaults"]["futurePreference"])
         self.assertIn("Other script.md", actual["pinnedScripts"])
@@ -193,7 +227,10 @@ class ObsidianConfigTests(unittest.TestCase):
         self.run_chezmoi("apply", "community-plugins.json")
         self.assertEqual(self.read("appearance.json"), {
             "theme": "system", "accentColor": "#123456",
-            "enabledCssSnippets": ["local-css", "excalidraw-compact-hint", "excalidraw-markdown-cards"],
+            "enabledCssSnippets": [
+                "local-css", "excalidraw-compact-hint", "excalidraw-markdown-cards",
+                "Excalidraw ArchiMate Library",
+            ],
         })
         self.assertEqual(self.read("community-plugins.json"), [
             "local-plugin", "pdf-plus", "obsidian-excalidraw-plugin",
@@ -215,18 +252,77 @@ class ObsidianConfigTests(unittest.TestCase):
         for name in CANVAS_SCRIPT_COMMANDS:
             self.assertTrue((scripts / f"{name}.md").is_file(), name)
         self.assertEqual(self.read("command-palette.json")["pinned"], PALETTE_COMMANDS)
+        for name in self.read("appearance.json")["enabledCssSnippets"]:
+            self.assertTrue((self.settings / "snippets" / f"{name}.css").is_file(), name)
         plugin = self.read(PLUGIN)
+        self.assertEqual(plugin["scriptEngineSettings"]["Ask Agent"]["defaultProfile"]["value"], "astra@codex")
+        self.assertNotIn("Ask Agent", plugin["autostartScripts"])
         self.assertTrue((self.vault / plugin["templateFilePath"]).is_file())
         for name in plugin["autostartScripts"]:
             self.assertTrue((scripts / f"{name}.md").is_file(), name)
         for path in plugin["pinnedScripts"]:
             self.assertTrue((self.vault / path).is_file(), path)
+        libraries = self.vault / "Excalidraw/Libraries"
+        for name in [
+            "ArchiMate Starter", "Novak–Cañas", "UML Activity",
+            "Interface Wireframes", "User Journeys", "Gantt",
+        ]:
+            self.assertTrue((libraries / f"{name}.excalidrawlib").is_file(), name)
+        self.assertFalse((libraries / "local-library.excalidrawlib").exists())
         self.assertFalse((self.vault / "dot_obsidian").exists())
         self.assertFalse((scripts / "README.md").exists())
+        for source, target in self.bundle_seed_paths():
+            self.assertTrue(target.is_file(), target.name)
+            self.assertEqual(target.read_bytes(), source.read_bytes(), target.name)
+            self.assertFalse(target.with_name(source.name).exists(), source.name)
+
+    def test_canvas_bundle_manifest_matches_packaged_files(self):
+        manifest = json.loads((ROOT / "docs/excalidraw/canvas-bundle.json").read_text())
+        self.assertEqual(manifest["version"], 1)
+        records = manifest["files"]
+        self.assertEqual(len(records), 28)
+        paths = {record["path"] for record in records}
+        self.assertEqual(len(paths), len(records))
+        self.assertTrue({f"Library/Canvas/{name}" for name in CANVAS_SEEDS} <= paths)
+        for record, (source, _) in zip(records, self.bundle_seed_paths()):
+            self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(),
+                             record["sha256"], record["path"])
+
+    def test_bundle_seeds_preserve_preexisting_content(self):
+        expected = {}
+        for _, target in self.bundle_seed_paths():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            expected[target] = f"Existing user content: {target.name}\n".encode()
+            target.write_bytes(expected[target])
+        self.run_chezmoi("apply")
+        for target, content in expected.items():
+            self.assertEqual(target.read_bytes(), content, target.name)
+
+    def test_bundle_seeds_preserve_practice_edits_after_source_updates(self):
+        self.run_chezmoi("apply")
+        expected = {}
+        for source, target in self.bundle_seed_paths():
+            expected[target] = target.read_bytes() + b"\nUser practice edits\n"
+            target.write_bytes(expected[target])
+            source.write_bytes(source.read_bytes() + b"\nUpdated seed\n")
+        self.run_chezmoi("apply")
+        for target, content in expected.items():
+            self.assertEqual(target.read_bytes(), content, target.name)
+
+    def test_missing_bundle_files_use_latest_seed(self):
+        self.run_chezmoi("apply")
+        paths = self.bundle_seed_paths()
+        for source, target in paths:
+            source.write_bytes(source.read_bytes() + b"\nUpdated seed\n")
+            target.unlink()
+        self.run_chezmoi("apply")
+        for source, target in paths:
+            self.assertEqual(target.read_bytes(), source.read_bytes(), target.name)
 
     def test_apply_preserves_unmanaged_vault_files(self):
         examples = {
             "Library/Canvas/My drawing.md": "private drawing",
+            "Excalidraw/Libraries/local-library.excalidrawlib": "personal library",
             ".obsidian/workspace.json": "private session state",
             ".obsidian/plugins/other-plugin/data.json": "private plugin state",
             "Assets/Scripts/Excalidraw/My script.md": "local script",

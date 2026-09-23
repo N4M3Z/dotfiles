@@ -79,13 +79,15 @@ try {
 
   const commands = new Map([
     ["m", "New Markdown Card"],
-    ["b", "Toggle Library"],
+    ["l", "Toggle Library"],
     ["a", "universal-add-file"],
     ["k", "insert-link-to-element"],
     ["c", "Copy Selection as Image"],
     ["n", "Draft Markdown with Source"],
     ["enter", "Slideshow"],
     ["y", "Copy Selection for Agent"],
+    ["i", "Ask Agent"],
+    ["u", "Review Comment"],
   ]);
   // Both shortcut scripts share one scope and remove only their own handlers.
   const scopeKey = Symbol.for("forge-obsidian.canvas-shortcut-scope");
