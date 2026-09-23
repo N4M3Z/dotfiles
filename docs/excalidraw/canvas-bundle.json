@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "Library/Canvas/Excalidraw Feature Cheatsheet.md",
+      "sha256": "8c84825bb4bfe62f8c3dc800d6ad8aafa9bb0b00673702f85b53fd9632bcec53"
+    },
+    {
+      "path": "Library/Canvas/Excalidraw Feature Cheatsheet.svg",
+      "sha256": "d2bb3ba4d952494d5d1c29f184a8a693447454dcba654d3500eea92fab5bce5e"
+    },
+    {
+      "path": "Library/Canvas/ArchiMate Starter.md",
+      "sha256": "0135e6a66f9f14e5e094e2e0075cd5c9da58f78530293c534f0dbcf77e2bb710"
+    },
+    {
+      "path": "Library/Canvas/ArchiMate Starter.svg",
+      "sha256": "82c3213e15f2adf9bc9eb1c140242442bbf27e1c1c2ade40701cb7d746d23f61"
+    },
+    {
+      "path": "Library/Canvas/Excalidraw Authoring Lab.md",
+      "sha256": "91e22211f685c5e70634b775a981bd83dc208d6ff6411bf905a7bd1d51241140"
+    },
+    {
+      "path": "Library/Canvas/Excalidraw Authoring Lab.svg",
+      "sha256": "07f340b67e479cdcb4ac57e06ccc76212f05348fc5cef2c6fad8bb03241c7f8f"
+    },
+    {
+      "path": "Library/Help/Excalidraw Authoring.md",
+      "sha256": "b60ab0a545248b1a36e3f6f13d64ec2338bc3df7e12ed4ba19b65a441541c8a3"
+    },
+    {
+      "path": "Library/Help/Excalidraw Feature Test Notes.md",
+      "sha256": "559971517dd068650443a718e2e6dc8a97249c2da7ff877f5a5d247c9bec080a"
+    },
+    {
+      "path": "Library/Help/Excalidraw Improvements Plan.md",
+      "sha256": "978b2492d187c9c2fc78e26f10d2a767f8f9a77ba1f7dbb26ff77523f54b0400"
+    },
+    {
+      "path": "Library/Help/Excalidraw - ArchiMate.md",
+      "sha256": "d0c90d768d4c3700fa6186f7b2434df188c56a634e52780d602678a1ca658d5b"
+    },
+    {
+      "path": "Library/Help/Excalidraw - Canvas review presentations.md",
+      "sha256": "89c85d6d5aeeb1e11565564970858ad11a9f160bcbb7b41dc88a8ac0ea9f33f9"
+    },
+    {
+      "path": "Library/Help/Excalidraw - Draft Markdown from drawings.md",
+      "sha256": "3ee18717af4b11092570d56d16cb0b5d33416404057fb23276825bb464b1d678"
+    },
+    {
+      "path": "Library/Help/Excalidraw - Explicit relationship metadata.md",
+      "sha256": "c8fbb5a62d3c369f16faacdd00763c737221349e9a5ed88cd165fa3c803f09ae"
+    },
+    {
+      "path": "Library/Help/Excalidraw - Keyboard flowcharts.md",
+      "sha256": "0d6d6e3599f3d5bb0777b5eb2370a1d768c60cfe928e7cfac9b9522bf1004092"
+    },
+    {
+      "path": "Library/Help/Excalidraw - Linked PDF excerpts.md",
+      "sha256": "2c9f7cd5fd07908fa1a5f790b6fc9d6748b36937a57a5d125a78d30290e207ff"
+    },
+    {
+      "path": "Library/Help/Excalidraw - Live region references.md",
+      "sha256": "f53e89e6b3d02f85914f9a568379b19fdb89bd0c5b6b139742e7a4e35e46121e"
+    },
+    {
+      "path": "Library/Help/Excalidraw - MindMap branches.md",
+      "sha256": "30ecdcc126a88409f7b71959c84bbc2d62b96c644592d3c1be4f75ec08cb5c60"
+    },
+    {
+      "path": "Library/Help/Excalidraw - Named review frames.md",
+      "sha256": "3471230e8cb74d6068145845b6dcd5edc1d34793ee747dcddac7c0a3396eea5f"
+    },
+    {
+      "path": "Library/Help/Excalidraw - Reusable components.md",
+      "sha256": "5a902d86cfaab9d778a7746f3c03256a079d992046b75dead1e585cca25107ed"
+    },
+    {
+      "path": "Library/Help/Excalidraw - Select elements by type.md",
+      "sha256": "a26dcf11ef93c771e9d9e214ae1f93fd52b015da0581f8d14c820ef46fee6723"
+    },
+    {
+      "path": "Library/Media/YouTube/Zsolt Viczián - Excalidraw Writing Machine.md",
+      "sha256": "b5b1bbbb0f4caca98aec878375acd3e58b21733fad3a638001578e4b7bbeb080"
+    },
+    {
+      "path": "Library/Media/YouTube/Zsolt Viczián - Block reference parts of images.md",
+      "sha256": "f8b9b133b2a108a43287302a2ee66fb20b21a6ddce7f3b6869c2091b286d6da9"
+    },
+    {
+      "path": "Library/Media/YouTube/Zsolt Viczián - Excalidraw 2.4.0 Feature Walkthrough.md",
+      "sha256": "74be271b67d731d0542ee8c4202dfb4110470b15f5920744b5fa79198e2f96f9"
+    },
+    {
+      "path": "Library/Media/YouTube/Zsolt Viczián - MindMap Builder v3.md",
+      "sha256": "616e1e69856d3490df7cd9b97105264e29cbf429698fcac3aeea15257a20dd7d"
+    },
+    {
+      "path": "Library/Media/YouTube/Zsolt Viczián - MindMap Builder 2.0.md",
+      "sha256": "75e9077e19cd0ebd2180243c81b968d254551c5dcc77d9b39e3a878037d05eff"
+    },
+    {
+      "path": "Library/Media/YouTube/Zsolt Viczián - Excalidraw-Obsidian Showcase.md",
+      "sha256": "b6f05d6a7ac43213685200c2c229fe12278853be0aad29581eb5801f42f73890"
+    },
+    {
+      "path": "Library/Media/YouTube/Zsolt Viczián - Excalidraw Slideshow v4.md",
+      "sha256": "a1f3badeff3cc6ed9b538bf00b1dac7d5b25105c80833f09cf3c5cc76112a82f"
+    },
+    {
+      "path": "Library/Help/Assets/Excalidraw Practice Source.pdf",
+      "sha256": "db79fdeddc75470de5cfe20f010ee30e4468135d56f9cb38e55a0197dc9d97f5"
+    }
+  ]
+}
