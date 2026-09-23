@@ -1,0 +1,87 @@
+# Slideshow maintenance
+
+`Slideshow.md` is a local fork maintained in N4M3Z/dotfiles.
+Zsolt Viczián wrote the upstream script. The attribution and upstream links remain in the script.
+Deploy the maintained script and its SVG icon together to `Atlas/Assets/Scripts/Excalidraw/`.
+Tests do not execute the script in Obsidian.
+
+## Source
+
+- [Upstream script at commit a8182899](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/a8182899b760fe09b24ba60c5833d5985d3a5f8c/ea-scripts/Slideshow.md)
+- Upstream build: `2026-09-15T13:48:51.367Z`
+- Original SHA-256: `94c658070da0cc15e552a9f2c944011f6fcbe45ed41d1700adfda97003603204`
+- Patched SHA-256: `eaa428b446690a117c84a88ca820f21ce4e255b5a187e3c28f80eab45b17621f`
+- Installed path: `Atlas/Assets/Scripts/Excalidraw/Slideshow.md`
+- Command: `obsidian-excalidraw-plugin:Slideshow`
+- Autostart and script settings key: `Slideshow`
+- Investigated environment: Excalidraw 2.27.3, Obsidian 1.14.2, macOS.
+
+## Changes
+
+A source note could become active while the inactive drawing still owned DOM fullscreen.
+The presentation controller remained active, and the Obsidian window lost normal input controls.
+The JavaScript thread still responded.
+
+The patch adds two presentation-scoped Obsidian workspace listeners.
+They end the presentation when another leaf becomes active or the host drawing changes.
+The presenter leaf remains exempt.
+Exit removes both listeners.
+Failed startup also releases controller resources.
+
+Cleanup exits the drawing's DOM fullscreen before presenter cleanup and native window restoration.
+It awaits the DOM fullscreen exit promise.
+It avoids scene restoration if the leaf or file now contains another drawing.
+
+Presentation setup now preserves the drawing's frame rendering preferences.
+The upstream script disabled frame rendering temporarily, then restored it during exit.
+Source navigation could save that temporary state before exit restored it.
+The local script removes both the temporary override and its exit restoration.
+This prevents presentation startup from changing the saved frame settings.
+
+Window snapshots now include the original native fullscreen state.
+Restoration preserves that state where the operating system permits it.
+It skips bounds changes while native fullscreen remains active, including after the existing timeout.
+
+The default transition duration changes from 1,000 ms to 500 ms.
+An existing saved duration still overrides this default.
+The patch does not add a keyboard handler.
+Cmd+Option starts fullscreen when both modifiers remain pressed during command execution.
+Cleared modifiers already start fullscreen, so Cmd+Option+P has the same result in both states.
+Cmd or Ctrl alone still opens the sidepanel. Option alone still starts windowed.
+Shift retains its resume behavior.
+
+## Validation
+
+Run `node --test tests/excalidraw-slideshow.test.cjs` from the repository root.
+All 35 focused tests pass.
+The tests parse the complete script and execute its affected production sections with controlled mocks.
+They cover navigation, cleanup order, listener disposal, file replacement, fullscreen ownership, native restoration, frame preferences, modifiers, and failed startup.
+
+The installed script matched the previous fork before its ownership comment changed.
+This adoption changes only that comment. Runtime code stays unchanged.
+A live computer-use test confirmed that Cmd+Option+P starts fullscreen with presentation and view mode active.
+One Backspace ended the presentation, cleared DOM fullscreen, and restored edit mode.
+The full test suite passed all 129 tests.
+
+Full navigation and native window restoration tests remain pending.
+Test source links from both windowed and native fullscreen Obsidian.
+Check the active leaf, DOM fullscreen owner, window input, and native fullscreen state after navigation.
+Presenter focus and repeated presentation starts also remain pending.
+
+## Limits and updates
+
+The link hook remains synchronous and still permits native link navigation.
+The workspace listeners provide cleanup after navigation when the hook does not run.
+They do not serialize note navigation behind the fullscreen promise.
+
+The tests establish cleanup behavior with mocked Obsidian and Electron APIs.
+They do not prove that macOS rendering or accessibility faults are resolved.
+Native fullscreen restoration depends on asynchronous operating system transitions.
+Display movement and ordinary slideshow behavior remain upstream behavior.
+Frame labels and outlines remain visible during presentation when the drawing's preferences enable them.
+Cmd+Option-click on the script also starts fullscreen because the script uses the same modifier resolver.
+The fullscreen exception applies only without Ctrl or Shift.
+
+This copy is maintained separately from the downloaded scripts.
+Review upstream changes against the pinned source, apply selected changes here, and run the tests before deployment.
+Keep the icon, shortcut, Autostart entry, and script settings under the `Slideshow` name.

@@ -1,0 +1,32 @@
+[
+  {
+    "file": "Atlas/Assets/Scripts/Excalidraw/Downloaded/Mindmap Builder.svg",
+    "source": "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/a8182899b760fe09b24ba60c5833d5985d3a5f8c/ea-scripts/Mindmap%20Builder.svg",
+    "sha256": "50b311f80452148627d692036f438675b1bba167031d910a4195a017fed1b518"
+  },
+  {
+    "file": "Atlas/Assets/Scripts/Excalidraw/Downloaded/Mindmap Builder.md",
+    "source": "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/a8182899b760fe09b24ba60c5833d5985d3a5f8c/ea-scripts/Mindmap%20Builder.md",
+    "sha256": "7739e46cf531e2ae92b070e8fe7ea0e4b2c6d1abd453f2ccdaf06b773e0d4f59"
+  },
+  {
+    "file": "Atlas/Assets/Scripts/Excalidraw/Downloaded/Excalidraw Writing Machine.svg",
+    "source": "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/a8182899b760fe09b24ba60c5833d5985d3a5f8c/ea-scripts/Excalidraw%20Writing%20Machine.svg",
+    "sha256": "af6f86000a152d293b58e955962913d9e05c1ade57a39eb63f6d19459b4916d3"
+  },
+  {
+    "file": "Atlas/Assets/Scripts/Excalidraw/Downloaded/Select Elements of Type.svg",
+    "source": "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/a8182899b760fe09b24ba60c5833d5985d3a5f8c/ea-scripts/Select%20Elements%20of%20Type.svg",
+    "sha256": "8be3860adcd164493972d3e31a84ad2d9c69b5528bfa75569ab717392714ea4c"
+  },
+  {
+    "file": "Atlas/Assets/Scripts/Excalidraw/Downloaded/Select Elements of Type.md",
+    "source": "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/a8182899b760fe09b24ba60c5833d5985d3a5f8c/ea-scripts/Select%20Elements%20of%20Type.md",
+    "sha256": "279696ca47caea0263098a5f7f6cd0c0f0b8d396dc7fe8f889b2d37502c02e40"
+  },
+  {
+    "file": "Atlas/Assets/Scripts/Excalidraw/Downloaded/Excalidraw Writing Machine.md",
+    "source": "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/a8182899b760fe09b24ba60c5833d5985d3a5f8c/ea-scripts/Excalidraw%20Writing%20Machine.md",
+    "sha256": "6d5e52d4dd4bf9cb767e8a1edd448fb61ca103b889a10d6eae881b984d8a0327"
+  }
+]
