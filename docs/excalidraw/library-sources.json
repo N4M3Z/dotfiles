@@ -1,0 +1,281 @@
+{
+  "repository": "https://github.com/excalidraw/excalidraw-libraries",
+  "revision": "297a349eaff859e678f78d4dbc8e68df5fce42e5",
+  "revisionUrl": "https://github.com/excalidraw/excalidraw-libraries/commit/297a349eaff859e678f78d4dbc8e68df5fce42e5",
+  "license": {
+    "spdx": "MIT",
+    "scope": "Repository root license; the pinned repository has no per-pack license files.",
+    "url": "https://github.com/excalidraw/excalidraw-libraries/blob/297a349eaff859e678f78d4dbc8e68df5fce42e5/LICENSE",
+    "notice": "excalidraw-libraries.LICENSE",
+    "sha256": "1352d204fdb90d5e482c13139d848bc2c9300a9a7de358a0a558a23e72d0d8be"
+  },
+  "adaptation": {
+    "importer": "ExcalidrawLib.restoreLibraryItems",
+    "legacyItemIds": "Stable pack-key and item-index IDs",
+    "labels": "Searchable item names; Excalifont fitted within original text bounds",
+    "preserved": [
+      "element IDs",
+      "groups",
+      "source text"
+    ],
+    "helper": "normalize-library.cjs"
+  },
+  "itemCount": 54,
+  "packs": [
+    {
+      "key": "uml-activity",
+      "name": "UML Activity",
+      "path": "Atlas/Excalidraw/Libraries/UML Activity.excalidrawlib",
+      "upstreamTitle": "UML Library: Activity Diagram",
+      "authors": [
+        {
+          "name": "Krzysztof Koper",
+          "github": "papaCrispy",
+          "url": "https://www.linkedin.com/in/krzysztofkoper/"
+        }
+      ],
+      "assetUrl": "https://raw.githubusercontent.com/excalidraw/excalidraw-libraries/297a349eaff859e678f78d4dbc8e68df5fce42e5/libraries/https-github-com-papacrispy/uml-library-activity-diagram.excalidrawlib",
+      "sourceUrl": "https://github.com/excalidraw/excalidraw-libraries/blob/297a349eaff859e678f78d4dbc8e68df5fce42e5/libraries/https-github-com-papacrispy/uml-library-activity-diagram.excalidrawlib",
+      "upstreamSha256": "d445c1ceec31507e22fbdbf3cb139565e86eee85b23d6aa335765814b4e49e36",
+      "upstreamFormatVersion": 2,
+      "license": "MIT",
+      "itemCount": 16,
+      "catalogMetadata": {
+        "created": "2022-10-02"
+      },
+      "items": [
+        {
+          "suggestedName": "UML Activity: Initial State"
+        },
+        {
+          "suggestedName": "UML Activity: Final State"
+        },
+        {
+          "suggestedName": "UML Activity: Terminate"
+        },
+        {
+          "suggestedName": "UML Activity: Action Box"
+        },
+        {
+          "suggestedName": "UML Activity: Item Box"
+        },
+        {
+          "suggestedName": "UML Activity: Decision Box_1"
+        },
+        {
+          "suggestedName": "UML Activity: Decision Box_2"
+        },
+        {
+          "suggestedName": "UML Activity: Fork/ Join Node"
+        },
+        {
+          "suggestedName": "UML Activity: Expansion Region Entry/Exit Point"
+        },
+        {
+          "suggestedName": "UML Activity: Expansion Description_Iterative"
+        },
+        {
+          "suggestedName": "UML Activity: Expansion Description_Parallel"
+        },
+        {
+          "suggestedName": "UML Activity: Expansion Description_Stream"
+        },
+        {
+          "suggestedName": "UML Activity: Expansion Region"
+        },
+        {
+          "suggestedName": "UML Activity: Region"
+        },
+        {
+          "suggestedName": "UML Activity: Comment Box"
+        },
+        {
+          "suggestedName": "UML Activity: Swimlane"
+        }
+      ]
+    },
+    {
+      "key": "lo-fi-wireframes",
+      "name": "Interface Wireframes",
+      "path": "Atlas/Excalidraw/Libraries/Interface Wireframes.excalidrawlib",
+      "upstreamTitle": "Lo-Fi Wireframing Kit",
+      "authors": [
+        {
+          "name": "Aleksandra Lazovic",
+          "url": "https://spfr.co"
+        }
+      ],
+      "assetUrl": "https://raw.githubusercontent.com/excalidraw/excalidraw-libraries/297a349eaff859e678f78d4dbc8e68df5fce42e5/libraries/spfr/lo-fi-wireframing-kit.excalidrawlib",
+      "sourceUrl": "https://github.com/excalidraw/excalidraw-libraries/blob/297a349eaff859e678f78d4dbc8e68df5fce42e5/libraries/spfr/lo-fi-wireframing-kit.excalidrawlib",
+      "upstreamSha256": "bf5c3f6db095885e6362ad5c9c3051d50ab1246599d19f9bc3c7542d94e91f91",
+      "upstreamFormatVersion": 1,
+      "license": "MIT",
+      "itemCount": 23,
+      "catalogMetadata": {
+        "created": "2021-02-10"
+      },
+      "items": [
+        {
+          "suggestedName": "Lo-Fi: Buttons"
+        },
+        {
+          "suggestedName": "Lo-Fi: Input fields"
+        },
+        {
+          "suggestedName": "Lo-Fi: Dropdown"
+        },
+        {
+          "suggestedName": "Lo-Fi: Alerts"
+        },
+        {
+          "suggestedName": "Lo-Fi: Form controls"
+        },
+        {
+          "suggestedName": "Lo-Fi: Tags"
+        },
+        {
+          "suggestedName": "Lo-Fi: Badges"
+        },
+        {
+          "suggestedName": "Lo-Fi: Breadcrumbs"
+        },
+        {
+          "suggestedName": "Lo-Fi: Charts"
+        },
+        {
+          "suggestedName": "Lo-Fi: Icons"
+        },
+        {
+          "suggestedName": "Lo-Fi: Image placeholders"
+        },
+        {
+          "suggestedName": "Lo-Fi: Typography"
+        },
+        {
+          "suggestedName": "Lo-Fi: Text placeholder"
+        },
+        {
+          "suggestedName": "Lo-Fi: Header"
+        },
+        {
+          "suggestedName": "Lo-Fi: Card"
+        },
+        {
+          "suggestedName": "Lo-Fi: Table"
+        },
+        {
+          "suggestedName": "Lo-Fi: Tabs"
+        },
+        {
+          "suggestedName": "Lo-Fi: Search"
+        },
+        {
+          "suggestedName": "Lo-Fi: Sidebar"
+        },
+        {
+          "suggestedName": "Lo-Fi: Hero"
+        },
+        {
+          "suggestedName": "Lo-Fi: Phone"
+        },
+        {
+          "suggestedName": "Lo-Fi: Desktop"
+        },
+        {
+          "suggestedName": "Lo-Fi: Tablet"
+        }
+      ]
+    },
+    {
+      "key": "user-journeys",
+      "name": "User Journeys",
+      "path": "Atlas/Excalidraw/Libraries/User Journeys.excalidrawlib",
+      "upstreamTitle": "Customer Journey Map",
+      "authors": [
+        {
+          "name": "Wiktoria Mielcarek / Braweria",
+          "url": "https://github.com/braweria"
+        }
+      ],
+      "assetUrl": "https://raw.githubusercontent.com/excalidraw/excalidraw-libraries/297a349eaff859e678f78d4dbc8e68df5fce42e5/libraries/braweria/customer-journey-map.excalidrawlib",
+      "sourceUrl": "https://github.com/excalidraw/excalidraw-libraries/blob/297a349eaff859e678f78d4dbc8e68df5fce42e5/libraries/braweria/customer-journey-map.excalidrawlib",
+      "upstreamSha256": "c651fd11a7a13fbed8f50ccc432efa2ab893624498f0cb02f2eb7a04ea8651c9",
+      "upstreamFormatVersion": 1,
+      "license": "MIT",
+      "itemCount": 14,
+      "catalogMetadata": {
+        "created": "2021-06-10"
+      },
+      "items": [
+        {
+          "suggestedName": "Journey: Title or focus"
+        },
+        {
+          "suggestedName": "Journey: Persona"
+        },
+        {
+          "suggestedName": "Journey: Stage start"
+        },
+        {
+          "suggestedName": "Journey: Stage continuation"
+        },
+        {
+          "suggestedName": "Journey: Step label"
+        },
+        {
+          "suggestedName": "Journey: Lane cell"
+        },
+        {
+          "suggestedName": "Journey: Emotional journey scale"
+        },
+        {
+          "suggestedName": "Journey: Dramatic arc scale"
+        },
+        {
+          "suggestedName": "Journey: Emotional journey grid"
+        },
+        {
+          "suggestedName": "Journey: Dramatic arc grid"
+        },
+        {
+          "suggestedName": "Journey: Single-stage template"
+        },
+        {
+          "suggestedName": "Journey: Journey row headers"
+        },
+        {
+          "suggestedName": "Journey: Lane type key"
+        },
+        {
+          "suggestedName": "Journey: Complete journey map"
+        }
+      ]
+    },
+    {
+      "key": "gantt",
+      "name": "Gantt",
+      "path": "Atlas/Excalidraw/Libraries/Gantt.excalidrawlib",
+      "upstreamTitle": "Gantt Diagram",
+      "authors": [
+        {
+          "name": "ferminrp",
+          "url": "https://github.com/ferminrp"
+        }
+      ],
+      "assetUrl": "https://raw.githubusercontent.com/excalidraw/excalidraw-libraries/297a349eaff859e678f78d4dbc8e68df5fce42e5/libraries/ferminrp/gantt.excalidrawlib",
+      "sourceUrl": "https://github.com/excalidraw/excalidraw-libraries/blob/297a349eaff859e678f78d4dbc8e68df5fce42e5/libraries/ferminrp/gantt.excalidrawlib",
+      "upstreamSha256": "8791a29d8be4b5b6ddea2eea255fe6961e7e40f0da4d7696970f1062a0acf75e",
+      "upstreamFormatVersion": 1,
+      "license": "MIT",
+      "itemCount": 1,
+      "catalogMetadata": {
+        "created": "2021-06-22"
+      },
+      "items": [
+        {
+          "suggestedName": "Gantt: January-June project plan"
+        }
+      ]
+    }
+  ]
+}

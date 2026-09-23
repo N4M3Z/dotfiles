@@ -1,0 +1,569 @@
+{
+  "type": "excalidrawlib",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "libraryItems": [
+    {
+      "id": "concept-mapping-concept-v1",
+      "name": "Novak–Cañas · Concept",
+      "status": "unpublished",
+      "created": 1790294400000,
+      "elements": [
+        {
+          "id": "cm000001",
+          "type": "rectangle",
+          "x": 0,
+          "y": 0,
+          "width": 220,
+          "height": 90,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": {
+            "type": 3
+          },
+          "seed": 81160,
+          "version": 1,
+          "versionNonce": 489070778,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "uQUmLFSJ"
+          ],
+          "boundElements": [
+            {
+              "id": "cm000002",
+              "type": "text"
+            }
+          ],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "customData": {
+            "conceptMapping": {
+              "kind": "concept"
+            }
+          }
+        },
+        {
+          "text": "Concept",
+          "fontSize": 22,
+          "fontFamily": 5,
+          "textAlign": "center",
+          "verticalAlign": "middle",
+          "id": "cm000002",
+          "type": "text",
+          "x": 67.25401306152344,
+          "y": 31.25,
+          "width": 85.49197387695312,
+          "height": 27.5,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": null,
+          "seed": 6334,
+          "version": 1,
+          "versionNonce": 522431672,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "uQUmLFSJ"
+          ],
+          "boundElements": [],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "containerId": "cm000001",
+          "originalText": "Concept",
+          "rawText": "Concept",
+          "lineHeight": 1.25,
+          "autoResize": true,
+          "customData": {
+            "conceptMapping": {
+              "kind": "concept"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "concept-mapping-relationship-v1",
+      "name": "Novak–Cañas · Relationship",
+      "status": "unpublished",
+      "created": 1790294400000,
+      "elements": [
+        {
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              260,
+              0
+            ]
+          ],
+          "elbowed": false,
+          "lastCommittedPoint": null,
+          "startBinding": null,
+          "endBinding": null,
+          "startArrowhead": null,
+          "endArrowhead": "triangle",
+          "id": "cm000003",
+          "type": "arrow",
+          "x": 0,
+          "y": 0,
+          "width": 260,
+          "height": 0,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": null,
+          "seed": 67136,
+          "version": 1,
+          "versionNonce": 639987413,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "GfHGTMPg"
+          ],
+          "boundElements": [
+            {
+              "id": "cm000004",
+              "type": "text"
+            }
+          ],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "customData": {
+            "conceptMapping": {
+              "kind": "relationship"
+            }
+          }
+        },
+        {
+          "text": "relates to",
+          "fontSize": 22,
+          "fontFamily": 5,
+          "textAlign": "center",
+          "verticalAlign": "middle",
+          "id": "cm000004",
+          "type": "text",
+          "x": 75.92401885986328,
+          "y": -13.75,
+          "width": 108.15196228027344,
+          "height": 27.5,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": null,
+          "seed": 83092,
+          "version": 1,
+          "versionNonce": 723485498,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "GfHGTMPg"
+          ],
+          "boundElements": [],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "containerId": "cm000003",
+          "originalText": "relates to",
+          "rawText": "relates to",
+          "lineHeight": 1.25,
+          "autoResize": true,
+          "customData": {
+            "conceptMapping": {
+              "kind": "relationship"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "concept-mapping-proposition-v1",
+      "name": "Novak–Cañas · Proposition",
+      "status": "unpublished",
+      "created": 1790294400000,
+      "elements": [
+        {
+          "id": "cm000005",
+          "type": "rectangle",
+          "x": 0,
+          "y": 0,
+          "width": 230,
+          "height": 90,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": {
+            "type": 3
+          },
+          "seed": 88106,
+          "version": 1,
+          "versionNonce": 399758710,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "JnRGsJdg"
+          ],
+          "boundElements": [
+            {
+              "id": "cm000006",
+              "type": "text"
+            },
+            {
+              "type": "arrow",
+              "id": "cm000009"
+            }
+          ],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "customData": {
+            "conceptMapping": {
+              "kind": "proposition"
+            }
+          }
+        },
+        {
+          "text": "Concept maps",
+          "fontSize": 22,
+          "fontFamily": 5,
+          "textAlign": "center",
+          "verticalAlign": "middle",
+          "id": "cm000006",
+          "type": "text",
+          "x": 42.34502410888672,
+          "y": 31.25,
+          "width": 145.30995178222656,
+          "height": 27.5,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": null,
+          "seed": 66468,
+          "version": 1,
+          "versionNonce": 378281681,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "JnRGsJdg"
+          ],
+          "boundElements": [],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "containerId": "cm000005",
+          "originalText": "Concept maps",
+          "rawText": "Concept maps",
+          "lineHeight": 1.25,
+          "autoResize": true,
+          "customData": {
+            "conceptMapping": {
+              "kind": "proposition"
+            }
+          }
+        },
+        {
+          "id": "cm000007",
+          "type": "rectangle",
+          "x": 480,
+          "y": 0,
+          "width": 220,
+          "height": 90,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": {
+            "type": 3
+          },
+          "seed": 66060,
+          "version": 1,
+          "versionNonce": 18258515,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "JnRGsJdg"
+          ],
+          "boundElements": [
+            {
+              "id": "cm000008",
+              "type": "text"
+            },
+            {
+              "type": "arrow",
+              "id": "cm000009"
+            }
+          ],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "customData": {
+            "conceptMapping": {
+              "kind": "proposition"
+            }
+          }
+        },
+        {
+          "text": "knowledge",
+          "fontSize": 22,
+          "fontFamily": 5,
+          "textAlign": "center",
+          "verticalAlign": "middle",
+          "id": "cm000008",
+          "type": "text",
+          "x": 537.0790252685547,
+          "y": 31.25,
+          "width": 105.84194946289062,
+          "height": 27.5,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": null,
+          "seed": 77058,
+          "version": 1,
+          "versionNonce": 772343492,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "JnRGsJdg"
+          ],
+          "boundElements": [],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "containerId": "cm000007",
+          "originalText": "knowledge",
+          "rawText": "knowledge",
+          "lineHeight": 1.25,
+          "autoResize": true,
+          "customData": {
+            "conceptMapping": {
+              "kind": "proposition"
+            }
+          }
+        },
+        {
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              234,
+              0
+            ]
+          ],
+          "elbowed": false,
+          "lastCommittedPoint": null,
+          "startBinding": {
+            "elementId": "cm000005",
+            "mode": "orbit",
+            "fixedPoint": [
+              1,
+              0.5001
+            ]
+          },
+          "endBinding": {
+            "elementId": "cm000007",
+            "mode": "orbit",
+            "fixedPoint": [
+              0,
+              0.5001
+            ]
+          },
+          "startArrowhead": null,
+          "endArrowhead": "triangle",
+          "id": "cm000009",
+          "type": "arrow",
+          "x": 238,
+          "y": 45,
+          "width": 234,
+          "height": 0,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": null,
+          "seed": 23549,
+          "version": 1,
+          "versionNonce": 134292029,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "JnRGsJdg"
+          ],
+          "boundElements": [
+            {
+              "id": "cm00000a",
+              "type": "text"
+            }
+          ],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "customData": {
+            "conceptMapping": {
+              "kind": "proposition"
+            }
+          }
+        },
+        {
+          "text": "represent",
+          "fontSize": 22,
+          "fontFamily": 5,
+          "textAlign": "center",
+          "verticalAlign": "middle",
+          "id": "cm00000a",
+          "type": "text",
+          "x": 304.90602111816406,
+          "y": 31.25,
+          "width": 100.18795776367188,
+          "height": 27.5,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": null,
+          "seed": 42241,
+          "version": 1,
+          "versionNonce": 249505246,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "JnRGsJdg"
+          ],
+          "boundElements": [],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "containerId": "cm000009",
+          "originalText": "represent",
+          "rawText": "represent",
+          "lineHeight": 1.25,
+          "autoResize": true,
+          "customData": {
+            "conceptMapping": {
+              "kind": "proposition"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "concept-mapping-focus-question-v1",
+      "name": "Novak–Cañas · Focus question",
+      "status": "unpublished",
+      "created": 1790294400000,
+      "elements": [
+        {
+          "text": "What does this map explain?",
+          "fontSize": 22,
+          "fontFamily": 5,
+          "textAlign": "left",
+          "verticalAlign": "middle",
+          "id": "cm00000b",
+          "type": "text",
+          "x": 0,
+          "y": 0,
+          "width": 302.54388427734375,
+          "height": 27.5,
+          "angle": 0,
+          "strokeColor": "#1e1e1e",
+          "backgroundColor": "transparent",
+          "fillStyle": "solid",
+          "strokeWidth": 1.5,
+          "strokeStyle": "solid",
+          "roughness": 0,
+          "opacity": 100,
+          "roundness": null,
+          "seed": 51359,
+          "version": 1,
+          "versionNonce": 526696766,
+          "updated": 1790333637253,
+          "isDeleted": false,
+          "groupIds": [
+            "i4PNdC7b"
+          ],
+          "boundElements": [],
+          "link": null,
+          "locked": false,
+          "frameId": null,
+          "hasTextLink": false,
+          "containerId": null,
+          "originalText": "What does this map explain?",
+          "rawText": "What does this map explain?",
+          "lineHeight": 1.25,
+          "autoResize": true,
+          "customData": {
+            "conceptMapping": {
+              "kind": "focus-question"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
