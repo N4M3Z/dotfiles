@@ -1,0 +1,55 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $current := dict -}}
+{{- if trim .chezmoi.stdin -}}
+{{- $current = fromJson .chezmoi.stdin -}}
+{{- end -}}
+{{- if not (kindIs "map" $current) -}}
+{{- fail "Expected an Obsidian JSON object; no settings were changed." -}}
+{{- end -}}
+{{- $current = setValueAtPath (list "folder") (fromJson `"Library/Canvas"`) $current -}}
+{{- $current = setValueAtPath (list "templateFilePath") (fromJson `"Library/Canvas/Excalidraw Dark Template.md"`) $current -}}
+{{- $current = setValueAtPath (list "scriptFolderPath") (fromJson `"Assets/Scripts/Excalidraw"`) $current -}}
+{{- $current = setValueAtPath (list "allowJavaScriptFiles") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "storeScriptFilesAsJavaScript") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "compress") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "decompressForMDView") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "autosaveIntervalDesktop") (fromJson `30000`) $current -}}
+{{- $current = setValueAtPath (list "autosaveIntervalMobile") (fromJson `30000`) $current -}}
+{{- $current = setValueAtPath (list "autosave") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "drawingEmbedPrefixWithFilename") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "defaultMode") (fromJson `"normal"`) $current -}}
+{{- $current = setValueAtPath (list "disableDoubleClickTextEditing") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "doubleClickLinkOpenViewMode") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "matchTheme") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "matchThemeAlways") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "matchThemeTrigger") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "iframeMatchExcalidrawTheme") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "showLinkBrackets") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "allowCtrlClick") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "exportWithTheme") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "exportWithBackground") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "keepInSync") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "autoexportSVG") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "autoexportPNG") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "autoExportLightAndDark") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "mdFont") (fromJson `"Excalifont"`) $current -}}
+{{- $current = setValueAtPath (list "markdownNodeOneClickEditing") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "canvasImmersiveEmbed") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "autostartScripts" "Double Click Markdown") (fromJson `"allow"`) $current -}}
+{{- $current = setValueAtPath (list "autostartScripts" "Markdown Card Interaction") (fromJson `"allow"`) $current -}}
+{{- $current = setValueAtPath (list "autostartScripts" "Canvas View Shortcuts") (fromJson `"allow"`) $current -}}
+{{- $current = setValueAtPath (list "autostartScripts" "Slideshow") (fromJson `"allow"`) $current -}}
+{{- $current = setValueAtPath (list "scriptEngineSettings" "Slideshow" "transitionDelay") (fromJson `500`) $current -}}
+{{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "useObsidianDefaults") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "backgroundMatchCanvas") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "backgroundMatchElement") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "backgroundColor") (fromJson `"#fff"`) $current -}}
+{{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "backgroundOpacity") (fromJson `60`) $current -}}
+{{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "borderMatchElement") (fromJson `true`) $current -}}
+{{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "borderColor") (fromJson `"#fff"`) $current -}}
+{{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "borderOpacity") (fromJson `0`) $current -}}
+{{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "filenameVisible") (fromJson `false`) $current -}}
+{{- $current = setValueAtPath (list "markdownImageSettings" "defaults" "fontFamily") (fromJson `"Excalifont"`) $current -}}
+{{- $pins := default (list) (get $current "pinnedScripts") -}}
+{{- $current = setValueAtPath "pinnedScripts" (concat $pins (fromJson `["Assets/Scripts/Excalidraw/New Markdown Card.md", "Assets/Scripts/Excalidraw/Copy Selection for Agent.md", "Assets/Scripts/Excalidraw/Downloaded/Select Elements of Type.md", "Assets/Scripts/Excalidraw/Downloaded/Mindmap Builder.md", "Assets/Scripts/Excalidraw/Slideshow.md", "Assets/Scripts/Excalidraw/Draft Markdown with Source.md"]`) | uniq) $current -}}
+{{ $current | toPrettyJson }}

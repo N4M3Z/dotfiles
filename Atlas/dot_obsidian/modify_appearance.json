@@ -1,0 +1,11 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $current := dict -}}
+{{- if trim .chezmoi.stdin -}}
+{{- $current = fromJson .chezmoi.stdin -}}
+{{- end -}}
+{{- if not (kindIs "map" $current) -}}
+{{- fail "Expected an Obsidian JSON object; no settings were changed." -}}
+{{- end -}}
+{{- $snippets := default (list) (get $current "enabledCssSnippets") -}}
+{{- $current = setValueAtPath "enabledCssSnippets" (concat $snippets (list "excalidraw-compact-hint" "excalidraw-markdown-cards") | uniq) $current -}}
+{{ $current | toPrettyJson }}

@@ -50,6 +50,23 @@ chezmoi apply
 
 `~/.local/share/chezmoi` is a symlink to this repo, so chezmoi reads its default source location and finds the dotfiles here. No config file, no `--source` flag. Works from any directory.
 
+## Obsidian and OpenLogi
+
+Chezmoi manages the Atlas Excalidraw setup and selected OpenLogi preferences.
+The source includes custom scripts, pinned upstream scripts, CSS, and the empty dark drawing template.
+Native modify templates preserve unrelated JSON and TOML settings.
+
+- [Excalidraw controls, deployment, and provenance](docs/excalidraw/README.md)
+- [OpenLogi preferences and GUI change reconciliation](docs/openlogi.md)
+
+Run the configuration checks before deployment:
+
+```sh
+python3 tests/test-obsidian-config.py
+python3 tests/test-openlogi-config.py
+node --test tests/excalidraw-*.test.cjs
+```
+
 ## Bootstrap on a fresh Mac
 
 ```sh

@@ -1,0 +1,82 @@
+/* forge-excalidraw-markdown-cards */
+/* Style live Markdown cards only. Ordinary Obsidian notes keep their theme. */
+:is(.workspace-leaf-content[data-type="excalidraw"]
+    .excalidraw__embeddable-container [id^="embed-"].canvas-node,
+    body.forge-excalidraw-markdown-card-frame) {
+  --font-text: "Excalifont", "Xiaolai", var(--font-interface, sans-serif);
+  --font-text-theme: "Excalifont", "Xiaolai", var(--font-interface, sans-serif);
+  --bold-color: var(--text-normal);
+  --p-spacing: 0.65em;
+  --heading-spacing: 1em;
+}
+
+:is(.workspace-leaf-content[data-type="excalidraw"]
+    .excalidraw__embeddable-container [id^="embed-"].canvas-node,
+    body.forge-excalidraw-markdown-card-frame)
+:is(.markdown-preview-view, .markdown-source-view, .cm-content, .cm-line) {
+  font-family: "Excalifont", "Xiaolai", var(--font-interface, sans-serif) !important;
+  line-height: 1.45;
+}
+
+:is(.workspace-leaf-content[data-type="excalidraw"]
+    .excalidraw__embeddable-container [id^="embed-"].canvas-node,
+    body.forge-excalidraw-markdown-card-frame)
+.markdown-preview-view {
+  padding: 14px 18px;
+}
+
+:is(.workspace-leaf-content[data-type="excalidraw"]
+    .excalidraw__embeddable-container [id^="embed-"].canvas-node,
+    body.forge-excalidraw-markdown-card-frame)
+.markdown-preview-view :is(p, ul, ol) {
+  margin-block: 0.65em;
+}
+
+:is(.workspace-leaf-content[data-type="excalidraw"]
+    .excalidraw__embeddable-container [id^="embed-"].canvas-node,
+    body.forge-excalidraw-markdown-card-frame)
+.markdown-preview-view :is(h1, h2, h3, h4, h5, h6) {
+  margin-block: 1em 0.4em;
+  line-height: 1.2;
+}
+
+:is(.workspace-leaf-content[data-type="excalidraw"]
+    .excalidraw__embeddable-container [id^="embed-"].canvas-node,
+    body.forge-excalidraw-markdown-card-frame)
+:is(strong, b, .cm-strong) {
+  color: var(--text-normal) !important;
+  font-weight: 700;
+}
+
+/* A link stays distinct even when its label also uses bold Markdown. */
+:is(.workspace-leaf-content[data-type="excalidraw"]
+    .excalidraw__embeddable-container [id^="embed-"].canvas-node,
+    body.forge-excalidraw-markdown-card-frame)
+:is(a.internal-link, a.external-link, a.internal-link strong, a.external-link strong,
+    a.internal-link b, a.external-link b, .cm-hmd-internal-link, .cm-link, .cm-url) {
+  color: var(--link-color, var(--interactive-accent)) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 0.16em;
+  text-decoration-thickness: 1px;
+}
+
+:is(.workspace-leaf-content[data-type="excalidraw"]
+    .excalidraw__embeddable-container [id^="embed-"].canvas-node,
+    body.forge-excalidraw-markdown-card-frame)
+a.internal-link.is-unresolved {
+  text-decoration-style: dotted !important;
+}
+
+/* Actual editor focus makes the activation hint redundant. */
+.workspace-leaf-content[data-type="excalidraw"]
+.excalidraw__embeddable-container__inner:has([id^="embed-"].canvas-node .cm-content:focus)
+> .excalidraw__embeddable-hint {
+  visibility: hidden;
+}
+
+/* The focus guard marks a card when its local iframe editor owns focus. */
+.workspace-leaf-content[data-type="excalidraw"]
+.excalidraw__embeddable-container__inner:has([id^="embed-"].forge-excalidraw-markdown-focused)
+> .excalidraw__embeddable-hint {
+  visibility: hidden;
+}

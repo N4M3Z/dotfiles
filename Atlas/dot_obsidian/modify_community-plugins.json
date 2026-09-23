@@ -1,0 +1,5 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $current := list -}}
+{{- if trim .chezmoi.stdin -}}{{- $current = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- if not (kindIs "slice" $current) -}}{{- fail "Expected an Obsidian plugin list; no settings were changed." -}}{{- end -}}
+{{ concat $current (list "obsidian-excalidraw-plugin" "pdf-plus") | uniq | toPrettyJson }}

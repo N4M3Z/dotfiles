@@ -1,0 +1,18 @@
+/* Keep the activation hint clear of the note content. */
+/* This changes the hint only. The card activation behavior remains the same. */
+.workspace-leaf-content[data-type="excalidraw"]
+.excalidraw__embeddable-container__inner
+> .excalidraw__embeddable-hint {
+  inset: auto 8px 8px auto;
+  width: max-content;
+  height: auto;
+  max-width: calc(100% - 16px);
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0;
+  pointer-events: none;
+}
