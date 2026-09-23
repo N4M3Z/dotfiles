@@ -38,6 +38,7 @@
 {{- $current = setValueAtPath (list "autostartScripts" "Double Click Markdown") (fromJson `"allow"`) $current -}}
 {{- $current = setValueAtPath (list "autostartScripts" "Markdown Card Interaction") (fromJson `"allow"`) $current -}}
 {{- $current = setValueAtPath (list "autostartScripts" "Canvas View Shortcuts") (fromJson `"allow"`) $current -}}
+{{- $current = setValueAtPath (list "autostartScripts" "Canvas Command Shortcuts") (fromJson `"allow"`) $current -}}
 {{- $current = setValueAtPath (list "autostartScripts" "Slideshow") (fromJson `"allow"`) $current -}}
 {{- $current = setValueAtPath (list "scriptEngineSettings" "Slideshow" "transitionDelay") (fromJson `500`) $current -}}
 {{- $current = setValueAtPath (list "embeddableMarkdownDefaults" "useObsidianDefaults") (fromJson `false`) $current -}}

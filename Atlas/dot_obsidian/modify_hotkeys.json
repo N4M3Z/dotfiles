@@ -6,17 +6,21 @@
 {{- if not (kindIs "map" $current) -}}
 {{- fail "Expected an Obsidian JSON object; no settings were changed." -}}
 {{- end -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:excalidraw-autocreate-newtab") (fromJson `[{"modifiers": ["Mod", "Alt"], "key": "N"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:New Markdown Card") (fromJson `[{"modifiers": ["Alt"], "key": "8"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:Toggle Library") (fromJson `[{"modifiers": ["Mod", "Alt"], "key": "L"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:Copy Selection for Agent") (fromJson `[{"modifiers": ["Mod", "Alt"], "key": "J"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:Draft Markdown with Source") (fromJson `[{"modifiers": ["Mod", "Alt", "Shift"], "key": "N"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:Slideshow") (fromJson `[{"modifiers": ["Mod", "Alt"], "key": "P"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:Downloaded/Mindmap Builder") (fromJson `[{"modifiers": ["Mod", "Alt"], "key": "B"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:Downloaded/Select Elements of Type") (fromJson `[{"modifiers": ["Mod", "Alt", "Shift"], "key": "T"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:universal-add-file") (fromJson `[{"modifiers": ["Mod", "Alt"], "key": "U"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:insert-link-to-element") (fromJson `[{"modifiers": ["Mod", "Alt"], "key": "R"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:frame-settings") (fromJson `[{"modifiers": ["Mod", "Alt", "Shift"], "key": "F"}]`) $current -}}
-{{- $current = setValueAtPath (list "pdf-plus:copy-link-to-selection") (fromJson `[{"modifiers": ["Mod", "Alt", "Shift"], "key": "P"}]`) $current -}}
-{{- $current = setValueAtPath (list "obsidian-excalidraw-plugin:excalidraw-open-sidepanel") (fromJson `[{"modifiers": ["Mod", "Alt", "Shift"], "key": "B"}]`) $current -}}
+{{- range $command := list
+    "excalidraw-autocreate-newtab"
+    "New Markdown Card"
+    "Toggle Library"
+    "Copy Selection for Agent"
+    "Draft Markdown with Source"
+    "Slideshow"
+    "Downloaded/Mindmap Builder"
+    "Downloaded/Select Elements of Type"
+    "universal-add-file"
+    "insert-link-to-element"
+    "frame-settings"
+    "excalidraw-open-sidepanel"
+-}}
+{{- $current = setValueAtPath (list (printf "obsidian-excalidraw-plugin:%s" $command)) (list) $current -}}
+{{- end -}}
+{{- $current = setValueAtPath (list "pdf-plus:copy-link-to-selection") (fromJson `[{"modifiers": ["Mod", "Shift"], "key": "K"}]`) $current -}}
 {{ $current | toPrettyJson }}

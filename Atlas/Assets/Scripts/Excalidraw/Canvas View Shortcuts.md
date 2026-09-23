@@ -73,19 +73,20 @@ try {
   }
   const api = ea.getExcalidrawAPI();
   const document = root.ownerDocument;
-  // A view scope precedes the core Cmd+E command and preserves its parent scope.
-  const previousScope = view.scope;
   const Scope = ea.obsidian?.Scope;
-  let canvasScope = null;
-  let modeHandler = null;
-  releaseBindings = () => {
-    if (modeHandler) canvasScope.unregister(modeHandler);
-    if (canvasScope && view.scope === canvasScope) view.scope = previousScope;
-  };
   if (typeof Scope === "function" && typeof ea.setViewModeEnabled === "function") {
-    canvasScope = new Scope(previousScope ?? app.scope);
+    // Both shortcut scripts share one scope and remove only their own handlers.
+    const scopeKey = Symbol.for("forge-obsidian.canvas-shortcut-scope");
+    let shared = view[scopeKey];
+    if (!shared) {
+      const previousScope = view.scope;
+      const scope = new Scope(previousScope ?? app.scope);
+      shared = { scope, previousScope, handlers: new Set() };
+      view[scopeKey] = shared;
+      view.scope = scope;
+    }
     // A catch-all that returns undefined lets Obsidian continue through the parent scope.
-    modeHandler = canvasScope.register(null, null, (event) => {
+    const modeHandler = shared.scope.register(null, null, (event) => {
       if (disposed || event.defaultPrevented || event.isComposing || event.repeat ||
         event.key?.toLowerCase() !== "e" || !event.metaKey ||
         event.altKey || event.ctrlKey || event.shiftKey ||
@@ -98,7 +99,15 @@ try {
       ea.setViewModeEnabled(!current.viewModeEnabled);
       return false;
     });
-    view.scope = canvasScope;
+    shared.handlers.add(modeHandler);
+    releaseBindings = () => {
+      shared.scope.unregister(modeHandler);
+      shared.handlers.delete(modeHandler);
+      if (shared.handlers.size === 0) {
+        if (view.scope === shared.scope) view.scope = shared.previousScope;
+        if (view[scopeKey] === shared) delete view[scopeKey];
+      }
+    };
   }
 } catch (error) {
   dispose();

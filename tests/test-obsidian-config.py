@@ -12,6 +12,38 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PLUGIN = "plugins/obsidian-excalidraw-plugin/data.json"
+EXCALIDRAW = "obsidian-excalidraw-plugin:"
+DISABLED_GLOBAL_COMMANDS = [
+    "excalidraw-autocreate-newtab",
+    "New Markdown Card",
+    "Toggle Library",
+    "Copy Selection for Agent",
+    "Draft Markdown with Source",
+    "Slideshow",
+    "Downloaded/Mindmap Builder",
+    "Downloaded/Select Elements of Type",
+    "universal-add-file",
+    "insert-link-to-element",
+    "frame-settings",
+    "excalidraw-open-sidepanel",
+]
+PALETTE_COMMANDS = [
+    EXCALIDRAW + command for command in [
+        "excalidraw-autocreate-newtab",
+        "Downloaded/Mindmap Builder",
+        "Downloaded/Select Elements of Type",
+        "frame-settings",
+        "excalidraw-open-sidepanel",
+    ]
+]
+CANVAS_SCRIPT_COMMANDS = [
+    "New Markdown Card",
+    "Toggle Library",
+    "Copy Selection as Image",
+    "Draft Markdown with Source",
+    "Slideshow",
+    "Copy Selection for Agent",
+]
 
 
 class ObsidianConfigTests(unittest.TestCase):
@@ -78,6 +110,7 @@ class ObsidianConfigTests(unittest.TestCase):
         self.assertEqual(actual["autostartScriptFailures"], {"Other script": "local failure"})
         self.assertEqual(actual["autostartScripts"]["Other script"], "deny")
         self.assertEqual(actual["autostartScripts"]["Canvas View Shortcuts"], "allow")
+        self.assertEqual(actual["autostartScripts"]["Canvas Command Shortcuts"], "allow")
         self.assertEqual(actual["scriptEngineSettings"]["Slideshow"], {
             "transitionDelay": 500, "localOption": True,
         })
@@ -86,17 +119,69 @@ class ObsidianConfigTests(unittest.TestCase):
         self.assertTrue(actual["embeddableMarkdownDefaults"]["futurePreference"])
         self.assertIn("Other script.md", actual["pinnedScripts"])
 
-    def test_hotkeys_preserve_unrelated_commands(self):
-        binding = [{"modifiers": ["Mod"], "key": "E"}]
-        self.write("hotkeys.json", {"markdown:toggle-preview": binding})
+    def test_hotkeys_replace_old_bindings_and_preserve_editor_commands(self):
+        unrelated = {
+            "markdown:toggle-preview": [{"modifiers": ["Mod"], "key": "E"}],
+            "editor:toggle-blockquote": [{"modifiers": ["Mod", "Shift"], "key": "A"}],
+            "workspace:new-tab": [{"modifiers": ["Mod", "Shift"], "key": "N"}],
+            "editor:insert-codeblock": [{"modifiers": ["Mod", "Shift"], "key": "C"}],
+            "obsidian-icon-folder:add-icon": [{"modifiers": ["Mod", "Shift"], "key": "J"}],
+            "local-plugin:option-action": [{"modifiers": ["Mod", "Alt"], "key": "Z"}],
+        }
+        original = {
+            EXCALIDRAW + name: [{"modifiers": ["Mod", "Alt"], "key": "X"}]
+            for name in DISABLED_GLOBAL_COMMANDS
+        }
+        original["pdf-plus:copy-link-to-selection"] = [
+            {"modifiers": ["Mod", "Alt", "Shift"], "key": "P"},
+        ]
+        original.update(unrelated)
+        self.write("hotkeys.json", original)
+        rendered = json.loads(self.run_chezmoi("cat", "hotkeys.json").stdout)
+        self.assertEqual(self.read("hotkeys.json"), original)
         self.run_chezmoi("apply", "hotkeys.json")
         actual = self.read("hotkeys.json")
-        self.assertEqual(actual["markdown:toggle-preview"], binding)
-        self.assertEqual(len(actual), 14)
-        self.assertEqual(actual["obsidian-excalidraw-plugin:New Markdown Card"], [
-            {"modifiers": ["Alt"], "key": "8"},
+        self.assertEqual(actual, rendered)
+        for command, binding in unrelated.items():
+            self.assertEqual(actual[command], binding, command)
+        for command in DISABLED_GLOBAL_COMMANDS:
+            self.assertEqual(actual[EXCALIDRAW + command], [], command)
+        self.assertEqual(actual["pdf-plus:copy-link-to-selection"], [
+            {"modifiers": ["Mod", "Shift"], "key": "K"},
         ])
-        self.assertNotIn("obsidian-excalidraw-plugin:Toggle Canvas View Mode", actual)
+        self.assertNotIn(EXCALIDRAW + "Toggle Canvas View Mode", actual)
+        self.assertNotIn(EXCALIDRAW + "Copy Selection as Image", actual)
+        self.run_chezmoi("apply", "hotkeys.json")
+        self.assertEqual(self.read("hotkeys.json"), actual)
+
+    def test_palette_pins_preserve_order_and_other_settings_without_duplicates(self):
+        original = {
+            "pinned": ["local:first", PALETTE_COMMANDS[2], "local:last", "local:first"],
+            "localPreference": {"keep": True},
+        }
+        self.write("command-palette.json", original)
+        expected = {
+            "pinned": ["local:first", PALETTE_COMMANDS[2], "local:last",
+                       *[command for command in PALETTE_COMMANDS if command != PALETTE_COMMANDS[2]]],
+            "localPreference": {"keep": True},
+        }
+        rendered = json.loads(self.run_chezmoi("cat", "command-palette.json").stdout)
+        self.assertEqual(rendered, expected)
+        self.assertEqual(self.read("command-palette.json"), original)
+        self.run_chezmoi("apply", "command-palette.json")
+        self.assertEqual(self.read("command-palette.json"), expected)
+        first = (self.settings / "command-palette.json").read_bytes()
+        self.run_chezmoi("apply", "command-palette.json")
+        self.assertEqual((self.settings / "command-palette.json").read_bytes(), first)
+
+    def test_palette_rejects_invalid_pin_list(self):
+        for invalid in [None, "wrong type", {}]:
+            with self.subTest(invalid=invalid):
+                original = {"pinned": invalid}
+                self.write("command-palette.json", original)
+                self.run_chezmoi("cat", "command-palette.json", succeeds=False)
+                self.run_chezmoi("apply", "command-palette.json", succeeds=False)
+                self.assertEqual(self.read("command-palette.json"), original)
 
     def test_enabled_lists_preserve_local_choices_without_duplicates(self):
         self.write("appearance.json", {
@@ -123,10 +208,13 @@ class ObsidianConfigTests(unittest.TestCase):
                   for p in self.vault.rglob("*") if p.is_file()}
         self.assertEqual(first, second)
         scripts = self.vault / "Assets/Scripts/Excalidraw"
-        for command in self.read("hotkeys.json"):
-            name = command.removeprefix("obsidian-excalidraw-plugin:")
+        for command in [*self.read("hotkeys.json"), *self.read("command-palette.json")["pinned"]]:
+            name = command.removeprefix(EXCALIDRAW)
             if name[0].isupper():
                 self.assertTrue((scripts / f"{name}.md").is_file(), name)
+        for name in CANVAS_SCRIPT_COMMANDS:
+            self.assertTrue((scripts / f"{name}.md").is_file(), name)
+        self.assertEqual(self.read("command-palette.json")["pinned"], PALETTE_COMMANDS)
         plugin = self.read(PLUGIN)
         self.assertTrue((self.vault / plugin["templateFilePath"]).is_file())
         for name in plugin["autostartScripts"]:
@@ -152,7 +240,7 @@ class ObsidianConfigTests(unittest.TestCase):
             self.assertEqual((self.vault / name).read_text(), value)
 
     def test_invalid_json_does_not_replace_any_target(self):
-        for name in [PLUGIN, "hotkeys.json", "appearance.json", "community-plugins.json"]:
+        for name in [PLUGIN, "hotkeys.json", "command-palette.json", "appearance.json", "community-plugins.json"]:
             for original in ["{broken", '"wrong type"', "null"]:
                 with self.subTest(name=name, original=original):
                     path = self.settings / name

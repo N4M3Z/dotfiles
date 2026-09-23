@@ -448,7 +448,8 @@ test('the local default transition duration is 500 milliseconds', () => {
 });
 
 for (const [name, pressed, expected] of [
-  ['Cmd+Option', { metaKey: true, altKey: true }, { openSidepanel: false, resume: false, startFullscreen: true }],
+  ['Cmd+Shift', { metaKey: true, shiftKey: true }, { openSidepanel: false, resume: false, startFullscreen: true }],
+  ['Cmd+Option', { metaKey: true, altKey: true }, { openSidepanel: true, resume: false, startFullscreen: false }],
   ['cleared modifiers', {}, { openSidepanel: false, resume: false, startFullscreen: true }],
   ['Cmd', { metaKey: true }, { openSidepanel: true, resume: false, startFullscreen: true }],
   ['Ctrl', { ctrlKey: true }, { openSidepanel: true, resume: false, startFullscreen: true }],

@@ -8750,8 +8750,8 @@ Build version: 2026-09-15T13:48:51.367Z
     return "frame";
   }
   function resolveManualInvocationIntent(modifiers) {
-    // Cmd+Option starts fullscreen whether the shortcut modifiers remain pressed or have cleared.
-    if (modifiers.metaKey && modifiers.altKey && !modifiers.ctrlKey && !modifiers.shiftKey) {
+    // Cmd+Shift starts a new fullscreen presentation when the shortcut modifiers remain pressed.
+    if (modifiers.metaKey && modifiers.shiftKey && !modifiers.ctrlKey && !modifiers.altKey) {
       return { openSidepanel: false, resume: false, startFullscreen: true };
     }
     return {

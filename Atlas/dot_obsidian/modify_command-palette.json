@@ -1,0 +1,24 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $current := dict -}}
+{{- if trim .chezmoi.stdin -}}
+{{- $current = fromJson .chezmoi.stdin -}}
+{{- end -}}
+{{- if not (kindIs "map" $current) -}}
+{{- fail "Expected an Obsidian JSON object; no settings were changed." -}}
+{{- end -}}
+{{- $pins := list -}}
+{{- if hasKey $current "pinned" -}}
+{{- $pins = get $current "pinned" -}}
+{{- if not (kindIs "slice" $pins) -}}
+{{- fail "Expected a command palette pin list; no settings were changed." -}}
+{{- end -}}
+{{- end -}}
+{{- $commands := list
+    "obsidian-excalidraw-plugin:excalidraw-autocreate-newtab"
+    "obsidian-excalidraw-plugin:Downloaded/Mindmap Builder"
+    "obsidian-excalidraw-plugin:Downloaded/Select Elements of Type"
+    "obsidian-excalidraw-plugin:frame-settings"
+    "obsidian-excalidraw-plugin:excalidraw-open-sidepanel"
+-}}
+{{- $current = setValueAtPath (list "pinned") (concat $pins $commands | uniq) $current -}}
+{{ $current | toPrettyJson }}
