@@ -28,6 +28,9 @@ if command -v typos >/dev/null; then
 "
 fi
 advice=""
+# Plain vale: the global ~/.vale.ini layer and the repository's .vale.ini
+# add up, and a repository line such as STE.X = NO overrides one
+# global rule. A file outside any repository gets the global layer alone.
 if command -v vale >/dev/null && vale ls-config >/dev/null 2>&1; then
     # JSON keeps the level and the replacement per finding; the line
     # format flattens both. The flag overrides a project MinAlertLevel

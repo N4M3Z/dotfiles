@@ -1,0 +1,37 @@
+# The owner's global Vale layer. Vale reads its user-level file under every
+# repository's .vale.ini and adds the two together: BasedOnStyles gathers
+# across both files, and a repository line such as `STE.Semicolons = NO`
+# switches one global rule off there. `vale --no-global` skips this layer.
+#
+# Vale looks for the user-level file only at its OS path (`vale ls-dirs`),
+# so that path is a symlink to this file. StylesPath is absolute because
+# Vale resolves a relative one against the symlink's directory.
+#
+# The styles use the same names as the repositories' styles. Vale merges
+# same-named styles rule by rule, so a rule only one layer has runs once.
+# A rule file both layers have runs from this layer only, which can make a
+# local run laxer than CI while a repository's copy lags runedeck/deck's.
+# The owner chose that over doubled findings.
+StylesPath = {{ .chezmoi.homeDir }}/.vale/styles
+MinAlertLevel = suggestion
+
+# Personal accept and reject lists live in
+# styles/config/vocabularies/N4M3Z/. accept.txt extends the exception
+# list of every enabled style. reject.txt flags each match as an error
+# through Vale.Avoid, which runs only when the built-in Vale style is in
+# BasedOnStyles. That style is off here because it also brings
+# Vale.Spelling, which is noisy on technical prose.
+Vocab = N4M3Z
+
+[*.md]
+# STE and Deslop link to runedeck/deck's whole styles, so a new rule there
+# reaches every file here at once. Core holds links only to the Core rules
+# meant for every repository; the rest of runedeck/deck's Core is scoped to
+# its own paths and stays out.
+BasedOnStyles = STE, Deslop, Core
+
+# Core replaces two Deslop rules: NoEmDash allows no dash where
+# EmDashOveruse allows one, and NegativeParallelism also catches the
+# two-sentence "It is not X. It is Y." that NotJustScaffold misses.
+Deslop.EmDashOveruse = NO
+Deslop.NotJustScaffold = NO

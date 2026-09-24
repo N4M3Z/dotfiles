@@ -8,3 +8,18 @@
 .config/dcg/packs/rtk.yaml
 .config/dcg/packs/homebrew.yaml
 .config/dcg/packs/forge.yaml
+
+# The global Vale layer is ~/.vale.ini with styles under ~/.vale/styles.
+# These are the earlier layouts: style links at Vale's OS path that reused
+# repository style names, and a short-lived ~/.config/vale/owner.ini.
+Library/Application Support/vale/styles/STE
+Library/Application Support/vale/styles/Deslop
+Library/Application Support/vale/styles/Core
+.config/vale/owner.ini
+.config/vale/styles/STE
+.config/vale/styles/Deslop
+.config/vale/styles/Core
+.config/vale/styles/config
+.vale/styles/OwnerSTE
+.vale/styles/OwnerDeslop
+.vale/styles/OwnerCore
