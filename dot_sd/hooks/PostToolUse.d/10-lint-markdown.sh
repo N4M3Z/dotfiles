@@ -18,12 +18,24 @@ case "$f" in
     *) exit 0 ;;
 esac
 cd "$(dirname "$f")" 2>/dev/null || exit 0
+# A Czech note declares its language, wherever it lives: front matter
+# `lang: cs`, a `lang/cs` tag, or an inline #lang/cs (the Atlas vault
+# convention). The English typo dictionary and the spaced en dash finding
+# do not apply to it. The em dash is still an error.
+lang_cs=""
+front=$(yq --front-matter=extract '[.lang // "", (.tags | .. | select(tag == "!!str"))] | join(" ")' "$f" 2>/dev/null)
+case " $front " in
+    *" cs "*|*" lang/cs "*|*" #lang/cs "*) lang_cs=1 ;;
+esac
+if grep -Eq '(^|[[:space:]])#lang/cs([^[:alnum:]_/-]|$)' "$f" 2>/dev/null; then
+    lang_cs=1
+fi
 out=""
 if command -v rumdl >/dev/null; then
     r=$(rumdl check "$f" 2>&1) || out="$out$r
 "
 fi
-if command -v typos >/dev/null; then
+if [ -z "$lang_cs" ] && command -v typos >/dev/null; then
     t=$(typos --force-exclude "$f" 2>&1) || out="$out$t
 "
 fi
@@ -36,6 +48,11 @@ if command -v vale >/dev/null && vale ls-config >/dev/null 2>&1; then
     # format flattens both. The flag overrides a project MinAlertLevel
     # so suggestions still arrive as advice.
     v=$(vale --minAlertLevel=suggestion --output=JSON "$f" 2>&1)
+    # In a Czech note Core.NoEmDash keeps only the em dash and the spaced
+    # double hyphen; the spaced en dash is correct Czech typography.
+    if [ -n "$lang_cs" ] && printf '%s' "$v" | jq -e 'type == "object" and (has("Code") | not)' >/dev/null 2>&1; then
+        v=$(printf '%s' "$v" | jq 'map_values(map(select(.Check != "Core.NoEmDash" or (.Match | test("—|--")))))')
+    fi
     # A findings object maps paths to arrays. A runtime error (a style
     # missing from StylesPath) is an object with a Code field instead.
     if [ -n "$v" ] && printf '%s' "$v" | jq -e 'type == "object" and (has("Code") | not)' >/dev/null 2>&1; then
