@@ -12,7 +12,7 @@
 #
 # Harnesses use loopback, so they do not depend on Caddy or dnsmasq.
 # Claude Code reads ANTHROPIC_BASE_URL from this shell.
-# The Grok launcher reads the off flag and CLIPROXY_BYPASS.
+# Grok reads GROK_MODELS_BASE_URL and GROK_CODE_XAI_API_KEY from this shell.
 # The Codex proxy launcher reads the off flag and overrides model_provider.
 #
 # This file reads only CLIPROXY values from ~/.env.
@@ -45,12 +45,18 @@ if [[ ! -e "${CLIPROXY_OFF_FLAG}" ]]; then
     # The main account remains available for direct Remote Control sessions.
     export ANTHROPIC_BASE_URL="${CLIPROXY_URL}"
     export ANTHROPIC_AUTH_TOKEN="${CLIPROXY_API_KEY}"
+    # Grok's custom-endpoint mode switches it to bearer auth, and the
+    # GROK_CODE_ key scopes that bearer to grok so XAI_API_KEY stays free.
+    # Grok starts by name (DOT-0007), so the route is set here, not by a launcher.
+    export GROK_MODELS_BASE_URL="${CLIPROXY_URL}/v1"
+    export GROK_CODE_XAI_API_KEY="${CLIPROXY_API_KEY}"
 fi
 
 # Run one command against the vendor endpoints without changing global state.
 # CLIPROXY_BYPASS=1 tells `sd agent run` to skip its grok proxy injection.
 noproxy() {
     env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN \
+        -u GROK_MODELS_BASE_URL -u GROK_CODE_XAI_API_KEY \
         CLIPROXY_BYPASS=1 "$@"
 }
 
@@ -68,6 +74,8 @@ cliproxy() {
             command rm -f "${CLIPROXY_OFF_FLAG}"
             export ANTHROPIC_BASE_URL="${CLIPROXY_URL}"
             export ANTHROPIC_AUTH_TOKEN="${CLIPROXY_API_KEY}"
+            export GROK_MODELS_BASE_URL="${CLIPROXY_URL}/v1"
+            export GROK_CODE_XAI_API_KEY="${CLIPROXY_API_KEY}"
             unset GROK_CLI_CHAT_PROXY_BASE_URL
             print "cliproxy: on (${CLIPROXY_URL})"
             ;;
@@ -81,7 +89,7 @@ cliproxy() {
             if [[ -e "${CLIPROXY_OFF_FLAG}" ]]; then
                 print "  grok     vendor (direct)"
             else
-                print "  grok     ${CLIPROXY_URL} (sd agent run)"
+                print "  grok     ${GROK_MODELS_BASE_URL:-vendor (direct)}"
             fi
             print "  codex    vendor (direct)"
             if [[ -e "${CLIPROXY_OFF_FLAG}" ]]; then

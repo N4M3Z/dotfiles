@@ -1,23 +1,21 @@
 #!/bin/bash
-# Launch an agent CLI wrapped with policy, attribution, and session capture.
+# Launch an agent CLI with policy, attribution, and detached session capture.
 #
-# Invoked as `sd agent run <provider> [args...]`; the claude/codex/agy/grok/
-# opencode PATH wrappers all dispatch here.
+# Invoked as `sd agent run <provider> [args...]`. This is the fallback for a
+# machine without rune: `rune run <profile>` is the automated launcher, and
+# the vendor binaries answer to their own names on PATH (DOT-0007).
 #
-# Three jobs, none of which any harness does for all five on its own:
+#   1. Interactive runs preserve provider defaults. Grok and Antigravity use
+#      native sandboxes. OpenCode runs inside the Codex supervisor sandbox.
 #
-#   1. Session capture. Grok, Antigravity, and OpenCode expose no session
-#      hooks, so the only reliable capture point is after the process exits:
-#      run session-sync, and record a debt file when capture fails so
-#      `verify --strict` goes red instead of silently losing the session.
+#   2. Automated runs (HARNESS_AUTOMATED=1): pin the model, force the
+#      provider's read-only and no-approval flags, and author any commit as
+#      the model identity through JJ_USER and JJ_EMAIL, in the shape the
+#      runedeck attribution policy accepts.
 #
-#   2. Automated runs (HARNESS_AUTOMATED=1, councils and review jobs): pin the
-#      model, force the provider's read-only/no-approval flags, and stamp any
-#      commits with a jj co-author trailer naming the harness and requested
-#      model, so `jj log` answers "which agent wrote this".
-#
-#   3. Interactive runs preserve provider defaults. Grok and Antigravity use
-#      native sandboxes. OpenCode uses the Codex supervisor sandbox.
+#   3. After the harness exits, hand the session to session-sync detached.
+#      The launcher exits with the harness status at once; session-sync
+#      records capture debt itself when capture fails.
 #
 # Source: https://github.com/N4M3Z/dotfiles
 
@@ -31,13 +29,38 @@ read-only policy where the provider supports it.
 USAGE
 }
 
+# Whether an option is present before a `--`; what follows `--` is the
+# harness's positional input, not options.
 has_arg() {
     local expected="$1"
     shift
     local arg
 
     for arg in "$@"; do
+        [[ "$arg" == '--' ]] && return 1
         [[ "$arg" == "$expected" || "$arg" == "${expected}="* ]] && return 0
+    done
+    return 1
+}
+
+# The value of an option given as `--opt value` or `--opt=value`, before `--`.
+arg_value() {
+    local expected="$1"
+    shift
+    local previous=''
+    local arg
+
+    for arg in "$@"; do
+        [[ "$arg" == '--' ]] && return 1
+        if [[ "$previous" == "$expected" ]]; then
+            printf '%s' "$arg"
+            return 0
+        fi
+        if [[ "$arg" == "${expected}="* ]]; then
+            printf '%s' "${arg#*=}"
+            return 0
+        fi
+        previous="$arg"
     done
     return 1
 }
@@ -45,15 +68,21 @@ has_arg() {
 resolve_installed_binary() {
     local command_name="$1"
     local candidate
-    local newest_claude_version
+    local version
 
     case "$command_name" in
         claude)
-            # shellcheck disable=SC2012 # installer-owned dir of plain version-number files
-            newest_claude_version=$(ls -t "${HOME}/.local/share/claude/versions" \
-                2>/dev/null | head -1)
-            candidate="${HOME}/.local/share/claude/versions/${newest_claude_version}"
-            [[ -n "$newest_claude_version" && -x "$candidate" ]] && echo "$candidate"
+            # The newest entry by time can be a download in progress, which
+            # is not executable yet, so take the newest complete version.
+            # shellcheck disable=SC2012,SC2045 # installer-owned dir of plain version-number files, newest first
+            for version in $(ls -t "${HOME}/.local/share/claude/versions" 2>/dev/null); do
+                [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || continue
+                candidate="${HOME}/.local/share/claude/versions/${version}"
+                if [[ -x "$candidate" ]]; then
+                    echo "$candidate"
+                    return 0
+                fi
+            done
             ;;
         codex)
             candidate="${HOME}/.codex/packages/standalone/current/bin/codex"
@@ -66,72 +95,23 @@ resolve_installed_binary() {
     esac
 }
 
+# PATH first, then the installer's own location. HARNESS_REAL_BIN_DIR names a
+# directory that wins over both, for a caller that moved HOME.
 resolve_real_binary() {
     local command_name="$1"
-    local wrapper_dir
-    local clean_path=''
-    local directory
     local installed_binary
-    local old_ifs="$IFS"
 
     if [[ -n "${HARNESS_REAL_BIN_DIR:-}" \
         && -x "${HARNESS_REAL_BIN_DIR}/${command_name}" ]]; then
         echo "${HARNESS_REAL_BIN_DIR}/${command_name}"
         return 0
     fi
-
-    wrapper_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    IFS=':'
-    for directory in $PATH; do
-        [[ -n "$directory" ]] || continue
-        [[ "$directory" == "$wrapper_dir" ]] && continue
-        [[ "$directory" == "${HOME}/.local/bin" ]] && continue
-        if [[ -z "$clean_path" ]]; then
-            clean_path="$directory"
-        else
-            clean_path="${clean_path}:${directory}"
-        fi
-    done
-    IFS="$old_ifs"
-
-    if PATH="$clean_path" command -v "$command_name"; then
+    # `type -P` names an executable file only, never a function or alias.
+    if type -P "$command_name"; then
         return 0
     fi
-
     installed_binary=$(resolve_installed_binary "$command_name")
     [[ -n "$installed_binary" ]] && echo "$installed_binary"
-}
-
-record_capture_debt() {
-    local provider="$1"
-    local provider_status="$2"
-    local debt_root="${HARNESS_CAPTURE_DEBT_DIR:-${HOME}/.local/state/harness-run/capture-debt}"
-    local debt_file
-    local timestamp
-
-    umask 077
-    mkdir -p "$debt_root" 2>/dev/null || return 0
-    timestamp=$(date -u +%Y%m%dT%H%M%SZ)
-    debt_file="${debt_root}/${provider}-${timestamp}-$$.json"
-    jq -n \
-        --arg provider "$provider" \
-        --arg cwd "$PWD" \
-        --argjson provider_status "$provider_status" \
-        '{
-            provider: $provider,
-            cwd: $cwd,
-            provider_status: $provider_status,
-            capture_status: "failed"
-        }' > "$debt_file" 2>/dev/null || true
-    chmod 600 "$debt_file" 2>/dev/null || true
-}
-
-clear_capture_debt() {
-    local provider="$1"
-    local debt_root="${HARNESS_CAPTURE_DEBT_DIR:-${HOME}/.local/state/harness-run/capture-debt}"
-
-    [[ -d "$debt_root" ]] || return 0
-    find "$debt_root" -type f -name "${provider}-*.json" -exec rm -f {} + 2>/dev/null || true
 }
 
 provider_label() {
@@ -190,37 +170,49 @@ configure_grok_proxy() {
     export GROK_CODE_XAI_API_KEY="$client_key"
 }
 
-configure_jj_attribution() {
+# The author of anything an automated run commits is the model, in the shape
+# authors.yaml checks: `<Label> (<id>) <id@<provider>.noreply.nexus.local>`.
+# The id is the effective model, lowercased, every run of characters outside
+# letters, digits, dots, and hyphens collapsed to one hyphen, leading and
+# trailing hyphens dropped. An id with a leading, trailing, or doubled dot is
+# not a mail address and is refused. Whether a repository lists the identity
+# is that repository's policy. A trailer is not an identity there, so none is
+# written. The caller's identity is kept, so it can be restored for the
+# working-copy change the run leaves behind.
+configure_author_identity() {
     local provider="$1"
     local requested_model="$2"
-    local label
-    local trailer
-    local base_config="${XDG_CONFIG_HOME:-${HOME}/.config}/jj/config.toml"
+    local id
 
-    label=$(provider_label "$provider")
-    if [[ "$requested_model" == *$'\n'* \
-        || "$requested_model" == *$'\r'* \
-        || "$requested_model" == *'"'* \
-        || "$requested_model" == *\\* \
-        || "$requested_model" == *"'''"* ]]; then
-        echo 'sd agent run: requested model contains unsupported attribution characters' >&2
+    id=$(printf '%s' "$requested_model" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9.-]+/-/g; s/^-+//; s/-+$//')
+    if [[ -z "$id" || "$id" == .* || "$id" == *. || "$id" == *..* ]]; then
+        echo "sd agent run: model '${requested_model}' yields no usable identity" >&2
         return 1
     fi
+    caller_jj_user="${JJ_USER-}"
+    caller_jj_email="${JJ_EMAIL-}"
+    caller_identity_saved=1
+    JJ_USER="$(provider_label "$provider") (${id})"
+    JJ_EMAIL="${id}@${provider}.noreply.nexus.local"
+    export JJ_USER JJ_EMAIL
+    export GIT_AUTHOR_NAME="$JJ_USER" GIT_AUTHOR_EMAIL="$JJ_EMAIL"
+    export GIT_COMMITTER_NAME="$JJ_USER" GIT_COMMITTER_EMAIL="$JJ_EMAIL"
+}
 
-    trailer="Co-authored-by: ${label} / ${requested_model} <N4M3Z@users.noreply.github.com>"
-    jj_overlay=$(mktemp "${TMPDIR:-/tmp}/harness-jj-config.XXXXXX") || return 1
-    chmod 600 "$jj_overlay"
-    printf '%s\n' \
-        '[templates]' \
-        "commit_trailers = '''\"${trailer}\"'''" \
-        > "$jj_overlay"
-
-    if [[ -f "$base_config" ]]; then
-        export JJ_CONFIG="${base_config}:${jj_overlay}"
+# Back to the caller's identity, for the working-copy change the run leaves.
+restore_caller_identity() {
+    [[ -n "${caller_identity_saved:-}" ]] || return 0
+    unset GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
+    if [[ -n "$caller_jj_user" ]]; then
+        export JJ_USER="$caller_jj_user"
     else
-        export JJ_CONFIG="$jj_overlay"
+        unset JJ_USER
     fi
-    export HARNESS_EXPECTED_COAUTHOR="$trailer"
+    if [[ -n "$caller_jj_email" ]]; then
+        export JJ_EMAIL="$caller_jj_email"
+    else
+        unset JJ_EMAIL
+    fi
 }
 
 begin_jj_change() {
@@ -237,6 +229,9 @@ begin_jj_change() {
     fi
     description="WIP: $(provider_label "$provider") session $(date -u +%Y%m%dT%H%M%SZ)-$$"
     jj describe -m "$description" >/dev/null || return 1
+    # A claimed change made before this run carries its maker's identity;
+    # the run's author is the model.
+    jj metaedit --update-author >/dev/null || return 1
     jj_claimed_change=$(jj log -r @ --no-graph -T 'change_id.short()' 2>/dev/null) || return 1
 }
 
@@ -246,24 +241,34 @@ finish_jj_change() {
     local current_change
 
     [[ -n "${jj_claimed_change:-}" ]] || return 0
+    # The snapshot happens here, so the emptiness read below is current.
     if ! is_empty=$(jj log -r "$jj_claimed_change" --no-graph -T 'if(empty, "yes", "no")' \
         2>/dev/null); then
         echo "sd agent run: could not inspect claimed jj change ${jj_claimed_change}; WIP push gate remains active" >&2
         return 1
     fi
+    current_change=$(jj log -r @ --no-graph -T 'change_id.short()' 2>/dev/null) || return 1
     if [[ "$is_empty" == 'yes' ]]; then
-        jj abandon "$jj_claimed_change" >/dev/null || return 1
+        # Never abandon a change in the caller's workspace: a file saved
+        # between the read and the abandon would go with it. Drop the WIP
+        # description instead, so the change is claimable again.
+        restore_caller_identity
+        jj describe -r "$jj_claimed_change" -m '' >/dev/null || return 1
+        if [[ "$current_change" == "$jj_claimed_change" ]]; then
+            jj metaedit --update-author >/dev/null || return 1
+        fi
         return 0
     fi
     jj describe -r "$jj_claimed_change" \
         -m "chore: $(provider_label "$provider") automated session" >/dev/null || return 1
-    current_change=$(jj log -r @ --no-graph -T 'change_id.short()' 2>/dev/null) || return 1
     if [[ "$current_change" == "$jj_claimed_change" ]]; then
+        # The next working-copy change is the caller's, under their identity.
+        restore_caller_identity
         jj new >/dev/null || return 1
     fi
 }
 
-# tmux names windows from the pane's foreground process, which is this wrapper
+# tmux names windows from the pane's foreground process, which is this launcher
 # (bash) for providers that don't grab the terminal, and a version-numbered
 # binary for claude's native install. Pin the window name to the provider for
 # the session instead; rename-window turns automatic-rename off for the
@@ -278,17 +283,16 @@ label_tmux_window() {
 
 # shellcheck disable=SC2329 # Invoked by the EXIT trap.
 cleanup_runner() {
-    if [[ -n "${jj_overlay:-}" ]]; then
-        command rm -f "$jj_overlay"
-    fi
     if [[ -n "${tmux_window_labeled:-}" ]]; then
         tmux set-window-option -t "$TMUX_PANE" automatic-rename on 2>/dev/null || true
     fi
 }
 
-jj_overlay=''
 jj_claimed_change=''
 tmux_window_labeled=''
+caller_jj_user=''
+caller_jj_email=''
+caller_identity_saved=''
 trap cleanup_runner EXIT
 
 provider="${1:-}"
@@ -307,7 +311,7 @@ esac
 
 real_binary=$(resolve_real_binary "$command_name")
 if [[ -z "$real_binary" || ! -x "$real_binary" ]]; then
-    echo "sd agent run: ${command_name} is not installed outside the wrapper directory" >&2
+    echo "sd agent run: ${provider} is not installed (no ${command_name} on PATH or in its install directory)" >&2
     exit 127
 fi
 
@@ -321,6 +325,8 @@ if [[ "$automated" == '1' ]]; then
             requested_model="${HARNESS_MODEL:-claude-fable-5[1m]}"
             has_arg --model "${arguments[@]}" \
                 || arguments=(--model "$requested_model" "${arguments[@]}")
+            has_arg --permission-mode "${arguments[@]}" \
+                || arguments=(--permission-mode plan "${arguments[@]}")
             ;;
         codex)
             requested_model="${HARNESS_MODEL:-gpt-5.5}"
@@ -350,10 +356,21 @@ if [[ "$automated" == '1' ]]; then
             requested_model="${HARNESS_MODEL:-proton-lumo/lumo-max}"
             has_arg --model "${arguments[@]}" \
                 || arguments=(--model "$requested_model" "${arguments[@]}")
-            export OPENCODE_PERMISSION="${OPENCODE_PERMISSION:-{\"*\":\"deny\",\"read\":\"allow\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"skill\":\"allow\"}}"
+            # Assigned apart from the default: a `}` inside `${var:-word}`
+            # ends the expansion early and leaves a stray brace.
+            if [[ -z "${OPENCODE_PERMISSION:-}" ]]; then
+                # shellcheck disable=SC2089 # a JSON value, read by opencode, never re-parsed by this shell
+                OPENCODE_PERMISSION='{"*":"deny","read":"allow","glob":"allow","grep":"allow","list":"allow","lsp":"allow","skill":"allow"}'
+            fi
+            # shellcheck disable=SC2090 # see above
+            export OPENCODE_PERMISSION
             ;;
     esac
-    configure_jj_attribution "$provider" "$requested_model" || exit 1
+    # An explicit --model is the effective model, for the run and its author.
+    if explicit_model=$(arg_value --model "${arguments[@]}"); then
+        requested_model="$explicit_model"
+    fi
+    configure_author_identity "$provider" "$requested_model" || exit 1
     configure_github_identity
     if ! begin_jj_change "$provider"; then
         echo 'sd agent run: could not claim an isolated jj change' >&2
@@ -391,23 +408,28 @@ else
 fi
 provider_status=$?
 
+launcher_status="$provider_status"
 if [[ "$automated" == '1' ]] && ! finish_jj_change "$provider"; then
     printf '%s\n' \
         'WARNING: the harness finished, but its jj change could not be finalized.' \
-        '         A WIP description remains and the push gate will reject it.' >&2
+        '         Check `jj log -r @` before you push.' >&2
+    # A harness that succeeded must not report success through a launcher
+    # that left the repository half finalized.
+    [[ "$launcher_status" -eq 0 ]] && launcher_status=1
 fi
 
+# Capture is detached: the launcher never waits on it, and session-sync
+# writes the capture debt file itself when the sync fails. Descriptors above
+# 2 are closed so an inherited pipe cannot keep the caller waiting for EOF.
 session_sync="${SESSION_SYNC:-${HOME}/Developer/N4M3Z/forge-data/scripts/session-sync}"
 if [[ -x "$session_sync" ]]; then
-    if "$session_sync" --provider "$provider" --source wrapper </dev/null; then
-        clear_capture_debt "$provider"
-    else
-        printf '%s\n' \
-            "WARNING: ${provider} finished, but session capture failed." \
-            "         The original exit status (${provider_status}) is preserved; verification will fail until capture debt is recovered." \
-            >&2
-        record_capture_debt "$provider" "$provider_status"
-    fi
+    (
+        exec 3>&- 4>&- 5>&- 6>&- 7>&- 8>&- 9>&- 10>&- 11>&- 12>&- 13>&- 14>&- 15>&-
+        exec nohup "$session_sync" --provider "$provider" --source wrapper --status "$provider_status" \
+            >/dev/null 2>&1 </dev/null
+    ) &
+else
+    echo "WARNING: session-sync not found at ${session_sync}, this ${provider} session was not captured" >&2
 fi
 
-exit "$provider_status"
+exit "$launcher_status"

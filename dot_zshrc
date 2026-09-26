@@ -38,9 +38,13 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 # Appended, not prepended: the installer's prepend is not needed here.
 [ -d "${HOME}/.git-ai/bin" ] && export PATH="${PATH}:${HOME}/.git-ai/bin"
 
-# grok completions only. Keep ~/.grok/bin off PATH: ~/.local/bin/grok wraps
-# the vendor binary through harness-run (DOT-0004), and the installer's
-# PATH prepend would shadow that wrapper. Prezto runs compinit.
+# Vendor agent binaries answer to their own names (DOT-0007): no wrapper in
+# ~/.local/bin. Grok and the Codex app install outside the usual bin dirs.
+# Appended, so a Homebrew or installer copy earlier on PATH still wins.
+[ -d "${HOME}/.grok/bin" ] && export PATH="${PATH}:${HOME}/.grok/bin"
+[ -d "${HOME}/.codex/packages/standalone/current/bin" ] \
+    && export PATH="${PATH}:${HOME}/.codex/packages/standalone/current/bin"
+# Prezto runs compinit.
 [ -d "${HOME}/.grok/completions/zsh" ] && fpath=("${HOME}/.grok/completions/zsh" $fpath)
 
 # p10k config saved as fallback. Loaded only when p10k is the active prompt

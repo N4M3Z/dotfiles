@@ -50,9 +50,10 @@ Desktop applications remain direct. Managed terminal wrappers select CLIProxyAPI
 
 This boundary matches the feature boundary. Desktop applications keep their vendor sessions, while terminal requests remain visible to the proxy.
 
-The `codex` and `claude` wrapper scripts own route selection. `harness-run` keeps session capture, automation policy, and process attribution.
-
-The real-binary resolver prefers the owned standalone installation before its sanitized `PATH` fallback. This order prevents terminal Codex from selecting the desktop application bundle.
+Route selection lives in each harness's own configuration (`config.toml` for Codex) and in
+`codex-proxy` for a one-process proxy route. The PATH wrappers and `harness-run` were retired by
+`retire-harness-run` (DOT-0007): vendor binaries answer to their own names, and `rune run` owns
+automation.
 
 Alternatives included global environment variables and separate configuration homes. Global variables affect unrelated child processes. Separate homes split profiles and local usage data.
 

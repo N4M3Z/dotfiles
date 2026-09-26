@@ -8,5 +8,4 @@ if [[ -e "${off_flag}" ]]; then
     exit 1
 fi
 
-exec "$(dirname "$0")/harness-run" codex \
-    --config 'model_provider="cliproxyapi"' "$@"
+exec codex --config 'model_provider="cliproxyapi"' "$@"
