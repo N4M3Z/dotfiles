@@ -8,4 +8,12 @@ if [[ -e "${off_flag}" ]]; then
     exit 1
 fi
 
-exec codex --config 'model_provider="cliproxyapi"' "$@"
+# PATH first, then the Codex app's standalone install: a caller that did not
+# source the login shell (rune run, launchd) still finds the binary.
+codex_bin=$(type -P codex || true)
+[[ -n "$codex_bin" ]] || codex_bin="${HOME}/.codex/packages/standalone/current/bin/codex"
+if [[ ! -x "$codex_bin" ]]; then
+    printf '%s\n' 'codex-proxy: codex is not installed (no codex on PATH or in ~/.codex/packages/standalone/current/bin)' >&2
+    exit 127
+fi
+exec "$codex_bin" --config 'model_provider="cliproxyapi"' "$@"

@@ -421,7 +421,13 @@ fi
 # Capture is detached: the launcher never waits on it, and session-sync
 # writes the capture debt file itself when the sync fails. Descriptors above
 # 2 are closed so an inherited pipe cannot keep the caller waiting for EOF.
-session_sync="${SESSION_SYNC:-${HOME}/Developer/N4M3Z/forge-data/scripts/session-sync}"
+# An explicit SESSION_SYNC is used as given; only the default falls back.
+if [[ -n "${SESSION_SYNC:-}" ]]; then
+    session_sync="$SESSION_SYNC"
+else
+    session_sync="${HOME}/.local/bin/session-sync"
+    [[ -x "$session_sync" ]] || session_sync="${HOME}/Developer/N4M3Z/forge-data/scripts/session-sync"
+fi
 if [[ -x "$session_sync" ]]; then
     (
         exec 3>&- 4>&- 5>&- 6>&- 7>&- 8>&- 9>&- 10>&- 11>&- 12>&- 13>&- 14>&- 15>&-
