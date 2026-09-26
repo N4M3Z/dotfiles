@@ -47,7 +47,24 @@ desired=$(cat <<'DESIRED'
   },
   "enabledPlugins": {
     "warp@claude-code-warp": false,
-    "superwhisper@superwhisper": false
+    "superwhisper@superwhisper": false,
+    "terminal-browser@terminal-browser": true,
+    "filetree@n4m3z": true,
+    "review@runedeck": true,
+    "spec@runedeck": true,
+    "proof@runedeck": true,
+    "sign@runedeck": true,
+    "draft@runedeck": true,
+    "hook@runedeck": true,
+    "council@runedeck": true,
+    "tasks@runedeck": true,
+    "jj@runedeck": true,
+    "replay@runedeck": true,
+    "doc-review@runedeck": true,
+    "flightdeck@runedeck": true,
+    "vale-lsp@runedeck": true,
+    "blast-radius@runedeck": true,
+    "cc-plugin-you-should-know@builtin": true
   },
   "extraKnownMarketplaces": {
     "claude-code-warp": {
@@ -60,6 +77,24 @@ desired=$(cat <<'DESIRED'
       "source": {
         "source": "github",
         "repo": "superultrainc/superwhisper-claude-code"
+      }
+    },
+    "terminal-browser": {
+      "source": {
+        "source": "github",
+        "repo": "zenbu-labs/terminal-browser"
+      }
+    },
+    "n4m3z": {
+      "source": {
+        "source": "directory",
+        "path": "{{ .chezmoi.homeDir }}/Developer/N4M3Z/filetree"
+      }
+    },
+    "runedeck": {
+      "source": {
+        "source": "directory",
+        "path": "{{ .chezmoi.homeDir }}/Developer/runedeck/mods"
       }
     }
   },

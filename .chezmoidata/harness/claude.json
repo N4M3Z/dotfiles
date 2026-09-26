@@ -156,7 +156,9 @@
           "Bash(rtk cargo fmt *)",
           "Bash(rtk git status *)",
           "Bash(rtk git diff *)",
-          "Bash(rtk git log *)"
+          "Bash(rtk git log *)",
+          "Bash(zed *)",
+          "Bash(open -a Zed *)"
         ],
         "ask": [
           "Bash(gh repo create *)",
@@ -197,7 +199,7 @@
           "Bash(git push -f *)",
           "Bash(git push --delete *)",
           "Bash(git push * --delete *)",
-          "Bash(git push * :*)",
+          "Bash(git push * :**)",
           "Bash(gh pr merge *)",
           "Bash(gh repo delete *)",
           "Bash(gh issue delete *)",

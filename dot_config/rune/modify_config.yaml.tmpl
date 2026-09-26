@@ -64,6 +64,9 @@ launch:
         sonnet:
             id: claude-sonnet-5
             context: 200000
+        gemini:
+            id: gemini-4-argon-high
+            context: 1000000
     profiles:
         claude:
             sol:
@@ -148,6 +151,9 @@ launch:
         opencode:
             lumo:
                 model: lumo-opencode
+        agy:
+            gemini:
+                model: gemini
         grok:
             # The profile is defined in ~/.grok/sandbox.toml (dot_grok/private_sandbox.toml.tmpl).
             # An explicit flag keeps headless runs sandboxed even when the wrapper is bypassed.
@@ -168,58 +174,61 @@ launch:
 # order. A rewriter (rtk) runs before every guard (dcg, jj-guards), so a
 # guard judges the command the harness executes. Timeouts are per handler;
 # the event budget and the harness's own cap clamp them.
-hooks:
-    version: 1
-    handlers:
-        - id: author-identity
-          exec: [rune-hook-author-identity]
-          events: [session.start]
-          order: 5
-          timeout_ms: 800
-        - id: rtk
-          exec: [rune-hook-rtk]
-          events: [tool.before]
-          order: 10
-          timeout_ms: 800
-          rewrites: true
-        - id: dcg
-          exec: [rune-hook-dcg]
-          events: [tool.before]
-          order: 20
-          timeout_ms: 1500
-          on_failure: deny
-          requires: [tool_deny]
-        - id: jj-guards
-          exec: [rune-hook-jj-guards]
-          events: [tool.before]
-          order: 30
-          timeout_ms: 800
-          on_failure: deny
-        - id: git-ai
-          exec: [rune-hook-git-ai]
-          events: [tool.before, tool.after, turn.finish]
-          order: 40
-          timeout_ms: 2000
-        - id: lint-on-write
-          exec: [rune-hook-lint-on-write]
-          events: [tool.after]
-          order: 50
-          timeout_ms: 8000
-        - id: turn-checkpoint
-          exec: [rune-hook-turn-checkpoint]
-          events: [prompt.before, turn.finish, session.end]
-          order: 60
-          timeout_ms: 400
-        - id: tmux-status
-          exec: [rune-hook-tmux-status]
-          events: [prompt.before, notification, turn.finish, session.end]
-          order: 70
-          timeout_ms: 200
-        - id: session-capture
-          exec: [rune-hook-session-capture]
-          events: [session.end, compact.before]
-          order: 80
-          timeout_ms: 300
+# Commented out on 2026-10-16: the installed rune (0.6.0) refuses an unknown
+# `hooks` field, and the cli hook-dispatch change that reads it is unmerged.
+# Uncomment the block below once a build that parses it is installed.
+# hooks:
+#     version: 1
+#     handlers:
+#         - id: author-identity
+#           exec: [rune-hook-author-identity]
+#           events: [session.start]
+#           order: 5
+#           timeout_ms: 800
+#         - id: rtk
+#           exec: [rune-hook-rtk]
+#           events: [tool.before]
+#           order: 10
+#           timeout_ms: 800
+#           rewrites: true
+#         - id: dcg
+#           exec: [rune-hook-dcg]
+#           events: [tool.before]
+#           order: 20
+#           timeout_ms: 1500
+#           on_failure: deny
+#           requires: [tool_deny]
+#         - id: jj-guards
+#           exec: [rune-hook-jj-guards]
+#           events: [tool.before]
+#           order: 30
+#           timeout_ms: 800
+#           on_failure: deny
+#         - id: git-ai
+#           exec: [rune-hook-git-ai]
+#           events: [tool.before, tool.after, turn.finish]
+#           order: 40
+#           timeout_ms: 2000
+#         - id: lint-on-write
+#           exec: [rune-hook-lint-on-write]
+#           events: [tool.after]
+#           order: 50
+#           timeout_ms: 8000
+#         - id: turn-checkpoint
+#           exec: [rune-hook-turn-checkpoint]
+#           events: [prompt.before, turn.finish, session.end]
+#           order: 60
+#           timeout_ms: 400
+#         - id: tmux-status
+#           exec: [rune-hook-tmux-status]
+#           events: [prompt.before, notification, turn.finish, session.end]
+#           order: 70
+#           timeout_ms: 200
+#         - id: session-capture
+#           exec: [rune-hook-session-capture]
+#           events: [session.end, compact.before]
+#           order: 80
+#           timeout_ms: 300
 RUNE_CONFIG
 
 cat > "$live"
