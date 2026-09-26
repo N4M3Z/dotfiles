@@ -1,5 +1,17 @@
 {{- /* Permission policy is shared: edit .chezmoidata/harness/claude.json, not this block. */ -}}
 {{- $harness := .harness.claude -}}
+#!/bin/sh
+# A modify script: chezmoi hands the live settings.json on stdin and takes
+# the new file from stdout. Everything but `hooks` comes from the template
+# below; `hooks` is kept from the live file as it is, because rune owns
+# that block (cli change harness-hook-dispatch, DOT-0007): `rune hook
+# install` writes one dispatcher entry per event and keeps every foreign
+# entry. Nothing here registers a hook, so a chezmoi apply never undoes
+# what rune wrote and never resurrects the retired `sd hook` parts.
+set -eu
+live=$(cat)
+[ -n "$live" ] || live='{}'
+desired=$(cat <<'DESIRED'
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 36500,
@@ -27,119 +39,7 @@
   "attribution": {
     "commit": "Co-Authored-By: Martin Zeman <N4M3Z@users.noreply.github.com>"
   },
-  "model": "claude-fable-5-1[1m]",
   "enableAllProjectMcpServers": false,
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash|PowerShell",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/dcg"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook PreToolUse"
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "rtk hook claude"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook PostToolUse"
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-agent-identity"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook UserPromptSubmit",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.local/bin/claude-tmux-status attention"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook Stop",
-            "timeout": 30
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh {{ .chezmoi.homeDir }}/.sd/hook SessionEnd",
-            "timeout": 10
-          }
-        ]
-      }
-    ]
-  },
   "statusLine": {
     "type": "command",
     "command": "{{ .chezmoi.homeDir }}/.bun/bin/ccline",
@@ -304,7 +204,9 @@
       "opencode *",
       "agy *",
       "grok *",
-      "pi *"
+      "pi *",
+      "zed *",
+      "open -a Zed *"
     ]
   },
   "effortLevel": "high",
@@ -314,6 +216,9 @@
     },
     "claude-fable-5-1": {
       "effortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "xhigh"
     }
   },
   "remoteControlAtStartup": true,
@@ -345,3 +250,6 @@
   "voiceEnabled": true,
   "maxSkillDescriptionChars": 2048
 }
+DESIRED
+)
+printf '%s\n' "$desired" | jq --argjson live "$live" '. + {hooks: ($live.hooks // {})}'
