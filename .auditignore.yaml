@@ -1,0 +1,17 @@
+acknowledged:
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: 0a3679f1ff598cd42c49f4d189cc7c8dd7484245
+  - rule: host-sensitive-domain
+    sha256: 217a9f65b31506880552f50b424162bb9707bcd86296ef9b191d6df1e25d05f6
+    commit: 0a3679f1ff598cd42c49f4d189cc7c8dd7484245
+  - rule: personal-email-address
+    sha256: 4fe3183dec4b8f4695f16127e0721927dd6eaed7fa9cb4c9972e9f220881f918
+    commit: 0a3679f1ff598cd42c49f4d189cc7c8dd7484245
+  - rule: personal-email-address
+    sha256: 608d82352ccf7ab882e99551c2cbed6b634f58c7e6c854bd6a31e3808d8bae0f
+    commit: 0a3679f1ff598cd42c49f4d189cc7c8dd7484245
+  - rule: personal-email-address
+    sha256: b972b3805b538e19fe8eaced33daaad03eec0f961973de3b471ece4e5cffb084
+    commit: 0a3679f1ff598cd42c49f4d189cc7c8dd7484245
+
