@@ -14,4 +14,7 @@ acknowledged:
   - rule: personal-email-address
     sha256: b972b3805b538e19fe8eaced33daaad03eec0f961973de3b471ece4e5cffb084
     commit: 0a3679f1ff598cd42c49f4d189cc7c8dd7484245
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: 396285c13a178f6cdf17419bfedb629a7f43ad1a
 
