@@ -73,6 +73,16 @@ if command -v vale >/dev/null && vale ls-config >/dev/null 2>&1; then
         advice="vale did not run: $v"
     fi
 fi
+# One line per run for lint-stats, which keeps the record the hook itself
+# does not: which rules fired, on which file, and whether it blocked.
+# Nothing here may change the exit code.
+if command -v lint-stats >/dev/null; then
+    kind=clean
+    [ -z "$advice" ] || kind=advice
+    [ -z "$out" ] || kind=block
+    meta=$(printf '%s' "$payload" | jq -c '{tool: .tool_name, tuid: .tool_use_id, sid: .session_id, cwd: .cwd}' 2>/dev/null)
+    printf '%s%s' "$out" "$advice" | lint-stats log --kind "$kind" --file "$f" --meta "$meta" >/dev/null 2>&1 || true
+fi
 # A block carries the advice too, so the agent sees every finding once.
 [ -z "$out" ] || { printf '%s%s' "$out" "$advice" >&2; exit 2; }
 [ -z "$advice" ] && exit 0
