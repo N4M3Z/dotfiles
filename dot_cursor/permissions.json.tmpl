@@ -6,7 +6,7 @@
 {{- $mine := .automode.append.cursor -}}
 {
   "autoRun": {
-    "allow_instructions": {{ concat $shared.allow $mine.allow $shared.environment $mine.environment | toPrettyJson }},
+    "allow_instructions": {{ concat $shared.allow $mine.allow $shared.environment $mine.environment | toPrettyJson | replace "@GITLAB_HOST@" .private.gitlab_host }},
     "block_instructions": {{ concat $shared.soft_deny $mine.soft_deny $shared.hard_deny $mine.hard_deny | toPrettyJson }}
   }
 }

@@ -21,7 +21,7 @@
     "OTEL_LOG_USER_PROMPTS": "1",
     "OTEL_LOG_TOOL_DETAILS": "1",
     "OTEL_METRICS_INCLUDE_SESSION_ID": "false",
-    "GITLAB_HOST": "gitlab.protontech.ch"
+    "GITLAB_HOST": "{{ .private.gitlab_host }}"
   },
   "permissions": {{ $harness.permissions | toPrettyJson }},
   "attribution": {
@@ -200,7 +200,7 @@
         "files.pythonhosted.org",
         "semgrep.dev",
         "*.semgrep.dev",
-        "gitlab.protontech.ch",
+        "{{ .private.gitlab_host }}",
         "localhost",
         "127.0.0.1"
       ],
@@ -341,7 +341,7 @@
       "soft_deny" (concat (list "$defaults") $auto.soft_deny $mine.soft_deny)
       "hard_deny" (concat (list "$defaults") $auto.hard_deny $mine.hard_deny)
       "environment" (concat (list "$defaults") $auto.environment $mine.environment)
-    | toPrettyJson }},
+    | toPrettyJson | replace "@GITLAB_HOST@" .private.gitlab_host }},
   "voiceEnabled": true,
   "maxSkillDescriptionChars": 2048
 }

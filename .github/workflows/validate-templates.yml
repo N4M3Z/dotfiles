@@ -31,3 +31,6 @@ jobs:
 
             - name: Validate templates
               run: bash tests/validate-templates.sh
+
+            - name: Test private values
+              run: bash tests/test-private-data.sh

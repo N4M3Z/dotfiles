@@ -1,0 +1,31 @@
+{{- /* chezmoi init renders this into ~/.config/chezmoi/chezmoi.toml. Run it again after you edit it. */ -}}
+{{- /* The first init asks for the store and keeps the answer. The store unlocks once for each init, not for each apply. */ -}}
+{{- /* The pass entry dotfiles/proton, or the note of item proton in the Proton Pass vault dotfiles, holds NAME=value lines. */ -}}
+{{- /* NAME is the lowercase key in upper case: GITLAB_HOST sets gitlab_host. Blank lines and # comments are skipped. */ -}}
+{{- /* Every key here overrides its placeholder in .chezmoidata/private.yaml. */ -}}
+{{- $store := promptChoiceOnce . "privateStore" "Store for private values" (list "pass" "proton-pass") "pass" -}}
+{{- $body := "" -}}
+{{- if eq $store "pass" -}}
+{{-   $body = passRaw "dotfiles/proton" -}}
+{{- else -}}
+{{-   $body = protonPass "pass://dotfiles/proton/note" -}}
+{{- end -}}
+{{- $values := dict -}}
+{{- range $line := splitList "\n" $body -}}
+{{-   $line = trim $line -}}
+{{-   if and $line (not (hasPrefix "#" $line)) -}}
+{{-     if not (contains "=" $line) -}}
+{{-       fail "dotfiles/proton must hold NAME=value lines such as GITLAB_HOST=gitlab.example.com" -}}
+{{-     end -}}
+{{-     $pair := splitn "=" 2 $line -}}
+{{-     $_ := set $values (lower (trim $pair._0)) (trimAll "\"'" (trim $pair._1)) -}}
+{{-   end -}}
+{{- end -}}
+[data]
+    privateStore = {{ $store | quote }}
+
+[data.private]
+{{- range $key := list "gitlab_host" }}
+{{-   if not (hasKey $values $key) }}{{ fail (printf "dotfiles/proton has no %s= line" (upper $key)) }}{{ end }}
+    {{ $key }} = {{ get $values $key | toString | trim | quote }}
+{{- end }}

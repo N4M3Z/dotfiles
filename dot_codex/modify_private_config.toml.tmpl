@@ -33,7 +33,7 @@ trap 'command rm -f "$policy"' EXIT
 {{- $codex := deepCopy .harness.codex -}}
 {{- $_ := set $codex "auto_review" (dict "policy" (printf "%s\n" (join "\n" $lines))) }}
 cat > "$policy" <<'FORGE_POLICY'
-{{ $codex | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir }}
+{{ $codex | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir | replace "@GITLAB_HOST@" .private.gitlab_host }}
 FORGE_POLICY
 
 # The deep-merge (*) adds and overwrites but never removes, so a filesystem grant

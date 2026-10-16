@@ -2,11 +2,11 @@
 # Pins glab's TLS trust for Proton GitLab to the system CA bundle. glab is a Go
 # binary; inside a sandboxed agent shell the macOS keychain verifier cannot see
 # the Proton CA and every API call fails with x509 OSStatus -26276. The system
-# bundle verifies gitlab.protontech.ch fine. glab owns ~/.config/glab-cli/config.yml
+# bundle verifies {{ .private.gitlab_host }} fine. glab owns ~/.config/glab-cli/config.yml
 # and rewrites it (update-check timestamps), so the file is not managed here and
 # this script sets the one key idempotently instead. The token itself lives in
 # the keychain via `glab auth login`, the same way gh keeps its token.
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if and (eq .chezmoi.os "darwin") (ne .private.gitlab_host "@GITLAB_HOST@") -}}
 set -euo pipefail
 
 CONFIG="$HOME/.config/glab-cli/config.yml"
@@ -17,9 +17,9 @@ if ! command -v yq >/dev/null 2>&1; then
 fi
 
 if [ ! -f "$CONFIG" ]; then
-    echo "glab: no config yet, run 'glab auth login --hostname gitlab.protontech.ch' first" >&2
+    echo "glab: no config yet, run 'glab auth login --hostname {{ .private.gitlab_host }}' first" >&2
     exit 0
 fi
 
-yq -i '.hosts["gitlab.protontech.ch"].ca_cert = "/etc/ssl/cert.pem"' "$CONFIG"
+yq -i '.hosts["{{ .private.gitlab_host }}"].ca_cert = "/etc/ssl/cert.pem"' "$CONFIG"
 {{- end }}

@@ -41,7 +41,7 @@
             "files.pythonhosted.org",
             "semgrep.dev",
             "*.semgrep.dev",
-            "gitlab.protontech.ch"
+            "@GITLAB_HOST@"
           ],
           "deny": []
         }

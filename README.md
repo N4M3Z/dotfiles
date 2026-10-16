@@ -8,6 +8,8 @@ Each source path encodes its target via chezmoi prefixes. `dot_` becomes a leadi
 
 ```
 dotfiles/
+├── .chezmoi.toml.tmpl            → ~/.config/chezmoi/chezmoi.toml (private values, via chezmoi init)
+├── .chezmoidata/private.yaml     public placeholders for the private values
 ├── .chezmoiexternal.toml         clones github.com/N4M3Z/dotzsh into ~/.zsh
 ├── .chezmoiignore                ignores README.md and docs/
 ├── dot_zshrc                     → ~/.zshrc
@@ -48,7 +50,7 @@ dotfiles/
 chezmoi apply
 ```
 
-`~/.local/share/chezmoi` is a symlink to this repo, so chezmoi reads its default source location and finds the dotfiles here. No config file, no `--source` flag. Works from any directory.
+`~/.local/share/chezmoi` is a symlink to this repo, so chezmoi reads its default source location and finds the dotfiles here. No `--source` flag. Works from any directory. The only config file is the one `chezmoi init` renders from `.chezmoi.toml.tmpl`.
 
 ## Obsidian and OpenLogi
 
@@ -80,11 +82,26 @@ ln -s ~/Developer/N4M3Z/dotfiles ~/.local/share/chezmoi
 chezmoi apply
 ```
 
-The first `chezmoi apply` will clone the dotzsh Prezto fork into `~/.zsh/` via `.chezmoiexternal.toml`.
+The first `chezmoi apply` will clone the dotzsh Prezto fork into `~/.zsh/` via `.chezmoiexternal.toml`. The private values stay placeholders such as `@GITLAB_HOST@` until a store is back. Restore pass (the YubiKey's GPG key and `~/.password-store`) or run `pass-cli login`, then run `chezmoi init` and `chezmoi apply`.
 
 ## Private host blocks
 
 Sensitive SSH host configuration lives in a separate `dotfiles-private` repo at `~/Developer/N4M3Z/dotfiles-private/ssh/{hosts,vendor}`. The two `symlink_*.tmpl` files under `private_dot_ssh/` create `~/.ssh/hosts` and `~/.ssh/vendor` symlinks pointing into that repo. OpenSSH's `Include` directive silently skips broken symlinks, so a Mac without `dotfiles-private` cloned just loses the private hosts; everything else still works.
+
+## Private values
+
+Values that must not be public, such as the work GitLab host, live in [pass][PASS] (encrypted to the GPG key on the YubiKey) or in [Proton Pass][PPCLI]. The first `chezmoi init` asks which store the machine uses and keeps the answer. It renders `.chezmoi.toml.tmpl`, which reads each value with chezmoi's [`pass`][CZPASS] or [`protonPass`][CZPP] function into the `[data.private]` section of `~/.config/chezmoi/chezmoi.toml`. That config holds the values in plain text, as the deployed files do. `chezmoi apply` never reads a store, so it needs no YubiKey touch or Proton Pass session, and agent sandboxes, which deny `~/.password-store`, still render the real values.
+
+Templates read a value as data, for example `{{ .private.gitlab_host }}`. `.chezmoidata/private.yaml` holds a public placeholder for each value, such as `@GITLAB_HOST@`, so CI and a machine without the config render the placeholders. Data in `.chezmoidata` cannot be a template, so a data file uses the placeholder, and the template that renders the data replaces it with the value.
+
+The pass entry `dotfiles/proton`, or the note of the item `proton` in the Proton Pass vault `dotfiles`, holds one `NAME=value` line for each value, such as `GITLAB_HOST=gitlab.example.com`. `NAME` is the key in upper case. To add a value, add its line to the entry, give it a placeholder in `.chezmoidata/private.yaml`, and add the key to the list in `.chezmoi.toml.tmpl`. Then render the config again:
+
+```sh
+pass edit dotfiles/proton   # with Proton Pass, edit the note instead
+chezmoi init
+```
+
+To change the store, run `chezmoi init --prompt`. `tests/test-private-data.sh` renders `.chezmoi.toml.tmpl` against stub `pass` and `pass-cli` commands, then every template with and without the result. It fails on a missing key, a wrong entry name, or a leftover placeholder.
 
 ## Verification
 
@@ -131,4 +148,8 @@ Non-prefix `M-h/j/k/l` (alt+hjkl) is bound in `dot_config/tmux/tmux.conf` for on
 The choice of chezmoi as the dotfiles engine is captured in [`forge-provision/docs/decisions/ARCH-0005 Dotfiles engine chezmoi.md`][ADR]. The migration from a hand-rolled install script to native `dot_*` conventions happened in this session and is not yet a separate ADR.
 
 [CM]: https://www.chezmoi.io
+[PASS]: https://www.passwordstore.org
+[CZPASS]: https://www.chezmoi.io/user-guide/password-managers/pass/
+[CZPP]: https://www.chezmoi.io/user-guide/password-managers/proton-pass/
+[PPCLI]: https://protonpass.github.io/pass-cli/
 [ADR]: ../forge-provision/docs/decisions/ARCH-0005%20Dotfiles%20engine%20chezmoi.md

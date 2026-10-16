@@ -139,7 +139,7 @@
               "files.pythonhosted.org": "allow",
               "semgrep.dev": "allow",
               "*.semgrep.dev": "allow",
-              "gitlab.protontech.ch": "allow"
+              "@GITLAB_HOST@": "allow"
             }
           }
         }
@@ -153,7 +153,7 @@
           "*API_KEY*"
         ],
         "set": {
-          "GITLAB_HOST": "gitlab.protontech.ch",
+          "GITLAB_HOST": "@GITLAB_HOST@",
           "GLAB_CONFIG_DIR": "/Users/N4M3Z/.config/glab-cli-agent",
           "NPM_CONFIG_CACHE": "/Users/N4M3Z/Data/State/codex/npm-cache"
         }

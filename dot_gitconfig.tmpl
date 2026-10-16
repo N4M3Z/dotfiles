@@ -54,7 +54,7 @@
 
 ; Same pattern for Proton GitLab: glab serves the token it keeps in the
 ; keychain, so git needs no separate credential store for that host.
-[credential "https://gitlab.protontech.ch"]
+[credential "https://{{ .private.gitlab_host }}"]
     helper =
     helper = !"{{ $glab }}" auth git-credential
 

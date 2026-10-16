@@ -56,7 +56,9 @@ while IFS= read -r template; do
             failures=$((failures + 1))
         fi
     fi
-done < <(find "${SOURCE_DIR}" -name '*.tmpl' -not -path '*/.git/*' | sort)
+# .chezmoi.toml.tmpl reads the password store, which CI and agent sandboxes
+# cannot reach; tests/test-private-data.sh renders it against a stub pass.
+done < <(find "${SOURCE_DIR}" -name '*.tmpl' -not -name '.chezmoi.toml.tmpl' -not -path '*/.git/*' | sort)
 
 if [[ ${failures} -gt 0 ]]; then
     echo "validate-templates: ${failures} failure(s)"
