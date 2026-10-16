@@ -30,6 +30,7 @@ words = [
     "allowlisted",
     "chezmoi",
     "codebook",
+    "dcg",
     "frontmatter",
     "gitui",
     "jjui",

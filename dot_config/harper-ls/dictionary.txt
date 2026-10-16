@@ -2,6 +2,7 @@ agavra
 btop
 chezmoi
 codebook
+dcg
 frontmatter
 fzf
 gitui
