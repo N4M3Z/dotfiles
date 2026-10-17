@@ -8,6 +8,8 @@
 # install` writes one dispatcher entry per event and keeps every foreign
 # entry. Nothing here registers a hook, so a chezmoi apply never undoes
 # what rune wrote and never resurrects the retired `sd hook` parts.
+# `model` and `outputStyle` are also kept from the live file: /model and
+# /output-style write them per machine, and the template sets neither.
 set -eu
 live=$(cat)
 [ -n "$live" ] || live='{}'
@@ -289,4 +291,5 @@ desired=$(cat <<'DESIRED'
 }
 DESIRED
 )
-printf '%s\n' "$desired" | jq --argjson live "$live" '. + {hooks: ($live.hooks // {})}'
+printf '%s\n' "$desired" | jq --argjson live "$live" \
+    '. + {hooks: ($live.hooks // {})} + ($live | {model, outputStyle} | with_entries(select(.value != null)))'
