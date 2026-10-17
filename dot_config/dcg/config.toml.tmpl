@@ -35,10 +35,14 @@ custom_paths = [
 {{- if not (lookPath "rg") }}
 "rune.search:grep-use-rg" = "warn"
 "rune.search:grep-alt-forms" = "warn"
+"user.toolpolicy:grep-use-rg" = "warn"
+"user.toolpolicy:grep-alt-forms" = "warn"
 {{- end }}
 {{- if not (lookPath "fd") }}
 "rune.search:find-use-fd" = "warn"
 "rune.search:find-alt-forms" = "warn"
+"user.toolpolicy:find-use-fd" = "warn"
+"user.toolpolicy:find-alt-forms" = "warn"
 {{- end }}
 {{- if not (lookPath "yq") }}
 "rune.parsers:yaml-needs-yq" = "warn"
@@ -46,3 +50,11 @@ custom_paths = [
 {{- if not (lookPath "jq") }}
 "rune.parsers:json-needs-jq" = "warn"
 {{- end }}
+{{- if or (not (lookPath "yq")) (not (lookPath "jq")) }}
+"user.toolpolicy:yaml-json-needs-real-parser" = "warn"
+{{- end }}
+{{- if not (lookPath "mlr") }}
+"user.toolpolicy:csv-tsv-needs-real-parser" = "warn"
+{{- end }}
+# sed-no-in-place has no relax entry: the redirect target is the harness
+# Edit tool, which every agent context provides.

@@ -50,7 +50,21 @@ require_allow() {
 
 # The rune.* packs (search, parsers, secrets, push, provenance, rtk, homebrew)
 # live in every runedeck repository under .dcg/packs/ and are replayed by
-# that repository's scripts/test-dcg-packs. Only the host packs stay here.
+# that repository's scripts/test-dcg-packs. The host packs stay here, plus
+# user.toolpolicy: the user-level tool policy applies on every path, not
+# only inside runedeck repositories.
+
+# user.toolpolicy: redirects to the approved tools (UseEfficientCLI)
+require_block 'grep -R TODO .' user.toolpolicy:grep-use-rg
+require_block 'find . -name "*.md"' user.toolpolicy:find-use-fd
+require_block 'awk -F, "{print}" data.csv' user.toolpolicy:csv-tsv-needs-real-parser
+require_block 'cut -d, -f2 data.csv' user.toolpolicy:csv-tsv-needs-real-parser
+require_block 'sed -i "s/a/b/" notes.txt' user.toolpolicy:sed-no-in-place
+require_block 'sed --in-place "s/a/b/" notes.txt' user.toolpolicy:sed-no-in-place
+require_allow 'git grep TODO'
+# The replacement itself must stay allowed: cut is also an mlr verb.
+require_allow 'mlr --csv cut -f name data.csv'
+require_allow 'sed "s/a/b/" notes.txt'
 
 # user.secrets: a casual secret read is denied from any directory
 require_block 'cat ~/.env' user.secrets:casual-secret-read
