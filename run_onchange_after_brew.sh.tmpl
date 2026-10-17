@@ -3,9 +3,10 @@
 # hashes below), making `chezmoi apply` the one converge command for packages.
 # Converges through forge-provision's brew-bundle.sh, never raw `brew bundle`:
 # the wrapper trusts declared taps (Homebrew tap-trust would stall the apply),
-# selects the SCOPE-correct Brewfile, and routes Mac App Store entries through
-# mas-bundle.sh (missing apps only, per-app timeout) instead of Homebrew's
-# unbounded mas install/upgrade handler.
+# selects the SCOPE-correct Brewfile, and keeps Mac App Store entries out of
+# the bundle (mas needs root for each install and update). Its mas-bundle.sh
+# then reports each App Store app as current, outdated, or missing and asks
+# before it touches one; with no terminal it only reports.
 # Decision: workspace docs/Setup Review.md (converge through chezmoi apply).
 #
 # Brewfile: {{ output "shasum" "-a" "256" (joinPath .chezmoi.homeDir "Developer/N4M3Z/forge-provision/manifests/Brewfile") | trim }}
