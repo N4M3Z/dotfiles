@@ -47,3 +47,12 @@
     type = "git-repo"
     url = "https://github.com/laktak/extrakto.git"
     refreshPeriod = "168h"
+
+# avatar — the canonical AI identity file (private repo). Built by the
+# BuildAvatar interview; harness memory files receive its managed block.
+[".config/rune/avatar"]
+    type = "git-repo"
+    url = "https://github.com/N4M3Z/avatar.git"
+    refreshPeriod = "24h"
+    [".config/rune/avatar".pull]
+        args = ["--ff-only"]
