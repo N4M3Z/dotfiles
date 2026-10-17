@@ -1,0 +1,69 @@
+# Guard for pushes that delete or overwrite remote refs. The built-in
+# core.git pack already blocks --force and -f in any position; this pack
+# adds the forms it leaves open. It replaces the Claude deny rule
+# `Bash(git push * :**)`, which cannot be written without a `:*` that
+# Claude Code warns about (`:*` is a prefix marker only at the end).
+# Validate: dcg pack validate ~/.config/dcg/packs/gitpush.yaml
+schema_version: 1
+id: user.gitpush
+name: Remote Ref Protection
+version: 1.0.0
+
+description: |
+  Blocks git push forms that delete or overwrite refs on a remote:
+  --delete and -d, a refspec that starts with ":" (delete) or "+"
+  (force), --prune, --mirror, and --force-with-lease. Remote writes
+  belong to the owner; hand the command to their terminal.
+
+keywords:
+  - git
+  - push
+  - delete
+  - force
+  - remote
+
+destructive_patterns:
+  - name: push-delete-flag
+    pattern: '(?:^|[^[:alnum:]_-])git(?:\s+(?:[^\s&;|`()<>]+\s+)*|-)push\s+(?:[^\s&;|`()<>]+\s+)*(?:--delete|-[a-zA-Z]*d[a-zA-Z]*)(?=\s|$)'
+    severity: critical
+    description: git push --delete / -d removes a branch or tag from the remote.
+    explanation: |
+      Deleting a remote ref removes it for every collaborator and breaks
+      every open pull request that targets it. Recovery needs someone
+      who still holds the commit. Ask the owner to run the deletion.
+
+  - name: push-delete-refspec
+    pattern: '(?:^|[^[:alnum:]_-])git(?:\s+(?:[^\s&;|`()<>]+\s+)*|-)push\s+(?:[^\s&;|`()<>]+\s+)*["'']?:[^\s:"''&;|]'
+    severity: critical
+    description: A refspec with an empty source (":branch") deletes that branch on the remote.
+    explanation: |
+      `git push origin :feature` is the old spelling of `--delete`. The
+      colon with nothing before it means "push nothing to feature", which
+      removes the remote branch. Ask the owner to run the deletion.
+
+  - name: push-plus-refspec
+    pattern: '(?:^|[^[:alnum:]_-])git(?:\s+(?:[^\s&;|`()<>]+\s+)*|-)push\s+(?:[^\s&;|`()<>]+\s+)*["'']?\+[^\s"''&;|]'
+    severity: critical
+    description: A refspec that starts with "+" force-pushes that ref.
+    explanation: |
+      `git push origin +main` is `--force` for one refspec. It overwrites
+      remote history that others may have pulled. Rewriting published
+      history is the owner's call.
+
+  - name: push-prune-or-mirror
+    pattern: '(?:^|[^[:alnum:]_-])git(?:\s+(?:[^\s&;|`()<>]+\s+)*|-)push\s+(?:[^\s&;|`()<>]+\s+)*--(?:prune|mirror)(?:=\S*)?(?=\s|$)'
+    severity: critical
+    description: git push --prune / --mirror deletes remote refs that do not exist locally.
+    explanation: |
+      Both flags make the remote match the local repository, which deletes
+      every remote branch and tag the local clone does not have. Ask the
+      owner to run the command.
+
+  - name: push-force-with-lease
+    pattern: '(?:^|[^[:alnum:]_-])git(?:\s+(?:[^\s&;|`()<>]+\s+)*|-)push\s+(?:[^\s&;|`()<>]+\s+)*--force-with-lease(?:=\S*)?(?=\s|$)'
+    severity: high
+    description: git push --force-with-lease still rewrites published history.
+    explanation: |
+      The lease check only confirms nobody pushed since the last fetch. It
+      still replaces remote history, which this owner reserves for their
+      own terminal. Push to a branch you created, or hand the command over.
