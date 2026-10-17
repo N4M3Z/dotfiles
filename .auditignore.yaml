@@ -17,4 +17,7 @@ acknowledged:
   - rule: host-private-tld
     sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
     commit: 396285c13a178f6cdf17419bfedb629a7f43ad1a
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: 85c170c194ad0f2ff35dcb8b5357d889c1dbce97
 
