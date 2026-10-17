@@ -23,3 +23,11 @@ Library/Application Support/vale/styles/Core
 .vale/styles/OwnerSTE
 .vale/styles/OwnerDeslop
 .vale/styles/OwnerCore
+
+# The nightly prune of cargo build folders is the brew service
+# N4M3Z/tap/rust-cache (forge-provision Brewfile). Its earlier dotfiles
+# deployments go: target-prune, then rust-cache as a launch agent.
+.local/bin/target-prune
+Library/LaunchAgents/com.forge.target-prune.plist
+.local/bin/rust-cache
+Library/LaunchAgents/com.rune.rust-cache.plist

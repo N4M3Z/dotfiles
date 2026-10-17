@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Unloads the launch agents that ran the nightly cargo prune from dotfiles.
+# The prune is the brew service N4M3Z/tap/rust-cache now (sh.brew.rust-cache),
+# and .chezmoiremove deletes the old plists and scripts. launchd keeps a
+# loaded job until it is booted out, so removing the plist alone is not enough.
+{{ if eq .chezmoi.os "darwin" -}}
+set -euo pipefail
+
+uid=$(id -u)
+for label in com.rune.rust-cache com.forge.target-prune; do
+    launchctl bootout "gui/$uid/$label" 2>/dev/null || true
+done
+echo "run_once_after_retire-rust-cache-agent: old cargo prune agents unloaded"
+exit 0
+{{- end }}
