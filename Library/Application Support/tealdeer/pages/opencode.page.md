@@ -14,4 +14,4 @@
 
 - Run OpenCode through shared provider policy explicitly:
 
-`sd agent run opencode {{arguments}}`
+`just -g agent run opencode {{arguments}}`

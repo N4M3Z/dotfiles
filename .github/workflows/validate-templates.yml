@@ -8,9 +8,13 @@ on:
 # chezmoi cannot be installed with `go install` (its go.mod contains exclude
 # directives, which go refuses for named packages), so install the pinned
 # release binary and verify its checksum. jq and yq ship with the runner image.
+# just follows the same pattern; its digest is the one GitHub publishes on the
+# release asset (gh release view casey/just --json assets).
 env:
     CHEZMOI_VERSION: 2.71.0
     CHEZMOI_SHA256: 6ea2040ecc0e82d3dac604289e100b0157afefcd94ebb818e5f6e31655156d34
+    JUST_VERSION: 1.59.0
+    JUST_SHA256: 409044617b6f06517c1035e55ca38c8c856ff8b650e41bc2aa1ef82d5903a23e
 
 jobs:
     validate:
@@ -29,6 +33,17 @@ jobs:
                   sudo install -m 755 /tmp/chezmoi /usr/local/bin/chezmoi
                   chezmoi --version
 
+            - name: Install just
+              run: |
+                  curl -fsSL -o /tmp/just.tar.gz \
+                      "https://github.com/casey/just/releases/download/${JUST_VERSION}/just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+                  actual=$(sha256sum /tmp/just.tar.gz)
+                  actual=${actual%% *}
+                  [ "$actual" = "$JUST_SHA256" ] || { echo "just checksum mismatch: $actual"; exit 1; }
+                  tar -C /tmp -xzf /tmp/just.tar.gz just
+                  sudo install -m 755 /tmp/just /usr/local/bin/just
+                  just --version
+
             - name: Validate templates
               run: bash tests/validate-templates.sh
 
@@ -37,3 +52,6 @@ jobs:
 
             - name: Test home targets
               run: bash tests/test-home-targets.sh
+
+            - name: Validate just tree
+              run: bash tests/validate-just-tree.sh

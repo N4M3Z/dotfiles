@@ -17,4 +17,4 @@
 
 - Run Grok through shared provider policy explicitly:
 
-`sd agent run grok {{arguments}}`
+`just -g agent run grok {{arguments}}`

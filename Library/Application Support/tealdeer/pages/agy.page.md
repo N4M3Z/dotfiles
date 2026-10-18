@@ -26,4 +26,4 @@
 
 - Run Antigravity through shared provider policy explicitly:
 
-`sd agent run antigravity {{arguments}}`
+`just -g agent run antigravity {{arguments}}`

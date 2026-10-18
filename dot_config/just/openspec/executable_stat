@@ -1,0 +1,142 @@
+#!/bin/sh
+# OpenSpec status segment for the tmux bar; run as: just -g openspec stat
+# Aggregates over the SESSION footprint: the pane's repo plus every
+# repo in the same tmux session with an openspec/changes root, plus
+# registered stores (registry.yaml) that belong to a session repo.
+# A store belongs when its id equals a session repo or owner-folder
+# name, carries it as a "name-" prefix (runedeck-docs for a runedeck
+# session), or its local_path routes through such a folder. Specs
+# that live outside the work repo (store-backed docs trees) surface
+# this way. Server-wide panes are deliberately NOT scanned: an
+# unrelated session's specs must not color this session's segment.
+# Prints "⛭ <active-change> D/T" for the most recently modified open
+# change across the footprint (D/T = tasks.md checkboxes) plus "⁺N"
+# for the other open changes. Prints a bare ⛭ when the footprint has
+# none, so the click target stays present (the popup then reports the
+# empty footprint). Filesystem and list-panes only: the openspec CLI
+# runs on click, not at status-interval cadence.
+# $1 = pane path, $2 = session name (theme passes both as format
+# args, so the segment stays correct on every rendered session).
+# OPENSPEC_REPOS overrides the footprint (tests, scripting).
+d="$1"
+sess="${2:-}"
+[ -n "$d" ] || exit 0
+cd "$d" 2>/dev/null || exit 0
+tab=$(printf '\t')
+
+pane_repos() {
+    {
+        jj root 2>/dev/null || git rev-parse --show-toplevel 2>/dev/null || pwd
+        if [ -n "$sess" ]; then
+            tmux list-panes -s -t "=$sess" -F '#{pane_current_path}' 2>/dev/null
+        else
+            tmux list-panes -s -F '#{pane_current_path}' 2>/dev/null
+        fi | sort -u | while IFS= read -r p; do
+            [ -d "$p" ] || continue
+            (cd "$p" 2>/dev/null && { jj root 2>/dev/null || git rev-parse --show-toplevel 2>/dev/null; })
+        done
+    } | awk 'NF && !seen[$0]++'
+}
+
+store_roots() {
+    # $1 = repo basenames (path rule), $2 = repo plus owner basenames
+    # (id rule). The path rule never uses owner names: the home
+    # folder's own name is an owner name and would match every store.
+    reg="$HOME/.local/share/openspec/stores/registry.yaml"
+    [ -f "$reg" ] || return 0
+    awk '/^  [^ ]/ { id = $1; sub(/:$/, "", id) }
+         $1 == "local_path:" { print id "\t" $2 }' "$reg" \
+        | while IFS="$tab" read -r id path; do
+            if [ ! -d "$path/openspec/changes" ] && [ ! -d "$path/docs/changes" ]; then
+                continue
+            fi
+            hit=""
+            for nm in $2; do
+                case "$id" in "$nm"|"$nm"-*) hit=1; break ;; esac
+            done
+            if [ -z "$hit" ]; then
+                rel="${path#"$HOME"/}"
+                for nm in $1; do
+                    case "/$rel/" in */"$nm"/*) hit=1; break ;; esac
+                done
+            fi
+            if [ -n "$hit" ]; then printf '%s\t%s\n' "$id" "$path"; fi
+        done
+}
+
+footprint() {
+    if [ -n "${OPENSPEC_REPOS:-}" ]; then
+        printf '%s\n' "$OPENSPEC_REPOS" | while IFS= read -r r; do
+            [ -n "$r" ] && printf '%s\t%s\n' "$(basename "$r")" "$r"
+        done
+        return
+    fi
+    repos=$(pane_repos)
+    rnames=$(printf '%s\n' "$repos" | while IFS= read -r r; do
+        [ -n "$r" ] && basename "$r"
+    done | awk 'NF && !seen[$0]++')
+    onames=$(printf '%s\n' "$repos" | while IFS= read -r r; do
+        [ -n "$r" ] && basename "$(dirname "$r")"
+    done | awk 'NF && !seen[$0]++')
+    {
+        printf '%s\n' "$repos" | while IFS= read -r r; do
+            [ -n "$r" ] || continue
+            if [ -d "$r/openspec/changes" ] || [ -d "$r/docs/changes" ]; then
+                printf '%s\t%s\n' "$(basename "$r")" "$r"
+            fi
+        done
+        store_roots "$rnames" "$rnames $onames"
+    } | awk -F '\t' 'NF && !seen[$2]++'
+}
+
+# Pipe, not a heredoc: heredocs need a temp file, and a denied temp
+# write (sandboxed or odd TMPDIR contexts) would blank the segment.
+# Both change roots count: openspec/changes (the openspec tree) and
+# docs/changes (the rune-native tree). A proposal.md guard keeps
+# unrelated docs directories out. The pane's own repo sorts first,
+# then recency (tasks.md edits count as activity), so the segment
+# shows the change you sit in, and a foreign change carries its
+# repo label as a prefix.
+pane_root=$(jj root 2>/dev/null || git rev-parse --show-toplevel 2>/dev/null || pwd)
+pane_name=$(basename "$pane_root")
+changes=$(footprint | while IFS="$tab" read -r label r; do
+    [ -n "$r" ] || continue
+    for root in "$r/openspec/changes" "$r/docs/changes"; do
+        [ -d "$root" ] || continue
+        for c in "$root"/*/; do
+            [ -d "$c" ] || continue
+            [ "$(basename "$c")" = "archive" ] && continue
+            [ -f "${c}proposal.md" ] || continue
+            m=$(stat -f %m "$c" 2>/dev/null || echo 0)
+            mt=$(stat -f %m "${c}tasks.md" 2>/dev/null || echo 0)
+            [ "$mt" -gt "$m" ] && m=$mt
+            p=0
+            [ "$label" = "$pane_name" ] && p=1
+            printf '%s\t%s\t%s\t%s\n' "$p" "$m" "$label" "$c"
+        done
+    done
+done | sort -t "$tab" -k1,1rn -k2,2rn | awk -F "\t" '!seen[$4]++')
+if [ -z "$changes" ]; then
+    # Bare cog: the click target stays present with no open change.
+    printf '⛭'
+    exit 0
+fi
+count=$(printf '%s\n' "$changes" | grep -c .)
+active=$(printf '%s\n' "$changes" | head -1 | cut -f4)
+
+name=$(basename "$active")
+[ "${#name}" -gt 19 ] && name="$(printf '%.18s' "$name")…"
+done_n=0
+total=0
+if [ -f "$active/tasks.md" ]; then
+    done_n=$(grep -c '^- \[x\]' "$active/tasks.md")
+    total=$(grep -c '^- \[[x ]\]' "$active/tasks.md")
+fi
+if [ "$total" -gt 0 ]; then
+    printf '⛭ %s %s/%s' "$name" "$done_n" "$total"
+else
+    printf '⛭ %s' "$name"
+fi
+extra=$((count - 1))
+[ "$extra" -gt 0 ] && printf ' ⁺%s' "$extra"
+exit 0

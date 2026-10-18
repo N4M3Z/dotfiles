@@ -41,6 +41,9 @@ FORGE_POLICY
 # permissions.Nexus.filesystem outright: after the merge, replace that subtree
 # with the policy's copy so retired entries drop out on the next apply.
 # Keep gbrain disconnected when the live app retains an old registration.
+# The hook dispatcher moved from ~/.sd/hook to ~/.config/just/hook (PROV-0025),
+# and forge-provision's codex.sh wrote the old path into the live hooks, so
+# every hook command string is repointed. Remove once no live file has it.
 yq -p=toml -o=json '.' - \
-    | jq --slurpfile policy "$policy" '(((. // {}) | .permissions.Nexus = ((.permissions["workspace-local"] // {}) * (.permissions.Nexus // {})) | del(.profile, .profiles, .permissions["workspace-local"], .sandbox_mode, .sandbox_workspace_write)) * $policy[0]) | .permissions.Nexus.filesystem = $policy[0].permissions.Nexus.filesystem | del(.mcp_servers.gbrain)' \
+    | jq --slurpfile policy "$policy" '(((. // {}) | .permissions.Nexus = ((.permissions["workspace-local"] // {}) * (.permissions.Nexus // {})) | del(.profile, .profiles, .permissions["workspace-local"], .sandbox_mode, .sandbox_workspace_write)) * $policy[0]) | .permissions.Nexus.filesystem = $policy[0].permissions.Nexus.filesystem | del(.mcp_servers.gbrain) | walk(if type == "string" then sub("/\\.sd/hook "; "/.config/just/hook ") else . end)' \
     | yq -p=json -o=toml '.' -

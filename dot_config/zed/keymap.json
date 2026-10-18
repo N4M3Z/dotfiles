@@ -85,10 +85,10 @@
             "cmd-alt-n": "agent::NewTerminalThread",
             // Project Diff from any focus (terminal thread included) — the
             // space g d leader needs editor normal mode. Also the target
-            // chord `sd zed diff` synthesizes for the tmux right-click
+            // chord `just -g zed diff` synthesizes for the tmux right-click
             // redirect into Zed.
             "cmd-alt-g": "git::Diff",
-            // Companion chord for sd zed diff: hide every dock so the
+            // Companion chord for just -g zed diff: hide every dock so the
             // review multibuffer gets the full window.
             "cmd-alt-shift-g": "workspace::CloseAllDocks"
         }

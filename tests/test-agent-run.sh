@@ -1,9 +1,9 @@
 #!/bin/bash
-# Regression tests for the fallback launcher `sd agent run`.
+# Regression tests for the fallback launcher `just -g agent run`.
 # Source: https://github.com/N4M3Z/dotfiles
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
-RUNNER="${ROOT}/dot_sd/agent/executable_run"
+RUNNER="${ROOT}/dot_config/just/agent/executable_run"
 failures=0
 
 pass() { echo "PASS: $1"; }

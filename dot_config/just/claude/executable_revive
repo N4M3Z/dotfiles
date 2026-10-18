@@ -1,0 +1,5 @@
+#!/bin/sh
+# Forwarder: the shared lazy-revival implementation lives in just -g agent revive.
+# This verb stays because tmux.conf's resurrect mapping and saved layouts
+# reference restored claude panes as `just -g claude revive`.
+exec "$(dirname "$0")/../agent/revive" claude

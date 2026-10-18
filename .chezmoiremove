@@ -30,3 +30,11 @@ Library/Application Support/vale/styles/Core
 Library/LaunchAgents/com.forge.target-prune.plist
 .local/bin/rust-cache
 Library/LaunchAgents/com.rune.rust-cache.plist
+
+# The sd dispatcher (PROV-0024, superseded by PROV-0025). The script tree
+# deploys to ~/.config/just now. The two symlinks pointed into the deleted
+# N4M3Z/sd fork and were never managed here; the brew sd (chmln/sd) takes
+# the name on PATH. Drop these once every machine has applied the move.
+.sd
+.local/bin/sd
+.config/zsh/functions/_sd

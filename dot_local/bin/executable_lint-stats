@@ -36,7 +36,8 @@ VALE_LINE = re.compile(r"^(/.*?):(\d+):(\d+):([\w-]+\.[\w-]+):(.*)$")
 TYPO = re.compile(r"^error: `(.+?)` should be (.*)$")
 PREFIX = re.compile(r"^\[sh [^\]]*\]: ")
 PERSISTED = re.compile(r"Full output saved to: (\S+)")
-LINT_CMD = re.compile(r"\.sd/hook|rumdl|vale")
+# Older transcripts name the hook dispatcher under the retired sd tree (PROV-0025).
+LINT_CMD = re.compile(r"(\.sd|\.config/just)/hook|rumdl|vale")
 
 
 def week_of(ts):

@@ -16,7 +16,7 @@
 
 - Review the working copy or a recent change (also: click the `±` status segment):
 
-`sh ~/.sd/tmux/turn/review`
+`sh ~/.config/just/tmux/turn/review`
 
 - Open the agents picker with project names:
 

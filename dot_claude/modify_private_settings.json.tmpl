@@ -7,7 +7,8 @@
 # that block (cli change harness-hook-dispatch, DOT-0007): `rune hook
 # install` writes one dispatcher entry per event and keeps every foreign
 # entry. Nothing here registers a hook, so a chezmoi apply never undoes
-# what rune wrote and never resurrects the retired `sd hook` parts.
+# what rune wrote. Until that rune change ships, the live entries run
+# `sh ~/.config/just/hook <Event>`, the dispatcher in the just tree.
 # `model` and `outputStyle` are also kept from the live file: /model and
 # /output-style write them per machine, and the template sets neither.
 set -eu
@@ -341,5 +342,11 @@ desired=$(cat <<'DESIRED'
 }
 DESIRED
 )
-printf '%s\n' "$desired" | jq --argjson live "$live" \
-    '. + {hooks: ($live.hooks // {})} + ($live | {model, outputStyle} | with_entries(select(.value != null)))'
+# Path migration (2026-10-18, PROV-0025): the hook dispatcher moved from
+# ~/.sd/hook to ~/.config/just/hook. The live hooks block keeps the old
+# path until rune rewrites it, so every command string is repointed
+# here. Remove this once no live settings carry the old path.
+printf '%s\n' "$desired" | jq --argjson live "$live" '
+    . + {hooks: (($live.hooks // {})
+        | walk(if type == "string" then sub("/\\.sd/hook "; "/.config/just/hook ") else . end))}
+    + ($live | {model, outputStyle} | with_entries(select(.value != null)))'

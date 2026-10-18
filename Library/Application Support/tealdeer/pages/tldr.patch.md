@@ -8,7 +8,7 @@
 
 - Access the same page through the personal dispatcher:
 
-`sd tldr {{command}}`
+`just -g tldr {{command}}`
 
 - Validate the forge-provision page source without network access:
 
