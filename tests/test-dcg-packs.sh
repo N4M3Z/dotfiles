@@ -66,6 +66,17 @@ require_allow 'git grep TODO'
 require_allow 'mlr --csv cut -f name data.csv'
 require_allow 'sed "s/a/b/" notes.txt'
 
+# user.homebrew: a pipe after brew kills its lazy gem install
+require_block 'brew info cliproxyapi | head' user.homebrew:brew-no-pipe
+require_block 'brew info x| head' user.homebrew:brew-no-pipe
+require_block 'rtk brew info x | head' user.homebrew:brew-no-pipe
+require_block 'cd /tmp && brew audit f.rb 2>&1 | head -5' user.homebrew:brew-no-pipe
+require_allow 'brew info cliproxyapi > /tmp/brew.txt 2>&1'
+require_allow 'brew info --json=v2 x >| /tmp/brew.json 2>&1'
+require_allow 'brew a && b | c'
+require_allow 'brew --version'
+require_allow 'rtk brew --prefix cliproxyapi'
+
 # user.secrets: a casual secret read is denied from any directory
 require_block 'cat ~/.env' user.secrets:casual-secret-read
 require_block 'head ~/.ssh/id_rsa' user.secrets:casual-secret-read

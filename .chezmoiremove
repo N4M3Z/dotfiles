@@ -2,11 +2,10 @@
 # SKEL-0009). The secret-read rule stays as a host pack (secrets.yaml),
 # because it must hold outside those repositories. forge.yaml guarded a CLI
 # that is no longer used; other.yaml is the host catch-all now. The tool
-# policy pack is global as well as local (owner, 2026-10-24): the user copy
-# carries the user.toolpolicy id, so it never collides with the rune.*
-# repository packs.
+# policy and Homebrew packs are global as well as local (owner, 2026-10-24):
+# the user copies carry user.toolpolicy and user.homebrew ids, so they never
+# collide with the rune.* repository packs of the same name.
 .config/dcg/packs/rtk.yaml
-.config/dcg/packs/homebrew.yaml
 .config/dcg/packs/forge.yaml
 
 # The global Vale layer is ~/.vale.ini with styles under ~/.vale/styles.
