@@ -84,13 +84,15 @@
       "api_url": "http://localhost:11434",
       "context_window": 32768,
     },
-    // Local MLX provider on :8000. The provider id is lowercase so Zed's
-    // derived key env var is OMLX_API_KEY — Zed uppercases <id>_API_KEY with
-    // word-boundary splitting, so an "oMLX" id would look for O_MLX_API_KEY.
-    // `name` must match a served model id exactly (GET :8000/v1/models).
+    // Local MLX provider on :31415 (server.port in ~/.omlx/settings.json;
+    // 8000 and 8001 are taken by too many dev servers). The provider id is
+    // lowercase so Zed's derived key env var is OMLX_API_KEY: Zed uppercases
+    // <id>_API_KEY with word-boundary splitting, so an "oMLX" id would look
+    // for O_MLX_API_KEY. `name` must match a served model id exactly
+    // (GET :31415/v1/models).
     "openai_compatible": {
       "omlx": {
-        "api_url": "http://localhost:8000/v1",
+        "api_url": "http://localhost:31415/v1",
         "available_models": [
           {
             "name": "gpt-oss-20b-MXFP4-Q8",
