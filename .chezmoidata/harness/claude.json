@@ -161,6 +161,8 @@
           "Bash(open -a Zed *)"
         ],
         "ask": [
+          "Bash(docker *)",
+          "Bash(rtk docker *)",
           "Bash(gh repo create *)",
           "Bash(gh repo fork *)",
           "Bash(gh repo edit *)",

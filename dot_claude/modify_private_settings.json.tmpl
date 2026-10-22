@@ -145,9 +145,7 @@ desired=$(cat <<'DESIRED'
         "/tmp/.s.PGSQL.5432",
         "~/.obsidian-cli.sock",
         "~/.gnupg/S.gpg-agent",
-        "~/.gnupg/S.dirmngr",
-        "~/.orbstack/run/docker.sock",
-        "/var/run/docker.sock"
+        "~/.gnupg/S.dirmngr"
       ],
       "allowLocalBinding": true
     },
@@ -168,7 +166,6 @@ desired=$(cat <<'DESIRED'
         "~/.local/share/openspec",
         "~/.semgrep",
         "~/Library/Caches/",
-        "/opt/homebrew",
         "~/Data/Memex",
         "~/Data/Sessions",
         "~/Data/SessionVersions",
@@ -237,13 +234,16 @@ desired=$(cat <<'DESIRED'
       "rtk orbctl *",
       "jj *",
       "rtk jj *",
+      {{- /*
+      Agent CLIs are not excluded: an excluded child agent runs with full
+      user rights and none of this policy. `rune` stays excluded: its signing
+      steps need the hardware key, and its launches pass each harness its own
+      sandbox flags. A direct `codex` or `grok` call fails its nested sandbox
+      here and comes back as an unsandboxed retry, which goes through the
+      permission prompt. Docker keeps its exclusion for OrbStack work, but its
+      sockets are closed to sandboxed commands and `docker` asks first.
+      */}}
       "rune *",
-      "codex *",
-      "claude *",
-      "opencode *",
-      "agy *",
-      "grok *",
-      "pi *",
       "zed *",
       "open -a Zed *"
     ]
