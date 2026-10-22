@@ -285,6 +285,7 @@ desired=$(cat <<'DESIRED'
       "soft_deny" (concat (list "$defaults") $auto.soft_deny $mine.soft_deny)
       "hard_deny" (concat (list "$defaults") $auto.hard_deny $mine.hard_deny)
       "environment" (concat (list "$defaults") $auto.environment $mine.environment)
+      "classifyAllShell" true
     | toPrettyJson | replace "@GITLAB_HOST@" .private.gitlab_host }},
   "voiceEnabled": true,
   "maxSkillDescriptionChars": 2048
