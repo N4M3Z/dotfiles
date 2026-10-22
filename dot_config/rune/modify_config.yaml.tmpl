@@ -169,11 +169,15 @@ launch:
                     GROK_MODELS_BASE_URL: "http://127.0.0.1:8317/v1"
                     GROK_CODE_XAI_API_KEY:
                         from_env: CLIPROXY_API_KEY
-# Harness hooks, declared once (DOT-0007, cli harness-hook-dispatch): every
-# harness registers `rune hook run` per event, and these handlers run in
-# order. A rewriter (rtk) runs before every guard (dcg, jj-guards), so a
+# Harness hooks, declared once (DOT-0007, cli one-dispatcher-runs-every-hook):
+# every harness registers `rune hook run` per event, and these handlers run
+# in order. A rewriter (rtk) runs before every guard (dcg, jj-guards), so a
 # guard judges the command the harness executes. Timeouts are per handler;
-# the event budget and the harness's own cap clamp them.
+# the event budget and the harness's own cap clamp them. sandbox-guard (cli
+# exempt-tool-is-the-whole-command) refuses a sandbox-off request for a
+# command the Claude sandbox already exempts, and an exempt tool that the
+# line keeps inside the sandbox, with the one command to run. It reads the
+# exempt list from sandbox.excludedCommands, and a failure lets the call run.
 # Commented out on 2026-10-16: the installed rune (0.6.0) refuses an unknown
 # `hooks` field, and the cli hook-dispatch change that reads it is unmerged.
 # Uncomment the block below once a build that parses it is installed.
@@ -198,6 +202,11 @@ launch:
 #           timeout_ms: 1500
 #           on_failure: deny
 #           requires: [tool_deny]
+#         - id: sandbox-guard
+#           exec: [rune-hook-sandbox-guard]
+#           events: [tool.before]
+#           order: 25
+#           timeout_ms: 500
 #         - id: jj-guards
 #           exec: [rune-hook-jj-guards]
 #           events: [tool.before]
