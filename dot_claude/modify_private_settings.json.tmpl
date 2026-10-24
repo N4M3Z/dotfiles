@@ -35,6 +35,14 @@ desired=$(cat <<'DESIRED'
     "OTEL_LOG_USER_PROMPTS": "1",
     "OTEL_LOG_TOOL_DETAILS": "1",
     "OTEL_METRICS_INCLUDE_SESSION_ID": "false",
+    {{- /*
+    The Seatbelt sandbox blocks the keychain lookup (trustd), so a sandboxed
+    harness cannot verify the mkcert certificate that cliproxy.internal
+    serves (probed 2026-10-20). This file is the mkcert trust root: with it,
+    Node verifies the proxy beside its built-in roots. The variable only
+    adds a root and removes none.
+    */}}
+    "NODE_EXTRA_CA_CERTS": "{{ .chezmoi.homeDir }}/Library/Application Support/mkcert/rootCA.pem",
     "GITLAB_HOST": "{{ .private.gitlab_host }}"
   },
   "permissions": {{ $harness.permissions | toPrettyJson }},
@@ -139,7 +147,10 @@ desired=$(cat <<'DESIRED'
         "*.semgrep.dev",
         "{{ .private.gitlab_host }}",
         "localhost",
-        "127.0.0.1"
+        "127.0.0.1",
+        "cliproxy.internal",
+        "lumo.proton.me",
+        "models.opencode.ai"
       ],
       "allowUnixSockets": [
         "/tmp/.s.PGSQL.5432",
@@ -209,6 +220,7 @@ desired=$(cat <<'DESIRED'
         "~/.netrc",
         "~/.config/op",
         "~/.password-store",
+        "~/Library/Application Support/mkcert/rootCA-key.pem",
         "/Volumes/Keyvault",
         "/Volumes/.timemachine",
         "/Volumes/com.apple.TimeMachine.localsnapshots"
