@@ -279,7 +279,21 @@ desired=$(cat <<'DESIRED'
       */}}
       "rune *",
       "zed *",
-      "open -a Zed *"
+      "open -a Zed *",
+      {{- /*
+      Only the first token of a command line is matched. A leading `cd dir
+      &&` is tolerated, except for the guarded `jj push`, whose alias reads
+      the shell cwd: there `cd` is its own call. A pipe, a redirect, a loop,
+      or `$( )` around an excluded command runs it sandboxed, and it dies
+      with -26276, -60008, or EPERM (probed again 2026-10-19 with `cd *` and
+      `rtk head *` listed: `cd dir && gh auth status | rtk head` read the
+      keychain token as invalid, bare `gh auth status` did not, so those
+      entries were removed). A chain that needs the keychain goes in a
+      script under the workshop's docs/specs, which the two entries below
+      exclude by their first token; the receipt and seat scripts live there.
+      */}}
+      "sh {{ .chezmoi.homeDir }}/Agents/runedeck/docs/specs/*",
+      "bash {{ .chezmoi.homeDir }}/Agents/runedeck/docs/specs/*"
     ]
   },
   "effortLevel": "high",
