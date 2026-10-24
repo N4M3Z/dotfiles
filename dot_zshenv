@@ -54,6 +54,9 @@ export PATH="${BUN_INSTALL}/bin:${PATH}"
 # meters their spend. Reads keys from ~/.env; `noproxy <cmd>` bypasses it.
 [ -r "${HOME}/.config/zsh/cliproxy.zsh" ] && source "${HOME}/.config/zsh/cliproxy.zsh"
 
+# Browserbase key for the `browse` CLI. Reads one value from ~/.env.
+[ -r "${HOME}/.config/zsh/browserbase.zsh" ] && source "${HOME}/.config/zsh/browserbase.zsh"
+
 # Personal script directory (sd dispatcher). The tree deploys to ~/.sd via
 # chezmoi (source: dot_sd/); the dispatcher and completion default to ~/sd,
 # so this export is what points every shell at the real location (PROV-0024).
