@@ -6,21 +6,15 @@
 # openspec then reads docs/changes and docs/specs. Telemetry stays off.
 set -eu
 
-# Resolve the real binary: the first openspec on PATH outside this
-# script's own directory.
-self_dir=$(cd "$(dirname "$0")" && pwd)
-real=""
-old_ifs=$IFS
-IFS=:
-for dir in $PATH; do
-    [ "$dir" = "$self_dir" ] && continue
-    if [ -x "$dir/openspec" ]; then
-        real="$dir/openspec"
-        break
-    fi
-done
-IFS=$old_ifs
-[ -n "$real" ] || { echo "openspec: real binary not found on PATH" >&2; exit 1; }
+# Run only bun's global copy. Any other openspec on PATH is ignored, so
+# no second version can run. The deck's CI installs the latest release,
+# so the bun copy tracks the latest release too.
+real="${BUN_INSTALL:-$HOME/.bun}/bin/openspec"
+if [ ! -x "$real" ]; then
+    echo "openspec: bun copy not found at $real" >&2
+    echo "install it: bun add -g @fission-ai/openspec@latest" >&2
+    exit 1
+fi
 
 export OPENSPEC_TELEMETRY=0
 
