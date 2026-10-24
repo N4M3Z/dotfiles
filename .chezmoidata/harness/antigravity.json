@@ -48,7 +48,6 @@
         ],
         "ask": [
           "command(*)",
-          "unsandboxed(*)",
           "read_url(*)",
           "execute_url(*)",
           "mcp(*)",
