@@ -312,23 +312,7 @@
     },
   },
 
-  // gbrain (local knowledge brain) as an MCP context server, so the Zed
-  // agent can search the vault. Reaches the Zed-native agent and, via ACP
-  // forwarding, Zed-hosted Claude Code. Terminal threads and the standalone
-  // cmux fallback use Claude Code's own MCP config instead. Env mirrors the
-  // gbrain serve command (Ollama embedder + local Postgres).
-  "context_servers": {
-    "gbrain": {
-      "command": "/Users/N4M3Z/.bun/bin/gbrain",
-      "args": ["serve"],
-      "env": {
-        "OPENAI_BASE_URL": "http://localhost:11434/v1",
-        "OPENAI_API_KEY": "ollama",
-        "DATABASE_URL": "postgresql://localhost:5432/memex",
-        "GBRAIN_STDIO_SOURCE": "atlas",
-      },
-    },
-  },
+  "context_servers": {},
 
   // Nerd font so prompt glyphs render in the built-in terminal.
   // Mono variant to match Ghostty (p10k canonical, single-cell glyphs).

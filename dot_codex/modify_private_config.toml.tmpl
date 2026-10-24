@@ -40,6 +40,7 @@ FORGE_POLICY
 # retired from codex.json would linger in the live file forever. The policy owns
 # permissions.Nexus.filesystem outright: after the merge, replace that subtree
 # with the policy's copy so retired entries drop out on the next apply.
+# Keep gbrain disconnected when the live app retains an old registration.
 yq -p=toml -o=json '.' - \
-    | jq --slurpfile policy "$policy" '(((. // {}) | .permissions.Nexus = ((.permissions["workspace-local"] // {}) * (.permissions.Nexus // {})) | del(.profile, .profiles, .permissions["workspace-local"], .sandbox_mode, .sandbox_workspace_write)) * $policy[0]) | .permissions.Nexus.filesystem = $policy[0].permissions.Nexus.filesystem' \
+    | jq --slurpfile policy "$policy" '(((. // {}) | .permissions.Nexus = ((.permissions["workspace-local"] // {}) * (.permissions.Nexus // {})) | del(.profile, .profiles, .permissions["workspace-local"], .sandbox_mode, .sandbox_workspace_write)) * $policy[0]) | .permissions.Nexus.filesystem = $policy[0].permissions.Nexus.filesystem | del(.mcp_servers.gbrain)' \
     | yq -p=json -o=toml '.' -
