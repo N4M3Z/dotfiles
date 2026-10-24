@@ -34,3 +34,6 @@ jobs:
 
             - name: Test private values
               run: bash tests/test-private-data.sh
+
+            - name: Test home targets
+              run: bash tests/test-home-targets.sh
