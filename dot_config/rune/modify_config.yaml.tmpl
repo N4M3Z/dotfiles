@@ -236,73 +236,53 @@ launch:
                         from_env: CLIPROXY_API_KEY
 # Harness hooks, declared once (DOT-0007, cli one-dispatcher-runs-every-hook):
 # every harness registers `rune hook run` per event, and these handlers run
-# in order. A rewriter (rtk) runs before every guard (dcg, jj-guards), so a
-# guard judges the command the harness executes. Timeouts are per handler;
+# in order. dcg, rtk, and git-ai stay outside rune (owner, 2026-10-25): each
+# keeps its own direct entry in ~/.claude/settings.json and
+# ~/.codex/hooks.json, and rune's handover leaves those entries in place
+# because no handler here runs the same program. Timeouts are per handler;
 # the event budget and the harness's own cap clamp them. sandbox-guard (cli
 # exempt-tool-is-the-whole-command) refuses a sandbox-off request for a
 # command the Claude sandbox already exempts, and an exempt tool that the
 # line keeps inside the sandbox, with the one command to run. It reads the
 # exempt list from sandbox.excludedCommands, and a failure lets the call run.
-# Commented out on 2026-10-16: the installed rune (0.6.0) refuses an unknown
-# `hooks` field, and the cli hook-dispatch change that reads it is unmerged.
-# Uncomment the block below once a build that parses it is installed.
-# hooks:
-#     version: 1
-#     handlers:
-#         - id: author-identity
-#           exec: [rune-hook-author-identity]
-#           events: [session.start]
-#           order: 5
-#           timeout_ms: 800
-#         - id: rtk
-#           exec: [rune-hook-rtk]
-#           events: [tool.before]
-#           order: 10
-#           timeout_ms: 800
-#           rewrites: true
-#         - id: dcg
-#           exec: [rune-hook-dcg]
-#           events: [tool.before]
-#           order: 20
-#           timeout_ms: 1500
-#           on_failure: deny
-#           requires: [tool_deny]
-#         - id: sandbox-guard
-#           exec: [rune-hook-sandbox-guard]
-#           events: [tool.before]
-#           order: 25
-#           timeout_ms: 500
-#         - id: jj-guards
-#           exec: [rune-hook-jj-guards]
-#           events: [tool.before]
-#           order: 30
-#           timeout_ms: 800
-#           on_failure: deny
-#         - id: git-ai
-#           exec: [rune-hook-git-ai]
-#           events: [tool.before, tool.after, turn.finish]
-#           order: 40
-#           timeout_ms: 2000
-#         - id: lint-on-write
-#           exec: [rune-hook-lint-on-write]
-#           events: [tool.after]
-#           order: 50
-#           timeout_ms: 8000
-#         - id: turn-checkpoint
-#           exec: [rune-hook-turn-checkpoint]
-#           events: [prompt.before, turn.finish, session.end]
-#           order: 60
-#           timeout_ms: 400
-#         - id: tmux-status
-#           exec: [rune-hook-tmux-status]
-#           events: [prompt.before, notification, turn.finish, session.end]
-#           order: 70
-#           timeout_ms: 200
-#         - id: session-capture
-#           exec: [rune-hook-session-capture]
-#           events: [session.end, compact.before]
-#           order: 80
-#           timeout_ms: 300
+hooks:
+    version: 1
+    handlers:
+        # author-identity (order 5) returns with the identity fix in the next
+        # round: this build ignores authors.yaml model_domains, so the push
+        # check would refuse its identities. Until then the claude-agent-identity
+        # SessionStart entry stays in place.
+        - id: sandbox-guard
+          exec: [rune-hook-sandbox-guard]
+          events: [tool.before]
+          order: 25
+          timeout_ms: 500
+        - id: jj-guards
+          exec: [rune-hook-jj-guards]
+          events: [tool.before]
+          order: 30
+          timeout_ms: 800
+          on_failure: deny
+        - id: lint-on-write
+          exec: [rune-hook-lint-on-write]
+          events: [tool.after]
+          order: 50
+          timeout_ms: 8000
+        - id: turn-checkpoint
+          exec: [rune-hook-turn-checkpoint]
+          events: [prompt.before, turn.finish, session.end]
+          order: 60
+          timeout_ms: 400
+        - id: tmux-status
+          exec: [rune-hook-tmux-status]
+          events: [prompt.before, notification, turn.finish, session.end]
+          order: 70
+          timeout_ms: 200
+        - id: session-capture
+          exec: [rune-hook-session-capture]
+          events: [session.end, compact.before]
+          order: 80
+          timeout_ms: 300
 RUNE_CONFIG
 
 cat > "$live"
