@@ -272,14 +272,53 @@ desired=$(cat <<'DESIRED'
       "rtk jj *",
       {{- /*
       Agent CLIs are not excluded: an excluded child agent runs with full
-      user rights and none of this policy. `rune` stays excluded: its signing
-      steps need the hardware key, and its launches pass each harness its own
-      sandbox flags. A direct `codex` or `grok` call fails its nested sandbox
-      here and comes back as an unsandboxed retry, which goes through the
-      permission prompt. Docker keeps its exclusion for OrbStack work, but its
-      sockets are closed to sandboxed commands and `docker` asks first.
+      user rights and none of this policy. Only the rune forms that cannot
+      work inside the sandbox are excluded (2026-10-24). `run` and `proof run`
+      start harnesses, and a child inherits this sandbox: codex fails its
+      app-server, grok fails its own Seatbelt sandbox, and agy cannot read its
+      keychain login. `launch` starts an interactive harness. `sign` needs gpg
+      and ~/.gnupg. `install`, `deploy`, `clean`, and `repair` write the
+      harness homes. Every other rune command runs sandboxed, so
+      autoAllowBashIfSandboxed lets it through without a prompt (probed: spec
+      validate, config path, proof --check, and --version). A direct `codex` or
+      `grok` call fails its nested sandbox here and comes back as an
+      unsandboxed retry, which goes through the permission prompt. Docker
+      keeps its exclusion for OrbStack work, but its sockets are closed to
+      sandboxed commands and `docker` asks first. Each rune form also has an
+      `rtk` twin, because the UseEfficientCLI rule makes models write `rtk rune
+      run`, which ran sandboxed and came back as an unsandboxed retry prompt
+      (54 such calls on 2026-10-24).
       */}}
-      "rune *",
+      "rune run *",
+      "rtk rune run *",
+      "rune --json run *",
+      "rtk rune --json run *",
+      "rune launch *",
+      "rtk rune launch *",
+      "rune proof run *",
+      "rtk rune proof run *",
+      "rune --json proof run *",
+      "rtk rune --json proof run *",
+      "rune sign",
+      "rtk rune sign",
+      "rune sign *",
+      "rtk rune sign *",
+      "rune install",
+      "rtk rune install",
+      "rune install *",
+      "rtk rune install *",
+      "rune deploy",
+      "rtk rune deploy",
+      "rune deploy *",
+      "rtk rune deploy *",
+      "rune clean",
+      "rtk rune clean",
+      "rune clean *",
+      "rtk rune clean *",
+      "rune repair",
+      "rtk rune repair",
+      "rune repair *",
+      "rtk rune repair *",
       "zed *",
       "open -a Zed *",
       {{- /*
