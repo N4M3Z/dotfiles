@@ -166,7 +166,29 @@ desired=$(cat <<'DESIRED'
         "~/.cache/uv",
         "~/.cache/act",
         "~/.cache/prek",
+        {{- /*
+        Cargo's download cache, shared with unsandboxed builds. Without it a
+        sandboxed build stops at the first crate it must download (EPERM on
+        registry/cache, probed 2026-10-22), and sessions worked around that
+        with private CARGO_HOME copies that download everything again. The
+        rest of ~/.cargo stays closed: bin is on PATH, and config.toml can
+        name a rustc wrapper that an unsandboxed build would run.
+        Cargo's two lock files follow, under names cargo hard-codes
+        (src/util/cache_lock.rs). .package-cache is the download lock: cargo
+        holds it alone while it downloads crates. .package-cache-mutate is the
+        cleanup lock: every build shares it, and cache cleanup holds it alone.
+        Without them a sandboxed cargo falls back to a shared lock, which does
+        not keep two sandboxed downloads apart. With them cargo queues them
+        ("Blocking waiting for file lock on package cache", probed 2026-10-24). The last-use record
+        (.global-cache) stays closed. SQLite needs to create files beside it.
+        */}}
+        "~/.cargo/registry",
+        "~/.cargo/git",
+        "~/.cargo/.package-cache",
+        "~/.cargo/.package-cache-mutate",
         "~/.local/share/Trash",
+        "~/.local/state/rune",
+        "~/.local/state/sd-job",
         "/tmp/claude",
         "/var/folders",
         "~/Atlas",

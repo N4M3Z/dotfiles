@@ -53,6 +53,7 @@
             "~/.cache/gh": "write",
             "~/.cache/prek": "write",
             "~/.cache/semgrep_version": "write",
+            "~/.cargo/git": "write",
             "~/.cargo/registry": "write",
             "~/.codex/skills": "write",
             "~/.config/containers": "deny",
