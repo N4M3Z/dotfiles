@@ -98,9 +98,11 @@
                 "layout": {
                     "direction": "horizontal",
                     "split": 0.5,
+                    // Each child is a split ("direction") or a pane leaf
+                    // ("pane" with at least one surface tab).
                     "children": [
-                        { "surface": { "type": "terminal" } },
-                        { "surface": { "type": "terminal" } }
+                        { "pane": { "surfaces": [{ "type": "terminal" }] } },
+                        { "pane": { "surfaces": [{ "type": "terminal" }] } }
                     ]
                 }
             }
