@@ -1,0 +1,23 @@
+#!/bin/bash
+# chezmoi modify_ script for ~/.gemini/settings.json, Gemini CLI's user settings.
+#
+# How chezmoi runs this: the CURRENT live file arrives on stdin, and whatever
+# this script prints to stdout becomes the file's new contents on every
+# `chezmoi apply`. That makes the file partially managed: the policy fields
+# declared in .chezmoidata/harness/gemini.json are enforced, while everything
+# Gemini CLI writes itself, such as hooks and tools, stays untouched.
+#
+# The policy sends telemetry to the local Alloy collector over OTLP HTTP, so
+# Gemini CLI's logs land in VictoriaLogs and its metrics in Prometheus beside
+# the other harnesses.
+# Source: https://github.com/N4M3Z/dotfiles
+umask 077
+
+policy=$(mktemp "${TMPDIR:-/tmp}/gemini-policy.XXXXXX") || exit 1
+trap 'command rm -f "$policy"' EXIT
+
+cat > "$policy" <<'POLICY'
+{{ .harness.gemini | toJson }}
+POLICY
+
+jq -n --slurpfile policy "$policy" '((try input) // {}) * $policy[0]'
