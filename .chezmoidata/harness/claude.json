@@ -154,7 +154,29 @@
           "Bash(rune sign --verify *)",
           "Bash(rtk rune sign --verify *)",
           "Bash(zed *)",
-          "Bash(open -a Zed *)"
+          "Bash(open -a Zed *)",
+          "Bash(prlctl list)",
+          "Bash(rtk prlctl list)",
+          "Bash(prlctl list *)",
+          "Bash(rtk prlctl list *)",
+          "Bash(prlctl status *)",
+          "Bash(rtk prlctl status *)",
+          "Bash(prlctl start *)",
+          "Bash(rtk prlctl start *)",
+          "Bash(prlctl stop *)",
+          "Bash(rtk prlctl stop *)",
+          "Bash(prlctl exec *)",
+          "Bash(rtk prlctl exec *)",
+          "Bash(prlctl capture *)",
+          "Bash(rtk prlctl capture *)",
+          "Bash(prlctl clone *)",
+          "Bash(rtk prlctl clone *)",
+          "Bash(prlctl snapshot *)",
+          "Bash(rtk prlctl snapshot *)",
+          "Bash(prlctl snapshot-list *)",
+          "Bash(rtk prlctl snapshot-list *)",
+          "Bash(prlctl send-key-event *)",
+          "Bash(rtk prlctl send-key-event *)"
         ],
         "ask": [
           "Bash(rune sign)",
@@ -301,7 +323,11 @@
           "Bash(rtk gh label create *)",
           "Bash(rtk gh label edit *)",
           "Bash(rtk gh label clone *)",
-          "Bash(rtk gh api *)"
+          "Bash(rtk gh api *)",
+          "Bash(prlctl delete *)",
+          "Bash(rtk prlctl delete *)",
+          "Bash(prlctl snapshot-delete *)",
+          "Bash(rtk prlctl snapshot-delete *)"
         ],
         "deny": [
           "Bash(git push --force *)",
