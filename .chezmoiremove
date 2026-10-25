@@ -38,3 +38,18 @@ Library/LaunchAgents/com.rune.rust-cache.plist
 .sd
 .local/bin/sd
 .config/zsh/functions/_sd
+
+# Hook parts that rune handlers port (rune hook install, 2026-10-25): the
+# markdown lint (lint-on-write), the two session-sync parts (session-capture),
+# the three jj guards (jj-guards), and the three checkpoint parts
+# (turn-checkpoint). rune skips a handler only for the first part of a .d
+# folder, because the just dispatcher stops at the first part that fails, so
+# each of these would run twice. The tmux parts (first in every folder) and
+# Stop.d/20-turn-wrap stay.
+.config/just/hooks/PostToolUse.d
+.config/just/hooks/PreCompact.d
+.config/just/hooks/PreToolUse.d
+.config/just/hooks/SessionEnd.d/20-session-sync.sh
+.config/just/hooks/SessionEnd.d/30-turn-clear.sh
+.config/just/hooks/Stop.d/30-turn-snapshot.sh
+.config/just/hooks/UserPromptSubmit.d/20-turn-checkpoint.sh
