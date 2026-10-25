@@ -4,9 +4,10 @@
 [general]
 # dcg's version is pinned by its installer; skip background update checks.
 check_updates = false
-# self_heal_hook stays on (its default): it idempotently re-asserts the PreToolUse
-# hook if a harness drops it mid-session. The same hook is sourced in the chezmoi
-# settings, so the two agree on a fixed point and the file stops changing.
+# self_heal_hook stays on (its default): it idempotently re-asserts dcg's own
+# PreToolUse entry if a harness drops it mid-session. The chezmoi settings
+# template no longer registers hooks (it keeps the live hooks block as it is),
+# and rune leaves dcg's direct entry in place, so dcg alone keeps that entry.
 
 [packs]
 # core.* (filesystem, git) is always on and cannot be disabled. system.disk is on
