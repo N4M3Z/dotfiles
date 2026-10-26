@@ -66,14 +66,13 @@ done < "${WORKDIR}/recipes"
 
 # No tracked file names the retired tree or its dispatcher. The patterns are
 # built from pieces so this test does not match itself. docs/ keeps its
-# history; .chezmoiremove and the Claude and Codex modify scripts carry the old
-# path on purpose, to remove it and to repoint live hook entries.
+# history; .chezmoiremove and the Claude modify script carry the old path on
+# purpose, to remove it and to repoint live hook entries.
 old_tree='\.s''d/'
 old_root='SD_''ROOT'
 old_verb='\bs''d (tldr|agent|claude|github|openspec|tmux|zed|job|hook)\b'
 stale=$(git -C "${SOURCE_DIR}" ls-files \
     | grep -v -e '^docs/' -e '^\.chezmoiremove$' -e 'modify_private_settings\.json\.tmpl$' \
-        -e '^dot_codex/modify_private_config\.toml\.tmpl$' \
     | tr '\n' '\0' \
     | (cd "${SOURCE_DIR}" && xargs -0 grep -nIE "${old_tree}|${old_root}|${old_verb}" -- 2>/dev/null) \
     || true)
