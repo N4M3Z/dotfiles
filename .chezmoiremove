@@ -53,3 +53,8 @@ Library/LaunchAgents/com.rune.rust-cache.plist
 .config/just/hooks/SessionEnd.d/30-turn-clear.sh
 .config/just/hooks/Stop.d/30-turn-snapshot.sh
 .config/just/hooks/UserPromptSubmit.d/20-turn-checkpoint.sh
+
+# The SessionStart script that stamped the agent VCS identity. rune's
+# author-identity handler took over its entry, and nothing sources the
+# agent-identity.env file it wrote.
+.local/bin/claude-agent-identity
