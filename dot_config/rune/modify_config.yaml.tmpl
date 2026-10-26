@@ -248,10 +248,11 @@ launch:
 hooks:
     version: 1
     handlers:
-        # author-identity (order 5) returns with the identity fix in the next
-        # round: this build ignores authors.yaml model_domains, so the push
-        # check would refuse its identities. Until then the claude-agent-identity
-        # SessionStart entry stays in place.
+        - id: author-identity
+          exec: [rune-hook-author-identity]
+          events: [session.start]
+          order: 5
+          timeout_ms: 800
         - id: sandbox-guard
           exec: [rune-hook-sandbox-guard]
           events: [tool.before]
@@ -283,6 +284,11 @@ hooks:
           events: [session.end, compact.before]
           order: 80
           timeout_ms: 300
+        - id: postbox
+          exec: [rune-hook-postbox]
+          events: [session.start, prompt.before, turn.finish]
+          order: 90
+          timeout_ms: 800
 RUNE_CONFIG
 
 cat > "$live"
