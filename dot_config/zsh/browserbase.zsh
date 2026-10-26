@@ -11,6 +11,7 @@
 
 () {
     local value
-    value="$(grep '^BROWSERBASE_API_KEY=' "${HOME}/.env" 2>/dev/null | cut -d= -f2-)"
+    # After a key rotation ~/.env can hold two lines. The last one wins.
+    value="$(grep '^BROWSERBASE_API_KEY=' "${HOME}/.env" 2>/dev/null | tail -n 1 | cut -d= -f2-)"
     [[ -n "${value}" ]] && export BROWSERBASE_API_KEY="${value}"
 }
