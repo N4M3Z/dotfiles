@@ -6,12 +6,31 @@
 # openspec then reads docs/changes and docs/specs. Telemetry stays off.
 set -eu
 
-# Run only bun's global copy. Any other openspec on PATH is ignored, so
-# no second version can run. The deck's CI installs the latest release,
-# so the bun copy tracks the latest release too.
-real="${BUN_INSTALL:-$HOME/.bun}/bin/openspec"
-if [ ! -x "$real" ]; then
-    echo "openspec: bun copy not found at $real" >&2
+# Resolve the real binary: bun's global copy first, then npm's global
+# copy, then the first openspec on PATH. Skip this script's own directory
+# at every step, so the wrapper never runs itself.
+self_dir=$(cd "$(dirname "$0")" && pwd)
+usable() {
+    [ -x "$1" ] && [ "$(cd "$(dirname "$1")" && pwd)" != "$self_dir" ]
+}
+real=""
+if usable "${BUN_INSTALL:-$HOME/.bun}/bin/openspec"; then
+    real="${BUN_INSTALL:-$HOME/.bun}/bin/openspec"
+elif command -v npm >/dev/null 2>&1 && usable "$(npm prefix -g 2>/dev/null)/bin/openspec"; then
+    real="$(npm prefix -g)/bin/openspec"
+else
+    old_ifs=$IFS
+    IFS=:
+    for dir in $PATH; do
+        if usable "$dir/openspec"; then
+            real="$dir/openspec"
+            break
+        fi
+    done
+    IFS=$old_ifs
+fi
+if [ -z "$real" ]; then
+    echo "openspec: no openspec found" >&2
     echo "install it: bun add -g @fission-ai/openspec@latest" >&2
     exit 1
 fi
