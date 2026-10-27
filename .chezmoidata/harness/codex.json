@@ -125,6 +125,8 @@
               "files.pythonhosted.org": "allow",
               "semgrep.dev": "allow",
               "*.semgrep.dev": "allow",
+              "browserbase.com": "allow",
+              "*.browserbase.com": "allow",
               "@GITLAB_HOST@": "allow"
             }
           }
