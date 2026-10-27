@@ -284,6 +284,14 @@ hooks:
           events: [session.end, compact.before]
           order: 80
           timeout_ms: 300
+        # Compresses the finished raw API bodies (OTEL_LOG_RAW_API_BODIES) to
+        # .json.zst in a detached worker. session.start sweeps what a crashed
+        # session left. Readers resolve a body_ref through resolve-body.sh.
+        - id: telemetry-compress
+          exec: [{{ .chezmoi.homeDir }}/Developer/runedeck/provision/scripts/telemetry/compress-bodies.sh, --hook]
+          events: [session.start, session.end]
+          order: 85
+          timeout_ms: 300
         - id: postbox
           exec: [rune-hook-postbox]
           events: [session.start, prompt.before, turn.finish]
