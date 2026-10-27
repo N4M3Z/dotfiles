@@ -16,7 +16,7 @@ policy=$(mktemp "${TMPDIR:-/tmp}/antigravity-policy.XXXXXX") || exit 1
 trap 'command rm -f "$policy"' EXIT
 
 cat > "$policy" <<'FORGE_POLICY'
-{{ .harness.antigravity | toJson }}
+{{ .harness.antigravity | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir }}
 FORGE_POLICY
 
 jq -n --slurpfile policy "$policy" '((try input) // {}) * $policy[0]'
