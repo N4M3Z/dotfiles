@@ -1,0 +1,8 @@
+**/.claude/settings.local.json
+.entire/
+
+**/.claude/.cc-writes/
+
+# SpecStory writes its config and session history into every project it
+# starts in. jj reads this file too, so a rune workspace run drops them.
+.specstory/

@@ -1,0 +1,40 @@
+# Personal command tree: `just -g <topic> <verb>` (PROV-0025).
+# Each recipe execs the script beside it. tmux, the Claude Code
+# hooks, and Zed call those scripts by path and never parse this
+# file, so a syntax error here cannot break a status segment.
+set positional-arguments
+
+[private]
+default:
+    @just --justfile {{ justfile() }} --list --list-submodules
+
+# agent CLIs: policy launcher and resurrect revival
+mod agent
+
+# Claude Code: status flag, session resume, turn hooks
+mod claude
+
+# GitHub API pushes
+mod github
+
+# detached long-running jobs
+mod job
+
+# OpenSpec change picker and status segment
+mod openspec
+
+# tmux popups and status segments
+mod tmux
+
+# personal Zed build and launchers
+mod zed
+
+# Claude Code hook dispatcher: hook <Event>, parts in hooks/<Event>.d
+[no-cd]
+hook *args:
+    @exec "{{ source_directory() }}/hook" "$@"
+
+# tealdeer pages, --list with no arguments
+[no-cd]
+tldr *args:
+    @exec "{{ source_directory() }}/tldr" "$@"

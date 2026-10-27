@@ -1,0 +1,31 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+    SpecStory CLI config, ~/.specstory/cli/config.toml. SpecStory rewrites this
+    file itself, so chezmoi merges into it instead of replacing it: every key
+    SpecStory writes survives, and only the keys below are enforced.
+
+    Local-first capture for the second brain: no cloud, no external analytics,
+    no startup version ping. SpecStory's own OTLP spans feed the local
+    collector, the same one Claude Code's telemetry uses. Per-harness
+    output_dir is set by session-sync's --output-dir flag
+    (~/Data/<Harness>/transcripts), not here.
+*/ -}}
+{{- $config := dict -}}
+{{- if ne (trim .chezmoi.stdin) "" -}}
+{{- $config = fromToml .chezmoi.stdin -}}
+{{- end -}}
+{{- $enforced := list
+    (list (list "cloud_sync" "enabled") false)
+    (list (list "analytics" "enabled") false)
+    (list (list "version_check" "enabled") false)
+    (list (list "telemetry" "endpoint") "localhost:4317")
+    (list (list "telemetry" "prompts") true)
+-}}
+{{- range $enforced -}}
+{{- $table := index . 0 | first -}}
+{{- if and (hasKey $config $table) (not (kindIs "map" (get $config $table))) -}}
+{{- fail (printf "SpecStory %s must be a TOML table." $table) -}}
+{{- end -}}
+{{- $config = setValueAtPath (index . 0) (index . 1) $config -}}
+{{- end -}}
+{{ $config | toToml }}

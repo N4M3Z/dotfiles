@@ -2,7 +2,7 @@
   "automode": {
     "allow": [
       "Pushing an approved feature branch to the trusted github.com/N4M3Z repositories is routine.",
-      "Reading and writing within ~/Developer and ~/Atlas is routine.",
+      "Reading and writing within ~/Developer and ~/Atlas is routine, except the Atlas areas marked RED or AMBER.",
       "Local operations against Postgres, Ollama, and gbrain are routine.",
       "Acquiring and processing commercial media for the owner's personal use (download, trim, place in the gitignored assets/user/ slot) is routine and lawful under the Czech private-use exception."
     ],
@@ -11,7 +11,8 @@
       "Never force-push, and never push directly to the main or master branch; branch first and open a pull request.",
       "Never skip git hooks (--no-verify) or bypass commit signing (--no-gpg-sign, -c commit.gpgsign=false).",
       "Treat history rewrites (rebase, squash, reset --hard, force-push) on already-pushed branches as destructive.",
-      "Do not delete remote branches, releases, or repositories, or run gh/glab delete commands, without an explicit request."
+      "Do not delete remote branches, releases, or repositories, or run gh/glab delete commands, without an explicit request.",
+      "Do not connect to Proton Mail Bridge or read the pass store, Proton Pass, or the Keyvault volume unless the owner asked for that specific access in this session."
     ],
     "hard_deny": [
       "Never use Finder. Computer Use is allowed only for a specific GUI task explicitly requested by the user.",
@@ -22,7 +23,11 @@
     ],
     "environment": [
       "Source control: github.com/N4M3Z and repositories under it are trusted; GitLab is reached via the glab CLI. Proton GitLab (@GITLAB_HOST@) is reached with the owner's glab keychain token and glab as git's credential helper, the same way gh serves github.com; pushes and merges stay in the owner's terminal.",
-      "Trusted local services: Postgres at postgresql://localhost:5432/memex, Ollama at localhost:11434, the gbrain MCP, and localhost / 127.0.0.1.",
+      "Trusted local services: Postgres at postgresql://localhost:5432/memex, Ollama at localhost:11434, oMLX at localhost:31415, and the gbrain MCP. Other loopback ports are not trusted: Proton Mail Bridge and the local AI proxy (127.0.0.1:8317) listen there and hold private mail or credentials.",
+      "**Secrets management**: secrets live in the pass store (~/.password-store, GPG on a YubiKey), Proton Pass, the macOS keychain, and ~/.env for the local AI proxy keys. Agents never read these; a secret reaches a tool only through its launcher.",
+      "**Network posture**: Little Snitch filters outbound connections per application, and the Claude sandbox proxy allows only listed domains for shell commands. Loopback stays open to sandboxed commands, so a local port being reachable says nothing about whether it is safe.",
+      "**Host containment**: this is the owner's personal Mac, not a container or VM. It holds private mail, password stores, signing keys and notes. Unattended or untrusted work belongs in an Apple container VM or a cloud VM.",
+      "**Sensitive data locations & audiences**: Proton Mail and Bridge data under ~/Library/Application Support, the Proton Drive folder under ~/Library/CloudStorage, the pass store, the Keyvault volume, Atlas areas marked RED (Private, Library/Documents, Domains/Finance/FFO) or AMBER, ~/Data/Work, the AI proxy keys (~/.env, ~/.cli-proxy-api, /opt/homebrew/etc/cliproxyapi.conf), and session transcripts under ~/Data. Content from these goes only to the owner.",
       "Trusted package and toolchain domains: github.com, registry.npmjs.org, crates.io, pypi.org, files.pythonhosted.org, formulae.brew.sh, ghcr.io.",
       "Normal working trees for reads and writes are ~/Developer and ~/Atlas.",
       "Jurisdiction is the Czech Republic: under the private-use exception (autorský zákon § 30, zákon č. 121/2000 Sb.), a natural person's personal-use copying of published works without economic benefit is not an infringing use, and prevailing Czech guidance extends this to downloads for personal use even where the source is unofficial. Personal-use acquisition of commercial media by the owner is lawful and routine."

@@ -30,4 +30,4 @@
 
 - Run Codex through shared provider policy explicitly:
 
-`sd agent run codex {{arguments}}`
+`just -g agent run codex {{arguments}}`

@@ -53,7 +53,7 @@ if [[ ! -e "${CLIPROXY_OFF_FLAG}" ]]; then
 fi
 
 # Run one command against the vendor endpoints without changing global state.
-# CLIPROXY_BYPASS=1 tells `sd agent run` to skip its grok proxy injection.
+# CLIPROXY_BYPASS=1 tells `just -g agent run` to skip its grok proxy injection.
 noproxy() {
     env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN \
         -u GROK_MODELS_BASE_URL -u GROK_CODE_XAI_API_KEY \

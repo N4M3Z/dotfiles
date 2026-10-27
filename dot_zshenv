@@ -57,11 +57,6 @@ export PATH="${BUN_INSTALL}/bin:${PATH}"
 # Browserbase key for the `browse` CLI. Reads one value from ~/.env.
 [ -r "${HOME}/.config/zsh/browserbase.zsh" ] && source "${HOME}/.config/zsh/browserbase.zsh"
 
-# Personal script directory (sd dispatcher). The tree deploys to ~/.sd via
-# chezmoi (source: dot_sd/); the dispatcher and completion default to ~/sd,
-# so this export is what points every shell at the real location (PROV-0024).
-export SD_ROOT="${HOME}/.sd"
-
 # Autoloaded functions: personal (project, atlas) and prezto module functions
 # (trash, ...). Prezto puts these directories on fpath for interactive shells
 # only. A non-interactive shell (Claude Code Bash tool) inherits the autoload

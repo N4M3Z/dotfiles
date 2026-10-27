@@ -1,0 +1,38 @@
+#!/bin/sh
+# Open paths in the Zed instance this terminal belongs to. Zed task terminals
+# descend from the app process, so walking the ancestry finds
+# .../Zed*.app/Contents/MacOS/zed; its sibling `cli` binary handles paths,
+# path:line:column, and window reuse for that exact build (stable, preview,
+# or the personal Zed Dev fork). Outside any Zed, falls back to `zed` on
+# PATH, which `just -g zed dev` points at the personal build. A single empty
+# argument (a cancelled picker) is a clean no-op.
+
+[ $# -gt 0 ] && [ -n "$1" ] || exit 0
+
+# When every argument is an existing file (path or path:line:col),
+# pass --add so files outside every open worktree attach to the
+# current workspace instead of spawning a new window. Directories
+# keep workspace-open semantics.
+add="--add"
+for p in "$@"; do
+    if [ ! -f "$p" ] && [ ! -f "${p%%:*}" ]; then
+        add=""
+        break
+    fi
+done
+
+pid=$$
+while [ -n "$pid" ] && [ "$pid" -gt 1 ]; do
+    exe=$(ps -o comm= -p "$pid" 2>/dev/null)
+    case $exe in
+        */Contents/MacOS/zed)
+            cli="${exe%/zed}/cli"
+            if [ -x "$cli" ]; then
+                exec "$cli" $add "$@"
+            fi
+            ;;
+    esac
+    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+done
+
+exec zed $add "$@"

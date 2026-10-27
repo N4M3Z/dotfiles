@@ -25,6 +25,7 @@ FORGE_POLICY
 # retired from grok.json would linger in the live file forever. The policy owns
 # the permission map outright: replace it after the merge so retired entries
 # drop out on the next apply.
+# Keep gbrain disconnected when the live app retains an old registration.
 yq -p=toml -o=json '.' - \
-    | jq --slurpfile policy "$policy" '((. // {}) * $policy[0]) | .permission = $policy[0].permission' \
+    | jq --slurpfile policy "$policy" '((. // {}) * $policy[0]) | .permission = $policy[0].permission | del(.mcp_servers.gbrain)' \
     | yq -p=json -o=toml '.' -

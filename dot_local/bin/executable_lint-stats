@@ -1,0 +1,317 @@
+#!/usr/bin/env python3
+"""lint-stats: which lint rules fire on markdown that agents write.
+
+The PostToolUse lint hook keeps no record. A block goes to the agent on
+stderr, advice goes back as additionalContext, and both survive only in
+the Claude Code transcripts under ~/.claude/projects as hook_blocking_error
+and hook_additional_context attachments. This tool reads the new bytes of
+those transcripts into one event store and answers the usual questions.
+The hook can also append to the same store directly (hook-*.jsonl, same
+schema), which covers harnesses that keep no transcript.
+
+Usage:
+  lint-stats scan [--full]     read new transcript bytes into the store
+  lint-stats report [filters]  rules, weeks, repeats, files, typo words
+  lint-stats events [filters]  one JSON event per line, for jq
+
+Filters: --since 2026-W40 or 2026-10-01, --until likewise, --project SUB,
+--file SUB, --rule SUB, --kind block|advice, --top N.
+
+Store: ~/Data/State/lint/events.jsonl, one object per hook run:
+  ts week proj sid tuid kind(block|advice) tool fp chars ms
+  rules {rule: findings}  cause [rules that made it a block]
+  words {typo: findings}
+"""
+import argparse, collections, datetime, glob, json, os, re, subprocess, sys
+
+HOME = os.path.expanduser("~")
+PROJ = os.path.join(HOME, ".claude", "projects")
+STATE = os.path.join(HOME, "Data", "State", "lint")
+STORE = os.path.join(STATE, "events.jsonl")
+CACHE = os.path.join(STATE, "scan.json")
+
+RUMDL = re.compile(r"^(.*?):(\d+):(\d+): \[(MD\d+)\] (.*)$")
+VALE = re.compile(r"^(.*?):(\d+):(\d+) (error|warning|suggestion) ([\w-]+\.[\w-]+): (.*)$")
+VALE_LINE = re.compile(r"^(/.*?):(\d+):(\d+):([\w-]+\.[\w-]+):(.*)$")
+TYPO = re.compile(r"^error: `(.+?)` should be (.*)$")
+PREFIX = re.compile(r"^\[sh [^\]]*\]: ")
+PERSISTED = re.compile(r"Full output saved to: (\S+)")
+# Older transcripts name the hook dispatcher under the retired sd tree (PROV-0025).
+LINT_CMD = re.compile(r"(\.sd|\.config/just)/hook|rumdl|vale")
+
+
+def week_of(ts):
+    try:
+        return datetime.datetime.fromisoformat(ts.replace("Z", "+00:00")).strftime("%G-W%V")
+    except Exception:
+        return "?"
+
+
+def parse_findings(text):
+    """Return (rules, cause, words) from one hook output."""
+    rules, cause, words = collections.Counter(), set(), collections.Counter()
+    for raw in text.split("\n"):
+        s = raw.rstrip()
+        m = VALE.match(s)
+        if m:
+            rules[m.group(5)] += 1
+            if m.group(4) == "error":
+                cause.add(m.group(5))
+            continue
+        m = RUMDL.match(s)
+        if m:
+            rules[m.group(4)] += 1
+            cause.add(m.group(4))
+            continue
+        m = VALE_LINE.match(s)
+        if m:
+            rules[m.group(4)] += 1
+            cause.add(m.group(4))
+            continue
+        m = TYPO.match(s)
+        if m:
+            rules["typos"] += 1
+            words[m.group(1)] += 1
+            cause.add("typos")
+    return rules, cause, words
+
+
+def read_tail(path, offset, tools, durations, events):
+    """Parse transcript bytes from offset. Fills tools (tuid -> tool, fp)."""
+    with open(path, "rb") as fh:
+        fh.seek(offset)
+        for raw in fh:
+            line = raw.decode("utf-8", "replace")
+            if '"tool_use"' in line and '"type":"assistant"' in line:
+                try:
+                    d = json.loads(line)
+                except Exception:
+                    continue
+                for c in (d.get("message") or {}).get("content") or []:
+                    if isinstance(c, dict) and c.get("type") == "tool_use" and c.get("name") in ("Edit", "Write", "MultiEdit"):
+                        tools[c.get("id")] = (c["name"], (c.get("input") or {}).get("file_path"))
+                continue
+            if '"attachment"' not in line or '"hook_' not in line:
+                continue
+            try:
+                d = json.loads(line)
+            except Exception:
+                continue
+            a = d.get("attachment") or {}
+            t = a.get("type", "")
+            if a.get("hookEvent") != "PostToolUse":
+                continue
+            tuid = a.get("toolUseID")
+            if t == "hook_success":
+                if LINT_CMD.search(str(a.get("command", ""))) and isinstance(a.get("durationMs"), (int, float)):
+                    durations[tuid] = a["durationMs"]
+                continue
+            if t == "hook_blocking_error":
+                be = a.get("blockingError") or {}
+                if not LINT_CMD.search(str(be.get("command", ""))):
+                    continue
+                kind, text = "block", PREFIX.sub("", be.get("blockingError", ""))
+            elif t == "hook_additional_context":
+                text = a.get("content") or ""
+                if isinstance(text, list):
+                    text = "\n".join(str(x) for x in text)
+                if "Vale advice" not in text[:3000]:
+                    continue
+                m = PERSISTED.search(text)
+                if m and text.startswith("<persisted"):
+                    try:
+                        text = open(m.group(1)).read()
+                    except Exception:
+                        pass
+                kind = "advice"
+            else:
+                continue
+            rules, cause, words = parse_findings(text)
+            tool, fp = tools.get(tuid, (None, None))
+            if not fp:
+                m = VALE.search(text)
+                fp = m.group(1) if m else None
+            ts = d.get("timestamp") or ""
+            events.append(dict(
+                ts=ts, week=week_of(ts), proj=os.path.relpath(path, PROJ).split(os.sep)[0],
+                sid=d.get("sessionId"), tuid=tuid, kind=kind, tool=tool, fp=fp,
+                chars=len(text), ms=None, rules=dict(rules), cause=sorted(cause), words=dict(words)))
+        return fh.tell()
+
+
+def scan(full):
+    os.makedirs(STATE, exist_ok=True)
+    cache = {} if full else (json.load(open(CACHE)) if os.path.exists(CACHE) else {})
+    seen = set()
+    if not full and os.path.exists(STORE):
+        for l in open(STORE):
+            e = json.loads(l)
+            seen.add((e["kind"], e["tuid"]))
+    # Subagent transcripts nest under <session>/subagents/, several levels deep.
+    paths = glob.glob(os.path.join(PROJ, "**", "*.jsonl"), recursive=True)
+    fresh = [p for p in paths if p not in cache]
+    if fresh:
+        # A first look at a transcript: rg says which ones hold a lint event at all.
+        # The rest are marked read to their current end and only their growth is read later.
+        r = subprocess.run(["rg", "-l", "--no-messages", "--glob", "*.jsonl", "-e", '"hook_blocking_error"',
+                            "-e", '"hook_additional_context"', PROJ], capture_output=True, text=True)
+        hits = set(r.stdout.split("\n"))
+        for p in fresh:
+            if p not in hits:
+                cache[p] = dict(size=os.path.getsize(p), off=os.path.getsize(p))
+    events, durations, tools = [], {}, {}
+    for p in paths:
+        size = os.path.getsize(p)
+        c = cache.get(p, dict(size=0, off=0))
+        off = c["off"] if size >= c["off"] else 0
+        if size == off:
+            continue
+        tools.clear()
+        off = read_tail(p, off, tools, durations, events)
+        cache[p] = dict(size=size, off=off)
+    added = 0
+    with open(STORE, "w" if full else "a") as out:
+        for e in events:
+            k = (e["kind"], e["tuid"])
+            if k in seen:
+                continue
+            seen.add(k)
+            e["ms"] = durations.get(e["tuid"])
+            out.write(json.dumps(e, ensure_ascii=False) + "\n")
+            added += 1
+    json.dump(cache, open(CACHE, "w"))
+    print(f"scanned {len(paths)} transcripts, {added} new events, store {STORE}")
+
+
+def log_run(args):
+    """Append one event for a hook run; the hook output arrives on stdin."""
+    meta = json.loads(args.meta) if args.meta else {}
+    rules, cause, words = parse_findings(sys.stdin.read())
+    ts = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    # The project key matches the transcript directory name Claude Code derives from the cwd.
+    proj = re.sub(r"[^A-Za-z0-9-]", "-", meta.get("cwd") or os.getcwd())
+    e = dict(ts=ts, week=week_of(ts), proj=proj, sid=meta.get("sid"), tuid=meta.get("tuid"),
+             kind=args.kind, tool=meta.get("tool"), fp=args.file, chars=None, ms=None,
+             rules=dict(rules), cause=sorted(cause), words=dict(words))
+    os.makedirs(STATE, exist_ok=True)
+    with open(os.path.join(STATE, "hook-" + ts[:7] + ".jsonl"), "a") as out:
+        out.write(json.dumps(e, ensure_ascii=False) + "\n")
+
+
+def key_of(s):
+    """A --since/--until value: an ISO week or a date, compared as a week."""
+    if re.fullmatch(r"\d{4}-W\d{2}", s):
+        return s
+    return week_of(s + "T00:00:00+00:00")
+
+
+def load(args):
+    out, seen = [], set()
+    files = [STORE] + sorted(glob.glob(os.path.join(STATE, "hook-*.jsonl")))
+    for f in files:
+        if not os.path.exists(f):
+            continue
+        for l in open(f):
+            e = json.loads(l)
+            if e.get("tuid") and (e["kind"], e["tuid"]) in seen:
+                continue
+            seen.add((e["kind"], e.get("tuid")))
+            e.setdefault("week", week_of(e.get("ts", "")))
+            if args.since and e["week"] < key_of(args.since):
+                continue
+            if args.until and e["week"] > key_of(args.until):
+                continue
+            if args.project and args.project not in (e.get("proj") or ""):
+                continue
+            if args.file and args.file not in (e.get("fp") or ""):
+                continue
+            if args.kind and e["kind"] != args.kind:
+                continue
+            if args.rule and not any(args.rule in r for r in e.get("rules", {})):
+                continue
+            out.append(e)
+    return out
+
+
+def report(args):
+    ev = load(args)
+    blocks = [e for e in ev if e["kind"] == "block"]
+    advice = [e for e in ev if e["kind"] == "advice"]
+    clean = sum(e["kind"] == "clean" for e in ev)
+    # A clean run is known only from the hook log; the transcript keeps no trace of it.
+    print(f"events: {len(blocks)} blocks, {len(advice)} advice, {clean} clean (hook log only); chars to the agent: "
+          f"{sum(e['chars'] or 0 for e in blocks)} in blocks, {sum(e['chars'] or 0 for e in advice)} in advice")
+    ms = sorted(e["ms"] for e in ev if isinstance(e.get("ms"), (int, float)))
+    if ms:
+        print(f"hook ms (n={len(ms)}): median {ms[len(ms)//2]}, p90 {ms[int(len(ms)*.9)]}, max {ms[-1]}")
+    fnd, bev, aev = collections.Counter(), collections.Counter(), collections.Counter()
+    for e in ev:
+        for r, n in e["rules"].items():
+            fnd[r] += n
+            if e["kind"] == "block" and r in e["cause"]:
+                bev[r] += 1
+            elif r not in e["cause"]:
+                aev[r] += 1
+    print("\nrule\tfindings\tblocks_caused\tadvice_events")
+    for r, n in fnd.most_common(args.top):
+        print(f"{r}\t{n}\t{bev[r]}\t{aev[r]}")
+    only = collections.Counter(tuple(e["cause"]) for e in blocks if len(e["cause"]) == 1)
+    print("\nblocks with a single cause:", ", ".join(f"{k[0]} {n}" for k, n in only.most_common(8)))
+    w = collections.defaultdict(collections.Counter)
+    for e in ev:
+        w[e["week"]][e["kind"]] += 1
+        if e["kind"] == "block":
+            for c in {"typos" if c == "typos" else "rumdl" if c.startswith("MD") else "vale" for c in e["cause"]}:
+                w[e["week"]][c] += 1
+    print("\nweek\tblock\trumdl\ttypos\tvale\tadvice")
+    for k in sorted(w):
+        c = w[k]
+        print(f"{k}\t{c['block']}\t{c['rumdl']}\t{c['typos']}\t{c['vale']}\t{c['advice']}")
+    last, rep, same = {}, 0, 0
+    for e in sorted(blocks, key=lambda e: e["ts"]):
+        if not e.get("fp"):
+            continue
+        k = (e["sid"], e["fp"])
+        if k in last:
+            rep += 1
+            same += last[k] == set(e["cause"])
+        last[k] = set(e["cause"])
+    print(f"\nrepeat blocks on a file already blocked in the same session: {rep}, with the same causes: {same}")
+    files = collections.Counter(e["fp"] for e in blocks if e.get("fp"))
+    print("\nfiles blocked most:")
+    for f, n in files.most_common(args.top // 2):
+        print(f"{n}\t{f}")
+    words = collections.Counter()
+    for e in ev:
+        words.update(e.get("words", {}))
+    if words:
+        print("\ntypos words:", ", ".join(f"{k} {n}" for k, n in words.most_common(args.top)))
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("scan"); s.add_argument("--full", action="store_true")
+    g = sub.add_parser("log")
+    g.add_argument("--kind", choices=("block", "advice", "clean"), required=True)
+    g.add_argument("--file", required=True)
+    g.add_argument("--meta", help='JSON: {"tool","tuid","sid","cwd"}')
+    for name in ("report", "events"):
+        p = sub.add_parser(name)
+        for f in ("since", "until", "project", "file", "rule", "kind"):
+            p.add_argument("--" + f)
+        p.add_argument("--top", type=int, default=25)
+    args = ap.parse_args()
+    if args.cmd == "scan":
+        scan(args.full)
+    elif args.cmd == "log":
+        log_run(args)
+    elif args.cmd == "report":
+        report(args)
+    else:
+        for e in load(args):
+            print(json.dumps(e, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()

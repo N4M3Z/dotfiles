@@ -31,8 +31,8 @@
 
 - Open a path in the running Zed bundle, including Zed Dev:
 
-`sd zed open {{path/to/file}}`
+`just -g zed open {{path/to/file}}`
 
 - Build the personal Zed patch stack without installation:
 
-`sd zed rebuild`
+`just -g zed rebuild`

@@ -30,4 +30,4 @@ asciinema convert -f txt --overwrite proof.cast proof.txt
 agg --theme github-dark --font-size 11 --fps-cap 3 --last-frame-duration 3 proof.cast proof.gif
 ```
 
-The harness scenes need a plain terminal or `sd job start`: each harness starts its own sandbox.
+The harness scenes need a plain terminal or `just -g job start`: each harness starts its own sandbox.

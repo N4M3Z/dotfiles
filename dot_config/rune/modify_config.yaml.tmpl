@@ -35,7 +35,13 @@ launch:
             binary: {{ .chezmoi.homeDir }}/.grok/bin/grok
     models:
         sol:
-            id: gpt-5.6-sol
+            # gpt-6.1-sol as the proxy lists it (2026-10-20). The list carries no
+            # context length, so this is the old gpt-5.6-sol's, assumed equal.
+            id: gpt-6.1-sol
+            context: 272000
+        sol61:
+            # Same model as sol. Kept because the council roster names sol61@codex.
+            id: gpt-6.1-sol
             context: 272000
         astra:
             id: gpt-6-astra
@@ -47,10 +53,10 @@ launch:
             id: proton-lumo/lumo-max
             context: 131072
         fable-main:
-            id: main/claude-fable-5
+            id: claude-fable-5-1
             context: 200000
         fable-alt:
-            id: alt/claude-fable-5
+            id: claude-fable-5-1
             context: 200000
         grok:
             id: grok-4.7
@@ -62,11 +68,23 @@ launch:
             id: claude-opus-5-5
             context: 1000000
         sonnet:
-            id: claude-sonnet-5
+            id: claude-sonnet-5-5
             context: 200000
         gemini:
             id: gemini-4-argon-high
             context: 1000000
+        # The three below are agy ids (`agy models`, 2026-10-21). agy lists no
+        # context length. gemini-flash copies gemini's. opus-agy and sonnet-agy
+        # copy the proxy's opus and sonnet above: same model, assumed same window.
+        gemini-flash:
+            id: gemini-3.8-flash-high
+            context: 1000000
+        opus-agy:
+            id: claude-opus-5-5-high
+            context: 1000000
+        sonnet-agy:
+            id: claude-sonnet-5-5-high
+            context: 200000
     profiles:
         claude:
             sol:
@@ -78,7 +96,17 @@ launch:
                     ANTHROPIC_BASE_URL: "https://cliproxy.internal"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
-                    ANTHROPIC_SMALL_FAST_MODEL: "gpt-5.6-luna"
+                    ANTHROPIC_SMALL_FAST_MODEL: "gpt-6-luna"
+            sol61:
+                model: sol61
+                args:
+                    - "--settings"
+                    - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "gpt-6-luna"
             lumo:
                 model: lumo
                 args:
@@ -118,27 +146,56 @@ launch:
                     ANTHROPIC_BASE_URL: "https://cliproxy.internal"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
-                    ANTHROPIC_SMALL_FAST_MODEL: "gpt-5.6-luna"
+                    ANTHROPIC_SMALL_FAST_MODEL: "gpt-6-luna"
             main:
                 model: fable-main
                 env:
                     ANTHROPIC_BASE_URL: "https://cliproxy.internal"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
-                    ANTHROPIC_SMALL_FAST_MODEL: "main/claude-haiku-4-5-20251001"
+                    ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"
             alt:
                 model: fable-alt
                 env:
                     ANTHROPIC_BASE_URL: "https://cliproxy.internal"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
-                    ANTHROPIC_SMALL_FAST_MODEL: "alt/claude-haiku-4-5-20251001"
+                    ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"
+            # The three below sit on the main proxy account, like `main`.
+            fable:
+                model: fable-main
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"
+            opus:
+                model: opus
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"
+            sonnet:
+                model: sonnet
+                env:
+                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_AUTH_TOKEN:
+                        from_env: CLIPROXY_API_KEY
+                    ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"
         codex:
             sol:
                 model: sol
                 args:
                     - "--config"
-                    - 'model="gpt-5.6-sol"'
+                    - 'model="gpt-6.1-sol"'
+                    - "--config"
+                    - 'model_reasoning_effort="ultra"'
+            sol61:
+                model: sol61
+                args:
+                    - "--config"
+                    - 'model="gpt-6.1-sol"'
                     - "--config"
                     - 'model_reasoning_effort="ultra"'
             astra:
@@ -152,8 +209,16 @@ launch:
             lumo:
                 model: lumo-opencode
         agy:
+            # These run on the owner's Antigravity Pro quota. The Claude models
+            # here are separate from the proxy's opus and sonnet.
             gemini:
                 model: gemini
+            flash:
+                model: gemini-flash
+            opus:
+                model: opus-agy
+            sonnet:
+                model: sonnet-agy
         grok:
             # The profile is defined in ~/.grok/sandbox.toml (dot_grok/private_sandbox.toml.tmpl).
             # An explicit flag keeps headless runs sandboxed even when the wrapper is bypassed.
@@ -169,66 +234,61 @@ launch:
                     GROK_MODELS_BASE_URL: "http://127.0.0.1:8317/v1"
                     GROK_CODE_XAI_API_KEY:
                         from_env: CLIPROXY_API_KEY
-# Harness hooks, declared once (DOT-0007, cli harness-hook-dispatch): every
-# harness registers `rune hook run` per event, and these handlers run in
-# order. A rewriter (rtk) runs before every guard (dcg, jj-guards), so a
-# guard judges the command the harness executes. Timeouts are per handler;
-# the event budget and the harness's own cap clamp them.
-# Commented out on 2026-10-16: the installed rune (0.6.0) refuses an unknown
-# `hooks` field, and the cli hook-dispatch change that reads it is unmerged.
-# Uncomment the block below once a build that parses it is installed.
-# hooks:
-#     version: 1
-#     handlers:
-#         - id: author-identity
-#           exec: [rune-hook-author-identity]
-#           events: [session.start]
-#           order: 5
-#           timeout_ms: 800
-#         - id: rtk
-#           exec: [rune-hook-rtk]
-#           events: [tool.before]
-#           order: 10
-#           timeout_ms: 800
-#           rewrites: true
-#         - id: dcg
-#           exec: [rune-hook-dcg]
-#           events: [tool.before]
-#           order: 20
-#           timeout_ms: 1500
-#           on_failure: deny
-#           requires: [tool_deny]
-#         - id: jj-guards
-#           exec: [rune-hook-jj-guards]
-#           events: [tool.before]
-#           order: 30
-#           timeout_ms: 800
-#           on_failure: deny
-#         - id: git-ai
-#           exec: [rune-hook-git-ai]
-#           events: [tool.before, tool.after, turn.finish]
-#           order: 40
-#           timeout_ms: 2000
-#         - id: lint-on-write
-#           exec: [rune-hook-lint-on-write]
-#           events: [tool.after]
-#           order: 50
-#           timeout_ms: 8000
-#         - id: turn-checkpoint
-#           exec: [rune-hook-turn-checkpoint]
-#           events: [prompt.before, turn.finish, session.end]
-#           order: 60
-#           timeout_ms: 400
-#         - id: tmux-status
-#           exec: [rune-hook-tmux-status]
-#           events: [prompt.before, notification, turn.finish, session.end]
-#           order: 70
-#           timeout_ms: 200
-#         - id: session-capture
-#           exec: [rune-hook-session-capture]
-#           events: [session.end, compact.before]
-#           order: 80
-#           timeout_ms: 300
+# Harness hooks, declared once (DOT-0007, cli one-dispatcher-runs-every-hook):
+# every harness registers `rune hook run` per event, and these handlers run
+# in order. dcg, rtk, and git-ai stay outside rune (owner, 2026-10-25): each
+# keeps its own direct entry in ~/.claude/settings.json and
+# ~/.codex/hooks.json, and rune's handover leaves those entries in place
+# because no handler here runs the same program. Timeouts are per handler;
+# the event budget and the harness's own cap clamp them. sandbox-guard (cli
+# exempt-tool-is-the-whole-command) refuses a sandbox-off request for a
+# command the Claude sandbox already exempts, and an exempt tool that the
+# line keeps inside the sandbox, with the one command to run. It reads the
+# exempt list from sandbox.excludedCommands, and a failure lets the call run.
+hooks:
+    version: 1
+    handlers:
+        - id: author-identity
+          exec: [rune-hook-author-identity]
+          events: [session.start]
+          order: 5
+          timeout_ms: 800
+        - id: sandbox-guard
+          exec: [rune-hook-sandbox-guard]
+          events: [tool.before]
+          order: 25
+          timeout_ms: 500
+        - id: jj-guards
+          exec: [rune-hook-jj-guards]
+          events: [tool.before]
+          order: 30
+          timeout_ms: 800
+          on_failure: deny
+        - id: lint-on-write
+          exec: [rune-hook-lint-on-write]
+          events: [tool.after]
+          order: 50
+          timeout_ms: 8000
+        - id: turn-checkpoint
+          exec: [rune-hook-turn-checkpoint]
+          events: [prompt.before, turn.finish, session.end]
+          order: 60
+          timeout_ms: 400
+        - id: tmux-status
+          exec: [rune-hook-tmux-status]
+          events: [prompt.before, notification, turn.finish, session.end]
+          order: 70
+          timeout_ms: 200
+        - id: session-capture
+          exec: [rune-hook-session-capture]
+          events: [session.end, compact.before]
+          order: 80
+          timeout_ms: 300
+        - id: postbox
+          exec: [rune-hook-postbox]
+          events: [session.start, prompt.before, turn.finish]
+          order: 90
+          timeout_ms: 800
 RUNE_CONFIG
 
 cat > "$live"

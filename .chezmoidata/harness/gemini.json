@@ -1,0 +1,14 @@
+{
+  "harness": {
+    "gemini": {
+      "telemetry": {
+        "enabled": true,
+        "target": "local",
+        "useCollector": true,
+        "otlpEndpoint": "http://localhost:4318",
+        "otlpProtocol": "http",
+        "logPrompts": true
+      }
+    }
+  }
+}

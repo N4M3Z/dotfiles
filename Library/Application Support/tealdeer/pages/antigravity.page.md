@@ -22,4 +22,4 @@
 
 - Run through shared provider policy and session capture:
 
-`sd agent run antigravity {{arguments}}`
+`just -g agent run antigravity {{arguments}}`

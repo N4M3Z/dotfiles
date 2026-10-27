@@ -9,7 +9,7 @@ against the repos before acting, and delete this section when the items are clos
 - Never leak to Kimi or any model served from China: synthetic text only, always through
   `rune run --clean` (rune 0.6.0, the old `--clean-harness-state` spelling is gone). Deck rule
   `UntrustedModels` says so.
-- Start long harness jobs yourself with `sd job start`, detached, one background `until [ -f rc ]`
+- Start long harness jobs yourself with `just -g job start`, detached, one background `until [ -f rc ]`
   wait, one notification at the end. Never a per-event monitor, never hand the start line to the
   owner. Kimi, Grok, Lumo, Codex spend is pre-authorized. Keep Fable spend minimal.
 - Run `gh`, `jj git push`, `rune`, `grok`, `codex`, `opencode` as the whole command line, no

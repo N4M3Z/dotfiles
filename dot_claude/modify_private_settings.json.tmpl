@@ -7,7 +7,8 @@
 # that block (cli change harness-hook-dispatch, DOT-0007): `rune hook
 # install` writes one dispatcher entry per event and keeps every foreign
 # entry. Nothing here registers a hook, so a chezmoi apply never undoes
-# what rune wrote and never resurrects the retired `sd hook` parts.
+# what rune wrote. Until that rune change ships, the live entries run
+# `sh ~/.config/just/hook <Event>`, the dispatcher in the just tree.
 # `model` and `outputStyle` are also kept from the live file: /model and
 # /output-style write them per machine, and the template sets neither.
 set -eu
@@ -34,12 +35,21 @@ desired=$(cat <<'DESIRED'
     "OTEL_METRIC_EXPORT_INTERVAL": "60000",
     "OTEL_LOG_USER_PROMPTS": "1",
     "OTEL_LOG_TOOL_DETAILS": "1",
-    "OTEL_METRICS_INCLUDE_SESSION_ID": "false",
+    "OTEL_METRICS_INCLUDE_SESSION_ID": "true",
+    {{- /*
+    The Seatbelt sandbox blocks the keychain lookup (trustd), so a sandboxed
+    harness cannot verify the mkcert certificate that cliproxy.internal
+    serves (probed 2026-10-20). This file is the mkcert trust root: with it,
+    Node verifies the proxy beside its built-in roots. The variable only
+    adds a root and removes none.
+    */}}
+    "NODE_EXTRA_CA_CERTS": "{{ .chezmoi.homeDir }}/Library/Application Support/mkcert/rootCA.pem",
     "GITLAB_HOST": "{{ .private.gitlab_host }}"
   },
   "permissions": {{ $harness.permissions | toPrettyJson }},
   "attribution": {
-    "commit": "Co-Authored-By: Martin Zeman <N4M3Z@users.noreply.github.com>"
+    "commit": "Co-Authored-By: Martin Zeman <N4M3Z@users.noreply.github.com>",
+    "pr": ""
   },
   "enableAllProjectMcpServers": false,
   "statusLine": {
@@ -141,15 +151,16 @@ desired=$(cat <<'DESIRED'
         "*.browserbase.com",
         "{{ .private.gitlab_host }}",
         "localhost",
-        "127.0.0.1"
+        "127.0.0.1",
+        "cliproxy.internal",
+        "lumo.proton.me",
+        "models.opencode.ai"
       ],
       "allowUnixSockets": [
         "/tmp/.s.PGSQL.5432",
         "~/.obsidian-cli.sock",
         "~/.gnupg/S.gpg-agent",
-        "~/.gnupg/S.dirmngr",
-        "~/.orbstack/run/docker.sock",
-        "/var/run/docker.sock"
+        "~/.gnupg/S.dirmngr"
       ],
       "allowLocalBinding": true
     },
@@ -159,7 +170,29 @@ desired=$(cat <<'DESIRED'
         "~/.cache/uv",
         "~/.cache/act",
         "~/.cache/prek",
+        {{- /*
+        Cargo's download cache, shared with unsandboxed builds. Without it a
+        sandboxed build stops at the first crate it must download (EPERM on
+        registry/cache, probed 2026-10-22), and sessions worked around that
+        with private CARGO_HOME copies that download everything again. The
+        rest of ~/.cargo stays closed: bin is on PATH, and config.toml can
+        name a rustc wrapper that an unsandboxed build would run.
+        Cargo's two lock files follow, under names cargo hard-codes
+        (src/util/cache_lock.rs). .package-cache is the download lock: cargo
+        holds it alone while it downloads crates. .package-cache-mutate is the
+        cleanup lock: every build shares it, and cache cleanup holds it alone.
+        Without them a sandboxed cargo falls back to a shared lock, which does
+        not keep two sandboxed downloads apart. With them cargo queues them
+        ("Blocking waiting for file lock on package cache", probed 2026-10-24). The last-use record
+        (.global-cache) stays closed. SQLite needs to create files beside it.
+        */}}
+        "~/.cargo/registry",
+        "~/.cargo/git",
+        "~/.cargo/.package-cache",
+        "~/.cargo/.package-cache-mutate",
         "~/.local/share/Trash",
+        "~/.local/state/rune",
+        "~/.local/state/sd-job",
         "/tmp/claude",
         "/var/folders",
         "~/Atlas",
@@ -170,7 +203,6 @@ desired=$(cat <<'DESIRED'
         "~/.local/share/openspec",
         "~/.semgrep",
         "~/Library/Caches/",
-        "/opt/homebrew",
         "~/Data/Memex",
         "~/Data/Sessions",
         "~/Data/SessionVersions",
@@ -214,6 +246,7 @@ desired=$(cat <<'DESIRED'
         "~/.netrc",
         "~/.config/op",
         "~/.password-store",
+        "~/Library/Application Support/mkcert/rootCA-key.pem",
         "/Volumes/Keyvault",
         "/Volumes/.timemachine",
         "/Volumes/com.apple.TimeMachine.localsnapshots"
@@ -239,15 +272,71 @@ desired=$(cat <<'DESIRED'
       "rtk orbctl *",
       "jj *",
       "rtk jj *",
-      "rune *",
-      "codex *",
-      "claude *",
-      "opencode *",
-      "agy *",
-      "grok *",
-      "pi *",
+      {{- /*
+      Agent CLIs are not excluded: an excluded child agent runs with full
+      user rights and none of this policy. Only the rune forms that cannot
+      work inside the sandbox are excluded (2026-10-24). `run` and `proof run`
+      start harnesses, and a child inherits this sandbox: codex fails its
+      app-server, grok fails its own Seatbelt sandbox, and agy cannot read its
+      keychain login. `launch` starts an interactive harness. `sign` needs gpg
+      and ~/.gnupg. `install`, `deploy`, `clean`, and `repair` write the
+      harness homes. Every other rune command runs sandboxed, so
+      autoAllowBashIfSandboxed lets it through without a prompt (probed: spec
+      validate, config path, proof --check, and --version). A direct `codex` or
+      `grok` call fails its nested sandbox here and comes back as an
+      unsandboxed retry, which goes through the permission prompt. Docker
+      keeps its exclusion for OrbStack work, but its sockets are closed to
+      sandboxed commands and `docker` asks first. Each rune form also has an
+      `rtk` twin, because the UseEfficientCLI rule makes models write `rtk rune
+      run`, which ran sandboxed and came back as an unsandboxed retry prompt
+      (54 such calls on 2026-10-24).
+      */}}
+      "rune run *",
+      "rtk rune run *",
+      "rune --json run *",
+      "rtk rune --json run *",
+      "rune launch *",
+      "rtk rune launch *",
+      "rune proof run *",
+      "rtk rune proof run *",
+      "rune --json proof run *",
+      "rtk rune --json proof run *",
+      "rune sign",
+      "rtk rune sign",
+      "rune sign *",
+      "rtk rune sign *",
+      "rune install",
+      "rtk rune install",
+      "rune install *",
+      "rtk rune install *",
+      "rune deploy",
+      "rtk rune deploy",
+      "rune deploy *",
+      "rtk rune deploy *",
+      "rune clean",
+      "rtk rune clean",
+      "rune clean *",
+      "rtk rune clean *",
+      "rune repair",
+      "rtk rune repair",
+      "rune repair *",
+      "rtk rune repair *",
       "zed *",
-      "open -a Zed *"
+      "open -a Zed *",
+      {{- /*
+      Only the first token of a command line is matched. A leading `cd dir
+      &&` is tolerated, except for the guarded `jj push`, whose alias reads
+      the shell cwd: there `cd` is its own call. A pipe, a redirect, a loop,
+      or `$( )` around an excluded command runs it sandboxed, and it dies
+      with -26276, -60008, or EPERM (probed again 2026-10-19 with `cd *` and
+      `rtk head *` listed: `cd dir && gh auth status | rtk head` read the
+      keychain token as invalid, bare `gh auth status` did not, so those
+      entries were removed). A chain that needs the keychain goes in a
+      script under the workshop's docs/specs, which the two entries below
+      exclude by their first token; the receipt and seat scripts live there.
+      */}}
+      "sh {{ .chezmoi.homeDir }}/Agents/runedeck/docs/specs/*",
+      "bash {{ .chezmoi.homeDir }}/Agents/runedeck/docs/specs/*"
     ]
   },
   "effortLevel": "high",
@@ -287,11 +376,18 @@ desired=$(cat <<'DESIRED'
       "soft_deny" (concat (list "$defaults") $auto.soft_deny $mine.soft_deny)
       "hard_deny" (concat (list "$defaults") $auto.hard_deny $mine.hard_deny)
       "environment" (concat (list "$defaults") $auto.environment $mine.environment)
+      "classifyAllShell" true
     | toPrettyJson | replace "@GITLAB_HOST@" .private.gitlab_host }},
   "voiceEnabled": true,
   "maxSkillDescriptionChars": 2048
 }
 DESIRED
 )
-printf '%s\n' "$desired" | jq --argjson live "$live" \
-    '. + {hooks: ($live.hooks // {})} + ($live | {model, outputStyle} | with_entries(select(.value != null)))'
+# Path migration (2026-10-18, PROV-0025): the hook dispatcher moved from
+# ~/.sd/hook to ~/.config/just/hook. The live hooks block keeps the old
+# path until rune rewrites it, so every command string is repointed
+# here. Remove this once no live settings carry the old path.
+printf '%s\n' "$desired" | jq --argjson live "$live" '
+    . + {hooks: (($live.hooks // {})
+        | walk(if type == "string" then sub("/\\.sd/hook "; "/.config/just/hook ") else . end))}
+    + ($live | {model, outputStyle} | with_entries(select(.value != null)))'

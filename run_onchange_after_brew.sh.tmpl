@@ -26,11 +26,17 @@ if ! command -v brew >/dev/null 2>&1; then
     exit 0
 fi
 
+# An apply installs what is missing and upgrades nothing: HOMEBREW_BUNDLE_NO_UPGRADE
+# stops brew bundle from upgrading every outdated formula and cask, and
+# mas-bundle.sh reads it to skip App Store updates. A cask upgrade inside an
+# apply can stall (orbstack did), so upgrades stay a separate, deliberate
+# `brew upgrade`.
+#
 # A dead cask or a store timeout must not abort the rest of the apply. The
 # script runs after the files, but chezmoi then reports the whole apply as
 # failed and the owner reads that as nothing landed. Report and exit 0; the
 # bundle runs again on the next Brewfile change.
-if ! bash "$BUNDLE_SCRIPT"; then
+if ! HOMEBREW_BUNDLE_NO_UPGRADE=1 bash "$BUNDLE_SCRIPT"; then
     echo "run_onchange_after_brew: brew bundle failed; the apply continues, fix the Brewfile entry named above" >&2
 fi
 exit 0

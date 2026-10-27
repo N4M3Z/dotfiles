@@ -92,8 +92,11 @@ jobs:
         needs: [release, overrides]
         if: '!cancelled() && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.draft == false && needs.overrides.outputs.skipped == ''false'' && ((github.event.action == ''labeled'' && github.event.label.name == ''review:runeseer'') || (github.event.action == ''ready_for_review'' && needs.release.outputs.summoned == ''true''))'
         uses: runedeck/seer/.github/workflows/review-correctness.yaml@main
+        # The login must be the bot of the app whose credentials follow:
+        # the lane publishes as that app and then re-reads its own summary
+        # by this login, so a mismatch makes it reject what it just posted.
         with:
-            reviewer_login: "sentinel[bot]"
+            reviewer_login: "runeseer[bot]"
         secrets:
             RUNESEER_APP_ID: ${{ secrets.RUNESEER_APP_ID }}
             RUNESEER_APP_KEY: ${{ secrets.RUNESEER_APP_KEY }}
@@ -131,7 +134,7 @@ jobs:
             - env:
                   GH_TOKEN: ${{ github.token }}
                   HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-                  REVIEWER_LOGIN: "sentinel[bot]"
+                  REVIEWER_LOGIN: "runeseer[bot]"
                   RUNESEER_TOKEN: ${{ steps.runeseer.outputs.token }}
               run: |
                   set -o pipefail

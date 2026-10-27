@@ -30,12 +30,12 @@ diff_view = "unified"
 # with `:set wrap!`.
 wrap = true
 
-# Fork-only key (N4M3Z/tuicr feat-gutter-wrap). "flow" reproduces stock
-# wrapping. "gutter" pre-expands wrapped lines, so continuation rows keep
-# the line-number gutter and the +/- prefix. The brew bottle warns on
-# this key and ignores it. The key is not merged upstream. Remove it if
-# the PR lands in a changed form.
-wrap_style = "gutter"
+# Upstream since PR #760 (merged 2026-10-10, after the v0.27.0 release).
+# "flow" wraps from the left edge (default). "gutter" keeps continuation
+# rows aligned behind the line-number gutter. Commented out because the
+# brew bottle (v0.27.0) does not know the key and warns on it. Uncomment
+# after `brew upgrade tuicr` installs the first release that contains #760.
+# wrap_style = "gutter"
 
 # Open every session in single-file view (`:focus`). Pristine `--all-files`
 # mode forces this on regardless. Toggle at runtime with `:focus` / `:f` /
@@ -55,7 +55,10 @@ single_file_view = true
 # ascends to the parent. Falls through to plain horizontal scroll
 # when the file list isn't at the boundary. `Enter` / `Space` still
 # toggle folders regardless of this flag.
-# Commented out: pending upstream PR #370; not to be used until it lands.
+# Commented out: upstream closed PR #370 as stale (2026-10-10). The
+# feature lives on the fork branch `feat-arrow-folder-expansion`. The
+# brew bottle does not know the key. Uncomment only when you run a
+# branch build.
 # arrow_tree_navigation = true
 
 # Vim-style scroll padding. Keeps 5 lines visible above and below the

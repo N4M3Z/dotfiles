@@ -20,4 +20,15 @@ acknowledged:
   - rule: host-private-tld
     sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
     commit: 85c170c194ad0f2ff35dcb8b5357d889c1dbce97
-
+  - rule: host-private-tld
+    sha256: 4357fb342f8de51b3b6b17ca1b13a0397345b3bc1d848ccd9ba30a82e24888af
+    commit: 578aa1f54cd077d29d17c9f11cec816bcf541ee0
+    reason: a Jev permission name in the rune policy file, not a host
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: 578aa1f54cd077d29d17c9f11cec816bcf541ee0
+    reason: local proxy hostname under a private TLD, in files the stack edits
+  - rule: personal-email-address
+    sha256: 4fe3183dec4b8f4695f16127e0721927dd6eaed7fa9cb4c9972e9f220881f918
+    commit: 578aa1f54cd077d29d17c9f11cec816bcf541ee0
+    reason: a jj revset in a comment of the renamed push script, not an address

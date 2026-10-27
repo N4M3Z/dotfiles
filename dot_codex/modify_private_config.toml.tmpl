@@ -5,7 +5,7 @@
 # this script prints to stdout becomes the file's new contents on every
 # `chezmoi apply`. That makes the file partially managed: the policy fields
 # declared in .chezmoidata/harness/codex.json are enforced, while everything the
-# app writes itself (model choice, auth store, notify hooks) passes through
+# app writes itself (model choice, auth store, notify command) passes through
 # untouched.
 #
 # The config is TOML but the policy is JSON, so the pipeline converts
@@ -40,6 +40,36 @@ FORGE_POLICY
 # retired from codex.json would linger in the live file forever. The policy owns
 # permissions.Nexus.filesystem outright: after the merge, replace that subtree
 # with the policy's copy so retired entries drop out on the next apply.
+# Keep gbrain disconnected when the live app retains an old registration.
+#
+# Hooks live in ~/.codex/hooks.json alone (rune hook install, 2026-10-25).
+# Codex warns when a hook is declared in both files, so every [[hooks.<Event>]]
+# table goes. [hooks.state] stays: it records which hook commands the owner
+# trusted. Keys that point at a position with no hook go with the tables: the
+# config.toml keys, whose tables this script removes; the ai-stack keys, whose
+# project hooks.json is gone; and the ~/.codex/hooks.json Stop and
+# UserPromptSubmit keys for groups 0 and 1, which rune left as empty groups.
 yq -p=toml -o=json '.' - \
-    | jq --slurpfile policy "$policy" '(((. // {}) | .permissions.Nexus = ((.permissions["workspace-local"] // {}) * (.permissions.Nexus // {})) | del(.profile, .profiles, .permissions["workspace-local"], .sandbox_mode, .sandbox_workspace_write)) * $policy[0]) | .permissions.Nexus.filesystem = $policy[0].permissions.Nexus.filesystem' \
+    | jq --slurpfile policy "$policy" --arg home "$HOME" '
+        ([
+            "Agents/N4M3Z/ai-stack/.codex/hooks.json:post_tool_use:0:0",
+            "Agents/N4M3Z/ai-stack/.codex/hooks.json:session_start:0:0",
+            "Agents/N4M3Z/ai-stack/.codex/hooks.json:stop:0:0",
+            "Agents/N4M3Z/ai-stack/.codex/hooks.json:user_prompt_submit:0:0",
+            ".codex/hooks.json:stop:0:0",
+            ".codex/hooks.json:stop:1:0",
+            ".codex/hooks.json:user_prompt_submit:0:0",
+            ".codex/hooks.json:user_prompt_submit:1:0"
+        ] | map($home + "/" + .)) as $stale
+        | (((. // {}) | .permissions.Nexus = ((.permissions["workspace-local"] // {}) * (.permissions.Nexus // {})) | del(.profile, .profiles, .permissions["workspace-local"], .sandbox_mode, .sandbox_workspace_write)) * $policy[0])
+        | .permissions.Nexus.filesystem = $policy[0].permissions.Nexus.filesystem
+        | del(.mcp_servers.gbrain)
+        | .hooks |= (if type == "object" then
+                with_entries(select(.value | type != "array"))
+                | if (.state | type) == "object" then
+                    .state |= with_entries(select(.key | (startswith($home + "/.codex/config.toml:") or IN($stale[])) | not))
+                  else . end
+            else . end)
+        | if .hooks == null or .hooks == {} then del(.hooks) else . end
+    ' \
     | yq -p=json -o=toml '.' -

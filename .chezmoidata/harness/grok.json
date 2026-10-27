@@ -15,11 +15,7 @@
       "session": {
         "load_envrc": false
       },
-      "mcp_servers": {
-        "gbrain": {
-          "startup_timeout_sec": 15
-        }
-      },
+      "mcp_servers": {},
       "model": {
         "grok-3-mini": {
           "env_key": "GROK_CODE_XAI_API_KEY"

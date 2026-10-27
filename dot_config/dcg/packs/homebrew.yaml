@@ -1,0 +1,34 @@
+# Homebrew output policy.
+# Validate: dcg pack validate ~/.config/dcg/packs/homebrew.yaml
+schema_version: 1
+id: user.homebrew
+name: Rune Homebrew Policy
+version: 1.0.0
+
+description: |
+  Rejects a pipe after a brew command.
+  Homebrew installs vendored Ruby gems lazily at the start of many
+  commands; a pipe reader that exits early kills that install and
+  leaves Homebrew unable to boot.
+
+keywords:
+  - brew
+
+destructive_patterns:
+  - name: brew-no-pipe
+    pattern: '(^|[;&]\s*)(rtk\s+)?brew\b([^|;&]|>&[0-9]|&>)*[^|;&>]\|'
+    severity: high
+    description: Do not pipe brew output. Redirect it to a file and read the file.
+    explanation: |
+      The developer commands (audit, style, livecheck, bump, create,
+      test, test-bot, typecheck) install vendored gems first. When the
+      pipe reader exits early, SIGPIPE interrupts the gem build and
+      every later gem-dependent brew command fails at boot.
+      Write `brew <cmd> > "$TMPDIR/brew.txt" 2>&1` and read the file.
+    # No `executables` key: dcg then matches each pipeline segment on its
+    # own, and the pattern never sees the pipe it exists to catch.
+
+safe_patterns:
+  - name: brew-version-probe
+    pattern: '^(rtk\s+)?brew\s+(--version|--prefix|--cellar|--repository)\b'
+    description: Permit brew path and version probes, which load no gems.

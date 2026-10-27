@@ -26,8 +26,8 @@
 
 - Resume the exact pane session through the local breadcrumb wrapper:
 
-`sd claude resume`
+`just -g claude resume`
 
 - Run Claude through shared provider policy explicitly:
 
-`sd agent run claude {{arguments}}`
+`just -g agent run claude {{arguments}}`

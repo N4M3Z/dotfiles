@@ -31,6 +31,15 @@ fi
 # iTerm2 integration
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
+# cmux per-surface history. The vendored integration appends each command to
+# $CMUX_HISTORY_FILE (_cmux_terminal_history_precmd) but never creates its
+# directory, so a removed directory makes every prompt print "no such file or
+# directory". Tmux-restored surfaces keep the old path in their environment.
+# Create the directory up front; remove this guard when cmux creates it.
+if [[ -n "${CMUX_HISTORY_FILE:-}" ]]; then
+    mkdir -p -- "${CMUX_HISTORY_FILE:h}" 2>/dev/null
+fi
+
 # LM Studio CLI (lms)
 [ -d "${HOME}/.lmstudio/bin" ] && export PATH="${PATH}:${HOME}/.lmstudio/bin"
 

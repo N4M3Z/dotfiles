@@ -1,0 +1,106 @@
+# Tool policy pack (deck DECK-0010 companion). dcg evaluates every
+# agent shell command, so this pack is the harness-independent home for
+# the approved-tool policy: Claude Code, Codex, Gemini, Copilot, Cursor.
+# Secret-read rules live in user.secrets, not here. This global pack holds
+# outside runedeck repositories too; inside them the rune.search and
+# rune.parsers repository packs add their own copies of the same rules.
+# Validate: dcg pack validate ~/.config/dcg/packs/toolpolicy.yaml
+schema_version: 1
+id: user.toolpolicy
+name: Rune Tool Policy
+version: 1.1.0
+
+description: |
+  Redirects slow or unapproved tools to the approved set. rg replaces
+  grep. fd replaces find. yq and jq parse YAML and JSON. mlr parses CSV
+  and TSV. The Edit tool replaces sed -i. The denial text tells the
+  agent the replacement, so the correction costs one turn.
+
+keywords:
+  - grep
+  - find
+  - awk
+  - sed
+  - cut
+  - csv
+  - tsv
+
+destructive_patterns:
+  - name: grep-use-rg
+    pattern: '^grep\b'
+    severity: high
+    description: Use rg (ripgrep) instead of grep.
+    explanation: |
+      rg is faster, respects .gitignore, and prints file and line by
+      default. Replace `grep -r pattern .` with `rg pattern`.
+      `git grep` stays allowed.
+    executables:
+      - grep
+
+  - name: find-use-fd
+    pattern: '^find\s+\S'
+    severity: high
+    description: Use fd instead of find.
+    explanation: |
+      fd is faster and respects .gitignore. Replace
+      `find . -name "*.md"` with `fd -e md`. Destructive find flags
+      are already covered by the core.filesystem pack.
+    executables:
+      - find
+
+  - name: grep-alt-forms
+    pattern: '(^/(usr/)?bin/|\bxargs\s+(-\S+\s+)*|\bbusybox\s+)grep\b'
+    severity: high
+    description: Use rg (ripgrep) instead of grep, in any invocation form.
+    explanation: |
+      An absolute path, xargs, or busybox reaches the same grep binary.
+      The rg redirect applies to every form.
+
+  - name: find-alt-forms
+    pattern: '(^/(usr/)?bin/|\bbusybox\s+)find\s+\S'
+    severity: high
+    description: Use fd instead of find, in any invocation form.
+    explanation: |
+      An absolute path or busybox reaches the same find binary. The fd
+      redirect applies to every form.
+
+  - name: yaml-json-needs-real-parser
+    pattern: '\b(awk|sed)\b[^|;&]*\.(ya?ml|json)\b'
+    severity: high
+    description: Parse YAML and JSON with yq or jq, never awk or sed.
+    explanation: |
+      Line tools break on indentation, quoting, and multi-line values,
+      and the breakage is silent. yq and jq parse the structure.
+
+  - name: csv-tsv-needs-real-parser
+    pattern: '\b(awk|cut|sed)\b[^|;&]*\.(csv|tsv)\b'
+    severity: high
+    description: Parse CSV and TSV with mlr (miller), never awk, cut, or sed.
+    explanation: |
+      Line tools break on quoted fields, embedded delimiters, and
+      embedded newlines, and the breakage is silent. mlr parses the
+      structure: `mlr --csv cut -f name data.csv`.
+    executables:
+      - awk
+      - cut
+      - sed
+
+  - name: sed-no-in-place
+    pattern: '\bsed\s+(-\S+\s+)*(-\w*i\b|--in-place\b)'
+    severity: high
+    description: Use the Edit tool for in-place edits, never sed -i.
+    explanation: |
+      sed -i rewrites files with no diff, no match count, and a silent
+      no-op on a missed pattern. The harness Edit tool shows the exact
+      replacement and fails loudly when the match is absent.
+
+safe_patterns:
+  - name: grep-version-probe
+    pattern: '^grep\s+--(version|help)\b'
+    description: Version and help probes stay allowed.
+  - name: find-version-probe
+    pattern: '^find\s+--(version|help)\b'
+    description: Version and help probes stay allowed.
+  - name: sed-range-view
+    pattern: '\bsed\s+-n\s+.?[0-9]+,[0-9]+p.?\s'
+    description: A pure line-range view extracts nothing structural.

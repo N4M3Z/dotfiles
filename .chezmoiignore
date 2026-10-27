@@ -8,3 +8,7 @@ tests
 
 # Planning artifacts live in-repo only.
 openspec
+
+# The rune module manifest describes this repository, not the home folder.
+defaults.yaml
+module.yaml
