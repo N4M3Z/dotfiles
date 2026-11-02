@@ -86,6 +86,14 @@ jobs:
             - name: Validate just tree
               run: bash tests/validate-just-tree.sh
 
+            - name: Install zsh
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y zsh
+
+            - name: Test cliproxy.zsh
+              run: bash tests/test-cliproxy-zsh.sh
+
             - name: Test push gate
               run: bash tests/test-harness-pre-push.sh
 

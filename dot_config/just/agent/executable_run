@@ -145,7 +145,7 @@ configure_github_identity() {
 configure_grok_proxy() {
     local endpoint="${CLIPROXY_URL:-http://127.0.0.1:8317}"
     local off_flag="${CLIPROXY_OFF_FLAG:-${HOME}/.config/zsh/cliproxy.off}"
-    local env_file="${CLIPROXY_ENV_FILE:-${HOME}/.env}"
+    local manifest="${CLIPROXY_SECRETSPEC:-${HOME}/.config/provision/secretspec.toml}"
     local client_key="${CLIPROXY_API_KEY:-}"
 
     unset GROK_CLI_CHAT_PROXY_BASE_URL
@@ -155,8 +155,10 @@ configure_grok_proxy() {
         return 0
     fi
 
-    if [[ -z "$client_key" && -r "$env_file" ]]; then
-        client_key="$(grep '^CLIPROXY_API_KEY=' "$env_file" 2>/dev/null | cut -d= -f2-)"
+    # The owner's secretspec store (runedeck/provision PROV-0028).
+    if [[ -z "$client_key" && -r "$manifest" ]] && command -v secretspec >/dev/null 2>&1; then
+        client_key="$(secretspec get CLIPROXY_API_KEY --file "$manifest" --profile owner \
+            --reason 'just agent run: the grok hub key' 2>/dev/null)"
     fi
     if [[ -z "$client_key" ]]; then
         printf '%s\n' \

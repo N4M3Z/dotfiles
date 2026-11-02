@@ -224,7 +224,8 @@ launch:
             # An explicit flag keeps headless runs sandboxed even when the wrapper is bypassed.
             # The proxy route: custom-endpoint mode switches grok to bearer auth
             # and the GROK_CODE_ key scopes that bearer to grok, so XAI_API_KEY
-            # stays free. rune reads the key from ~/.env at launch; no secret here.
+            # stays free. rune reads the key at launch from the shell, which
+            # cliproxy.zsh loads from secretspec; no secret here.
             grok:
                 model: grok
                 args:
