@@ -79,6 +79,7 @@
           "Read(~/.cargo/credentials.toml)",
           "Read(~/Library/Keychains/**)",
           "Read(~/.password-store/**)",
+          "Read(~/.grok/auth.json)",
           "Edit(~/.bashrc)",
           "Edit(~/.zshrc)",
           "Edit(~/.bash_profile)",

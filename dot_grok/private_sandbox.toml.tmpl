@@ -13,7 +13,8 @@
 #
 # Keep the lists in step with the Claude sandbox block in
 # dot_claude/private_settings.json.tmpl: read_write mirrors allowWrite,
-# read_only mirrors denyWrite, deny mirrors denyRead.
+# read_only mirrors denyWrite, deny mirrors denyRead plus the Read(...) deny
+# rules in .chezmoidata/harness/claude.json.
 # Source: https://github.com/N4M3Z/dotfiles
 {{- $home := .chezmoi.homeDir -}}
 {{- $deny := list
@@ -42,6 +43,34 @@
       "/Volumes/.timemachine"
       "/Volumes/com.apple.TimeMachine.localsnapshots"
 -}}
+{{- /*
+  Claude Code also turns its Read(...) deny rules into kernel denies, so a
+  path that Claude blocks only by a permission rule (~/.env, the proxy keys,
+  the private Atlas folders) is still closed to Claude's shell. Grok applies
+  those rules to its own tools but not to its shell, so the same paths are
+  added here from claude.json. ~/ becomes the home, a leading // marks an
+  absolute path, and ./ becomes a relative entry, which the deny field anchors
+  at the workspace. A trailing /** on a literal path becomes the directory
+  itself, so the entry stays exact on Linux, where globs expand only at launch.
+*/ -}}
+{{- range .harness.claude.permissions.deny -}}
+  {{- if and (hasPrefix "Read(" .) (hasSuffix ")" .) -}}
+    {{- $path := trimSuffix ")" (trimPrefix "Read(" .) -}}
+    {{- if hasPrefix "~/" $path -}}
+      {{- $path = printf "%s/%s" $home (trimPrefix "~/" $path) -}}
+    {{- else if hasPrefix "//" $path -}}
+      {{- $path = trimPrefix "/" $path -}}
+    {{- else if hasPrefix "./" $path -}}
+      {{- $path = trimPrefix "./" $path -}}
+    {{- end -}}
+    {{- $literal := trimSuffix "/**" $path -}}
+    {{- if not (regexMatch `[*?\[]` $literal) -}}
+      {{- $path = $literal -}}
+    {{- end -}}
+    {{- $deny = append $deny $path -}}
+  {{- end -}}
+{{- end -}}
+{{- $deny = uniq $deny -}}
 {{- $readWrite := list
       (printf "%s/Agents" $home)
       (printf "%s/.cache/uv" $home)
