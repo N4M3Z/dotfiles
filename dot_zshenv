@@ -54,6 +54,9 @@ export PATH="${BUN_INSTALL}/bin:${PATH}"
 # meters their spend. Reads keys from ~/.env; `noproxy <cmd>` bypasses it.
 [ -r "${HOME}/.config/zsh/cliproxy.zsh" ] && source "${HOME}/.config/zsh/cliproxy.zsh"
 
+# Browserbase key for the `browse` CLI. Reads one value from ~/.env.
+[ -r "${HOME}/.config/zsh/browserbase.zsh" ] && source "${HOME}/.config/zsh/browserbase.zsh"
+
 # Autoloaded functions: personal (project, atlas) and prezto module functions
 # (trash, ...). Prezto puts these directories on fpath for interactive shells
 # only. A non-interactive shell (Claude Code Bash tool) inherits the autoload

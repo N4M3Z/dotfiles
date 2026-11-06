@@ -41,6 +41,8 @@
             "files.pythonhosted.org",
             "semgrep.dev",
             "*.semgrep.dev",
+            "browserbase.com",
+            "*.browserbase.com",
             "@GITLAB_HOST@"
           ],
           "deny": []
