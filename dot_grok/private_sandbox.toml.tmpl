@@ -2,11 +2,14 @@
 #
 # The profile format (extends, read_only, read_write, deny, restrict_network)
 # is the one the grok README documents under "Sandbox > Custom Profiles".
-# Paths are literal directories, no globs. Grok has no per-domain network
-# allowlist: restrict_network is all or nothing for child processes, so the
-# workspace profiles keep the child network open and rely on the Claude
-# allowlist only where Claude runs. The grok API hosts are in-process and
-# never blocked by the sandbox.
+# Paths are literal directories, no globs. Cargo's .package-cache and
+# .package-cache-mutate are files, so they stay off the write list.
+# Grok has no per-domain network
+# allowlist. On macOS, restrict_network does not block child network, so
+# these profiles leave it unset and child network stays open. The grok API
+# hosts are in-process and never blocked by the sandbox.
+# gh, jj sign, and brew run inside this profile. A denied path or a write
+# under /opt/homebrew fails closed. There is no unsandboxed retry.
 #
 # Keep the lists in step with the Claude sandbox block in
 # dot_claude/private_settings.json.tmpl: read_write mirrors allowWrite,
@@ -34,6 +37,7 @@
       (printf "%s/.password-store" $home)
       (printf "%s/.pypirc" $home)
       (printf "%s/Library/Keychains" $home)
+      (printf "%s/Library/Application Support/mkcert/rootCA-key.pem" $home)
       "/Volumes/Keyvault"
       "/Volumes/.timemachine"
       "/Volumes/com.apple.TimeMachine.localsnapshots"
@@ -41,7 +45,13 @@
 {{- $readWrite := list
       (printf "%s/Agents" $home)
       (printf "%s/.cache/uv" $home)
+      (printf "%s/.cache/act" $home)
+      (printf "%s/.cache/prek" $home)
+      (printf "%s/.cargo/registry" $home)
+      (printf "%s/.cargo/git" $home)
       (printf "%s/.local/share/Trash" $home)
+      (printf "%s/.local/state/rune" $home)
+      (printf "%s/.local/state/sd-job" $home)
       "/tmp/claude"
       "/var/folders"
       (printf "%s/Atlas" $home)
@@ -52,7 +62,6 @@
       (printf "%s/.local/share/openspec" $home)
       (printf "%s/.semgrep" $home)
       (printf "%s/Library/Caches" $home)
-      "/opt/homebrew"
       (printf "%s/Data/Memex" $home)
       (printf "%s/Data/Sessions" $home)
       (printf "%s/Data/SessionVersions" $home)

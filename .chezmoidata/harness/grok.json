@@ -5,6 +5,14 @@
         "profile": "workspace-local",
         "auto_allow_bash": false
       },
+      "ui": {
+        "permission_mode": "auto",
+        "yolo": false
+      },
+      "auto_mode": {
+        "enabled": true
+      },
+      "default_auto_mode": true,
       "shell_environment_policy": {
         "inherit": "core",
         "ignore_default_excludes": false
