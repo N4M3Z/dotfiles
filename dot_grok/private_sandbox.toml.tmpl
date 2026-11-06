@@ -17,10 +17,19 @@
 #   later. On Linux it covers only the files that exist at launch.
 # - restrict_network does nothing on macOS, and grok has no domain
 #   allowlist, so child processes keep the network. The grok API calls run
-#   in-process. sandbox.auto_allow_bash stays false in grok.json: turning it
-#   on skips bash prompts whenever a profile is active, and with an open
-#   network the auto-mode review is one of the few checks on what a command
-#   sends out.
+#   in-process. The config reference (26-config-reference.md) has no other
+#   network key: toolset.web_fetch.proxy_endpoint and the web_fetch and
+#   web_search domain lists cover in-process tools only, and
+#   shell_environment_policy.set can only name a proxy, which no filtering
+#   proxy on the host backs. The one egress control for grok's shell on
+#   macOS is a Little Snitch rule group keyed on grok's code identity
+#   (identifier.5Y6N3AJ54S/xai-grok-pager): a rule for a process with no
+#   via field also matches that process as the parent of a helper tool
+#   (https://help.obdev.at/littlesnitch6/adv-lsrules-file-format). That
+#   group lives outside this repo. Until it is imported and verified,
+#   sandbox.auto_allow_bash stays false in grok.json: turning it on skips
+#   bash prompts whenever a profile is active, and with an open network the
+#   auto-mode review is one of the few checks on what a command sends out.
 # - grok has no excluded commands and no unsandboxed retry. gh cannot read
 #   ~/.config/gh, jj cannot sign, and brew cannot write /opt/homebrew.
 #
