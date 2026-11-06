@@ -23,10 +23,11 @@ render() {
 }
 
 # A modify_ script prints the whole target file. Empty stdin is the state
-# chezmoi produces for a target that does not exist yet.
+# chezmoi produces for a target that does not exist yet. The optional second
+# argument is a live file to feed in instead.
 run_modify() {
     render "$1" > "${WORKDIR}/modify.sh" || return 1
-    printf '' | bash "${WORKDIR}/modify.sh"
+    printf '%s' "${2:-}" | bash "${WORKDIR}/modify.sh"
 }
 
 render dot_grok/private_sandbox.toml.tmpl \
@@ -89,6 +90,33 @@ if jq -e '.ui.permission_mode == "auto" and .auto_mode.enabled == true' \
 else
     echo "FAIL grok does not start in auto mode"
     failures=$((failures + 1))
+fi
+
+# Grok saves an always-approve choice in ui.yolo, and the next session starts
+# in yolo. Each apply resets it, and keeps the keys that grok writes itself.
+live_config=$'[ui]\nyolo = true\n\n[session]\nlast_model = "kept"\n'
+run_modify dot_grok/modify_private_config.toml.tmpl "${live_config}" \
+    | yq -p=toml -o=json '.' - > "${WORKDIR}/grok-live.json" || exit 1
+if jq -e '.ui.yolo == false' "${WORKDIR}/grok.json" > /dev/null \
+        && jq -e '.ui.yolo == false and .session.last_model == "kept"' \
+            "${WORKDIR}/grok-live.json" > /dev/null; then
+    echo "ok grok apply resets a saved yolo choice"
+else
+    echo "FAIL grok apply keeps a saved yolo choice, or drops grok's own keys"
+    failures=$((failures + 1))
+fi
+
+# The reset must not become a lock. Only requirements.toml can lock yolo, so
+# the source must manage neither that file nor the bypass switch.
+lock_files=$(find "${SOURCE_DIR}/dot_grok" -name '*requirements.toml*')
+lock_keys=$(grep -rl --exclude-dir=.git --exclude-dir=.jj --exclude-dir=.workspaces \
+    --exclude=test-grok-sandbox.sh 'disable_bypass_permissions_mode' "${SOURCE_DIR}")
+if [[ -n "${lock_files}${lock_keys}" ]]; then
+    echo "FAIL the source locks grok yolo:"
+    printf '%s\n%s\n' "${lock_files}" "${lock_keys}" | sed '/^$/d; s/^/    /'
+    failures=$((failures + 1))
+else
+    echo "ok /yolo stays available: no requirements.toml and no bypass switch"
 fi
 
 if [[ ${failures} -gt 0 ]]; then

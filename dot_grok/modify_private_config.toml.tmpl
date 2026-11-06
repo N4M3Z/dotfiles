@@ -25,6 +25,10 @@ FORGE_POLICY
 # retired from grok.json would linger in the live file forever. The policy owns
 # the permission map outright: replace it after the merge so retired entries
 # drop out on the next apply.
+# The merge also sets ui.yolo back to false. Grok saves an always-approve
+# choice there, and the next session starts in yolo. This is a reset on apply,
+# not a lock: only requirements.toml can lock yolo, and this repo ships none,
+# so /yolo still works inside a session.
 # Keep gbrain disconnected when the live app retains an old registration.
 # Drop cli.telemetry: grok 1.0.77 reports it as an unrecognized key, and the
 # telemetry switches live under [telemetry]. The harness check after apply
