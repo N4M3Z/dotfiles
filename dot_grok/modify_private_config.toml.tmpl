@@ -26,6 +26,9 @@ FORGE_POLICY
 # the permission map outright: replace it after the merge so retired entries
 # drop out on the next apply.
 # Keep gbrain disconnected when the live app retains an old registration.
+# Drop cli.telemetry: grok 1.0.77 reports it as an unrecognized key, and the
+# telemetry switches live under [telemetry]. The harness check after apply
+# fails on any config warning, so a dead key must not stay in the file.
 yq -p=toml -o=json '.' - \
-    | jq --slurpfile policy "$policy" '((. // {}) * $policy[0]) | .permission = $policy[0].permission | del(.mcp_servers.gbrain)' \
+    | jq --slurpfile policy "$policy" '((. // {}) * $policy[0]) | .permission = $policy[0].permission | del(.mcp_servers.gbrain) | del(.cli.telemetry)' \
     | yq -p=json -o=toml '.' -
