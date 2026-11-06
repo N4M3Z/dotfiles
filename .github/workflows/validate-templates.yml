@@ -53,5 +53,8 @@ jobs:
             - name: Test home targets
               run: bash tests/test-home-targets.sh
 
+            - name: Test grok sandbox
+              run: bash tests/test-grok-sandbox.sh
+
             - name: Validate just tree
               run: bash tests/validate-just-tree.sh
