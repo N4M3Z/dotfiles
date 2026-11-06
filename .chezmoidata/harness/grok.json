@@ -12,6 +12,11 @@
         "enabled": true
       },
       "default_auto_mode": true,
+      "compat": {
+        "cursor": {
+          "hooks": false
+        }
+      },
       "shell_environment_policy": {
         "inherit": "core",
         "ignore_default_excludes": false
