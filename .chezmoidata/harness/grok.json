@@ -6,8 +6,7 @@
         "auto_allow_bash": false
       },
       "ui": {
-        "permission_mode": "auto",
-        "yolo": false
+        "permission_mode": "auto"
       },
       "auto_mode": {
         "enabled": true
