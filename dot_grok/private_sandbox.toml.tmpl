@@ -1,20 +1,33 @@
 # Grok sandbox profiles, rendered by chezmoi into ~/.grok/sandbox.toml.
 #
-# The profile format (extends, read_only, read_write, deny, restrict_network)
-# is the one the grok README documents under "Sandbox > Custom Profiles".
-# Paths are literal directories, no globs. Cargo's .package-cache and
-# .package-cache-mutate are files, so they stay off the write list.
-# Grok has no per-domain network
-# allowlist. On macOS, restrict_network does not block child network, so
-# these profiles leave it unset and child network stays open. The grok API
-# hosts are in-process and never blocked by the sandbox.
-# gh, jj sign, and brew run inside this profile. A denied path or a write
-# under /opt/homebrew fails closed. There is no unsandboxed retry.
+# The profile fields (extends, read_only, read_write, deny, restrict_network)
+# are documented in ~/.grok/docs/user-guide/18-sandbox.md. That guide is
+# newer than the sandbox section of ~/.grok/README.md, so trust the guide.
+#
+# What the grok 1.0.77 guide says, and what these profiles rely on:
+# - A custom profile that cannot be applied stops grok from starting. A
+#   built-in profile only warns and runs without enforcement, so the default
+#   profile is a custom one. tests/test-grok-sandbox.sh checks that.
+# - Every profile built on workspace write-protects ~/.grok/config.toml,
+#   sandbox.toml and requirements.toml, so a session cannot widen its own
+#   policy. A /yolo or Shift+Tab switch lasts for that session only.
+# - read_only and read_write take directories only. Cargo's .package-cache
+#   and .package-cache-mutate are files, so they stay off the write list.
+# - deny takes paths and globs. On macOS a glob also covers files created
+#   later. On Linux it covers only the files that exist at launch.
+# - restrict_network does nothing on macOS, and grok has no domain
+#   allowlist, so child processes keep the network. The grok API calls run
+#   in-process. sandbox.auto_allow_bash stays false in grok.json: turning it
+#   on skips bash prompts whenever a profile is active, and with an open
+#   network the auto-mode review is one of the few checks on what a command
+#   sends out.
+# - grok has no excluded commands and no unsandboxed retry. gh cannot read
+#   ~/.config/gh, jj cannot sign, and brew cannot write /opt/homebrew.
 #
 # Keep the lists in step with the Claude sandbox block in
-# dot_claude/private_settings.json.tmpl: read_write mirrors allowWrite,
-# read_only mirrors denyWrite, deny mirrors denyRead plus the Read(...) deny
-# rules in .chezmoidata/harness/claude.json.
+# dot_claude/modify_private_settings.json.tmpl: read_write mirrors
+# allowWrite, read_only mirrors denyWrite, deny mirrors denyRead plus the
+# Read(...) deny rules in .chezmoidata/harness/claude.json.
 # Source: https://github.com/N4M3Z/dotfiles
 {{- $home := .chezmoi.homeDir -}}
 {{- $deny := list
