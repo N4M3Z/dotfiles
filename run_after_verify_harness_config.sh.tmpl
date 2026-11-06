@@ -8,6 +8,11 @@
 # codex: `codex mcp list` exits non-zero and prints the `Caused by` line on a
 # parse error; `codex doctor` exits 0 and buries the same failure in its report.
 # claude: `claude doctor` reads settings with no trust prompt.
+# grok: `grok inspect --json` exits 0 even when config.toml does not parse. It
+# marks that config layer with the note "parse error" and lists unknown keys
+# under configWarnings, so the probe reads both. GROK_SANDBOX=off stops inspect
+# from applying the sandbox profile, which fails when apply itself runs inside
+# an agent sandbox. tests/test-grok-sandbox.sh checks the profiles instead.
 set -o pipefail
 
 status=0
@@ -24,6 +29,22 @@ if command -v claude >/dev/null 2>&1; then
     if ! claude doctor >/dev/null 2>&1; then
         echo "fail:harness-config (claude doctor reports a problem; run it for detail)" >&2
         status=1
+    fi
+fi
+
+if command -v grok >/dev/null 2>&1; then
+    if ! output=$(GROK_SANDBOX=off grok inspect --json 2>/dev/null); then
+        echo "fail:harness-config (grok inspect fails; run it for detail)" >&2
+        status=1
+    else
+        problems=$(printf '%s' "$output" | jq -r '
+            ((.configSources.layers // [])[] | select(.note == "parse error") | "\(.path): parse error"),
+            ((.configWarnings // [])[] | "\(.path): \(.reason)")')
+        if [ -n "$problems" ]; then
+            echo "fail:harness-config (grok config has problems)" >&2
+            printf '%s\n' "$problems" >&2
+            status=1
+        fi
     fi
 fi
 
