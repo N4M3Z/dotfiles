@@ -178,8 +178,10 @@ else
         | grep -E 'ermission profile|unknown (key|field)|refusing run|Hooks: .*warning|UnsupportedEvent|MalformedConfig')
     # Muse quotes the path in literal backticks.
     # shellcheck disable=SC2016
-    unreadable=$(printf '%s\n' "${problems}" | sed -n 's/.*unresolvable Unix socket path `\(.*\)`.*/\1/p')
-    if [[ -n "${unreadable}" && ! -r "$(dirname "${unreadable}")" ]]; then
+    unreadable=$(printf '%s\n' "${problems}" | sed -n 's/^Named permission profiles are unavailable: unresolvable Unix socket path `\(.*\)`\.$/\1/p')
+    socket_problem="Named permission profiles are unavailable: unresolvable Unix socket path \`${unreadable}\`."
+    if [[ ${code} -eq 1 && -n "${unreadable}" && "${output}" == "${socket_problem}" \
+        && ! -r "$(dirname "${unreadable}")" ]]; then
         # An agent sandbox around this test hides the socket's folder from Muse.
         echo "skip muse cannot resolve ${unreadable} here: its folder is unreadable in this sandbox"
     elif [[ ${code} -ne 0 || -n "${problems}" ]]; then
