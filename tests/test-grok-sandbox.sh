@@ -123,9 +123,17 @@ fi
 
 # The reset must not become a lock. Only requirements.toml can lock yolo, so
 # the source must manage neither that file nor the bypass switch.
-lock_files=$(find "${SOURCE_DIR}/dot_grok" -name '*requirements.toml*')
+if ! lock_files=$(find "${SOURCE_DIR}/dot_grok" -name '*requirements.toml*'); then
+    echo "FAIL cannot scan Grok requirement files" >&2
+    exit 1
+fi
 lock_keys=$(grep -rl --exclude-dir=.git --exclude-dir=.jj --exclude-dir=.workspaces \
     --exclude=test-grok-sandbox.sh 'disable_bypass_permissions_mode' "${SOURCE_DIR}")
+lock_keys_status=$?
+if [[ ${lock_keys_status} -gt 1 ]]; then
+    echo "FAIL cannot scan the source for the bypass switch" >&2
+    exit 1
+fi
 if [[ -n "${lock_files}${lock_keys}" ]]; then
     echo "FAIL the source locks grok yolo:"
     printf '%s\n%s\n' "${lock_files}" "${lock_keys}" | sed '/^$/d; s/^/    /'

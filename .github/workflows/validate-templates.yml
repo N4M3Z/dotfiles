@@ -56,6 +56,9 @@ jobs:
             - name: Test grok sandbox
               run: bash tests/test-grok-sandbox.sh
 
+            - name: Test grok check failures
+              run: bash tests/test-grok-checks.sh
+
             - name: Test grok dcg profile
               run: bash tests/test-grok-dcg.sh
 

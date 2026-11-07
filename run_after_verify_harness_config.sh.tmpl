@@ -37,10 +37,14 @@ if command -v grok >/dev/null 2>&1; then
         echo "fail:harness-config (grok inspect fails; run it for detail)" >&2
         status=1
     else
-        problems=$(printf '%s' "$output" | jq -r '
-            ((.configSources.layers // [])[] | select(.note == "parse error") | "\(.path): parse error"),
-            ((.configWarnings // [])[] | "\(.path): \(.reason)")')
-        if [ -n "$problems" ]; then
+        if ! problems=$(printf '%s' "$output" | jq -rs '
+            if length != 1 or (.[0] | type) != "object"
+            then error("expected one JSON object") else .[0] end
+            | ((.configSources.layers // [])[] | select(.note == "parse error") | "\(.path): parse error"),
+              ((.configWarnings // [])[] | "\(.path): \(.reason)")'); then
+            echo "fail:harness-config (cannot parse grok inspect output)" >&2
+            status=1
+        elif [ -n "$problems" ]; then
             echo "fail:harness-config (grok config has problems)" >&2
             printf '%s\n' "$problems" >&2
             status=1
