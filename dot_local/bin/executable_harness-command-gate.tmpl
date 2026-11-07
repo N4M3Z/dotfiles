@@ -105,7 +105,7 @@ jq -nc --argjson rules "${RULES}" '
             | {kind: $kind, rule: $rule, part: .});
     def evaluation:
         first(.[] | select(test("^eval( |$)") or
-            (test("^(bash|sh|zsh|dash|ksh|fish)( |$)") and test("(^| )(-[^ -]*c[^ ]*|--command)( |$)")))
+            test("^(?:bash|sh|zsh|dash|ksh|fish)(?: (?:-o [^ ]+|[-+][^ ]*))*? (?:-[A-Za-z]*c[A-Za-z]*|--command)(?: |$)"))
             | {kind: "ask", source: "evaluation", part: .});
     input
     | if (.tool_name // "") != "bash" then empty

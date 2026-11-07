@@ -122,6 +122,12 @@ pass|cargo test
 pass|rg -n push src
 pass|nice git status
 pass|bash tests/test-command-gate.sh
+pass|bash deploy.sh -config x
+pass|sh build.sh --clean
+ask|bash -l -c 'git push'
+ask|bash -o pipefail -c 'git push'
+ask|bash --norc -c 'gh pr create'
+ask|sh -ec 'gh pr create'
 CASES
 for command_text in $'git push \\\n  --force origin main' $'git p\\\nush --force origin main'; do
     result=$(decide "${command_text}")
