@@ -62,5 +62,8 @@ jobs:
             - name: Test muse sandbox
               run: bash tests/test-muse-sandbox.sh
 
+            - name: Test command gate
+              run: bash tests/test-command-gate.sh
+
             - name: Validate just tree
               run: bash tests/validate-just-tree.sh
