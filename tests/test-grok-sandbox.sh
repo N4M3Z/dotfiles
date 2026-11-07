@@ -3,9 +3,10 @@
 # default profile must be a custom one.
 #
 # Claude turns its sandbox denyRead list and its Read(...) deny rules into
-# kernel denies. Grok applies Claude's rules to its own tools only, so for a
-# Grok shell command the profile's deny list is the only barrier. A path that
-# is missing there is readable to the shell.
+# kernel denies. Grok checks Claude's rules against its own tools and against
+# the paths a shell command names, but a program that opens a file itself gets
+# past that check. The profile's deny list is the only barrier for every
+# process, so a path that is missing there is readable to a Grok command.
 #
 # A built-in grok profile keeps running without enforcement when the kernel
 # refuses it. A custom profile refuses to start instead. So the default

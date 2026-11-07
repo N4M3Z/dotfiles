@@ -68,12 +68,15 @@
 {{- /*
   Claude Code also turns its Read(...) deny rules into kernel denies, so a
   path that Claude blocks only by a permission rule (~/.env, the proxy keys,
-  the private Atlas folders) is still closed to Claude's shell. Grok applies
-  those rules to its own tools but not to its shell, so the same paths are
-  added here from claude.json. ~/ becomes the home, a leading // marks an
-  absolute path, and ./ becomes a relative entry, which the deny field anchors
-  at the workspace. A trailing /** on a literal path becomes the directory
-  itself, so the entry stays exact on Linux, where globs expand only at launch.
+  the private Atlas folders) is still closed to Claude's shell. Grok checks
+  those rules against its own tools and against the paths that a shell
+  command names, such as `cat ~/.env`. A program that opens the file itself
+  gets past that check, and only a kernel deny covers every process. So the
+  same paths are added here from claude.json. ~/ becomes the home, a leading
+  // marks an absolute path, and ./ becomes a relative entry, which the deny
+  field anchors at the workspace. A trailing /** on a literal path becomes the
+  directory itself, so the entry stays exact on Linux, where globs expand only
+  at launch.
 */ -}}
 {{- range .harness.claude.permissions.deny -}}
   {{- if and (hasPrefix "Read(" .) (hasSuffix ")" .) -}}
