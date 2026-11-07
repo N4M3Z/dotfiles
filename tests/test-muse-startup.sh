@@ -5,6 +5,7 @@ set -o pipefail
 
 SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 WORKDIR=$(mktemp -d "${TMPDIR:-/tmp}/muse-startup.XXXXXX") || exit 1
+trap 'command rm -rf "$WORKDIR"' EXIT
 mkdir -p "${WORKDIR}/bin"
 
 chezmoi execute-template --source "${SOURCE_DIR}" \
