@@ -1,0 +1,197 @@
+#!/bin/bash
+# chezmoi modify_ script for ~/.config/muse/settings.json (Muse Code).
+#
+# chezmoi passes the live file on stdin and writes stdout back. The policy from
+# .chezmoidata/harness/muse.json is merged in, and the keys Muse writes itself
+# (tui, contributor mode, its own profiles and hooks) pass through.
+#
+# What Muse Code 1.4.14 does with these keys, checked against the binary
+# (evidence in the setup workshop, private/muse-sandbox-2026-11-07):
+# - permissions.default_profile picks the profile a new session starts in. The
+#   built-ins are :read-only, :ask-me, :auto-review and :unrestricted. A custom
+#   profile `extends` a built-in and may not extend :unrestricted. `--yolo` and
+#   `--permission-profile` still override it for one run.
+# - A profile rule that Muse cannot enforce stops Muse from starting
+#   ("cannot be enforced (no live matcher for this rule)"). That is the fail
+#   closed behavior, and it limits what the profile can say:
+#   - filesystem takes "<absolute or ~/ path>": "deny", and globs only under
+#     ":workspace_roots". A glob on an absolute path does not load, so the
+#     ProtonDrive-* rule is expanded here at apply time.
+#   - read and write grants on extra paths do not load, and neither does the
+#     profile workspace_roots key ("workspace roots come from the launch"), so
+#     Claude's allowWrite list has no Muse form. Shell writes stay inside the
+#     workspace, /tmp and $TMPDIR.
+#   - network.targets takes host: allow|deny. A loopback name must be a port in
+#     network.local_ports. A "*" key does not deny the rest: an unlisted host
+#     goes to the approval reviewer, which approves it or asks the owner.
+# - When the shell sandbox cannot start (inside another Seatbelt sandbox, for
+#   example), every shell command fails and is never run.
+# - hooks takes Claude Code's shape. The PreToolUse payload is Claude's too,
+#   with tool_name "bash". A hook answer of deny blocks the call, and ask goes
+#   to the owner, not to the AI reviewer.
+#
+# Lists copied from Claude Code: denyRead, allowedDomains and allowUnixSockets
+# in dot_claude/modify_private_settings.json.tmpl. tests/test-muse-sandbox.sh
+# fails when a copy here and the Claude source differ. The Read(...) deny rules
+# come from .chezmoidata/harness/claude.json at render time.
+# Source: https://github.com/N4M3Z/dotfiles
+{{- $home := .chezmoi.homeDir }}
+{{- $muse := .harness.muse }}
+{{- $claudeDenyRead := list
+      "~/.claude.json"
+      "~/.ssh"
+      "~/.aws"
+      "~/.azure"
+      "~/.gnupg"
+      "~/.kube"
+      "~/.config/gh"
+      "~/.config/gcloud"
+      "~/.git-credentials"
+      "~/Library/Keychains"
+      "~/.npmrc"
+      "~/.npm"
+      "~/.pypirc"
+      "~/.gem/credentials"
+      "~/.cargo/credentials.toml"
+      "~/.config/containers"
+      "~/.docker/config.json"
+      "~/.netrc"
+      "~/.config/op"
+      "~/.password-store"
+      "~/Library/Application Support/mkcert/rootCA-key.pem"
+      "/Volumes/Keyvault"
+      "/Volumes/.timemachine"
+      "/Volumes/com.apple.TimeMachine.localsnapshots"
+}}
+{{- $claudeAllowedDomains := list
+      "github.com"
+      "*.github.com"
+      "raw.githubusercontent.com"
+      "objects.githubusercontent.com"
+      "pkg-containers.githubusercontent.com"
+      "registry.npmjs.org"
+      "crates.io"
+      "static.crates.io"
+      "index.crates.io"
+      "formulae.brew.sh"
+      "ghcr.io"
+      "pypi.org"
+      "*.pypi.org"
+      "files.pythonhosted.org"
+      "semgrep.dev"
+      "*.semgrep.dev"
+      "browserbase.com"
+      "*.browserbase.com"
+      .private.gitlab_host
+      "localhost"
+      "127.0.0.1"
+      "cliproxy.internal"
+      "lumo.proton.me"
+      "models.opencode.ai"
+}}
+{{- $claudeUnixSockets := list
+      "/tmp/.s.PGSQL.5432"
+      "~/.obsidian-cli.sock"
+      "~/.gnupg/S.gpg-agent"
+      "~/.gnupg/S.dirmngr"
+}}
+{{- /*
+  Claude's paths use ~/ for the home, // for an absolute path and ./ for the
+  workspace. A trailing /** on a literal path means the path itself.
+*/}}
+{{- $claudePaths := concat $claudeDenyRead $muse.profile.deny }}
+{{- range .harness.claude.permissions.deny }}
+  {{- if and (hasPrefix "Read(" .) (hasSuffix ")" .) }}
+    {{- $claudePaths = append $claudePaths (trimSuffix ")" (trimPrefix "Read(" .)) }}
+  {{- end }}
+{{- end }}
+{{- $filesystem := dict }}
+{{- $workspace := dict }}
+{{- range uniq $claudePaths }}
+  {{- $path := . }}
+  {{- $relative := hasPrefix "./" $path }}
+  {{- if hasPrefix "~/" $path }}
+    {{- $path = printf "%s/%s" $home (trimPrefix "~/" $path) }}
+  {{- else if hasPrefix "//" $path }}
+    {{- $path = trimPrefix "/" $path }}
+  {{- else if $relative }}
+    {{- $path = trimPrefix "./" $path }}
+  {{- end }}
+  {{- $literal := trimSuffix "/**" $path }}
+  {{- if not (regexMatch `[*?\[]` $literal) }}
+    {{- $path = $literal }}
+  {{- end }}
+  {{- if $relative }}
+    {{- $_ := set $workspace $path "deny" }}
+  {{- else if regexMatch `[*?\[]` $path }}
+    {{- /* A deny on a folder covers what is under it, so glob for the folder. */}}
+    {{- range glob (trimSuffix "/**" $path) }}
+      {{- $_ := set $filesystem . "deny" }}
+    {{- end }}
+  {{- else }}
+    {{- $_ := set $filesystem $path "deny" }}
+  {{- end }}
+{{- end }}
+{{- $_ := set $filesystem ":workspace_roots" $workspace }}
+{{- $targets := dict }}
+{{- range $claudeAllowedDomains }}
+  {{- if not (has . (list "localhost" "127.0.0.1")) }}
+    {{- $_ := set $targets . "allow" }}
+  {{- end }}
+{{- end }}
+{{- $sockets := dict }}
+{{- range $claudeUnixSockets }}
+  {{- $_ := set $sockets (regexReplaceAll "^~/" . (printf "%s/" $home)) "allow" }}
+{{- end }}
+{{- $network := dict
+      "mode" $muse.profile.network.mode
+      "targets" $targets
+      "local_ports" $muse.profile.network.local_ports
+      "unix_sockets" $sockets
+}}
+{{- $profile := dict
+      "extends" $muse.profile.extends
+      "description" $muse.profile.description
+      "filesystem" $filesystem
+      "network" $network
+}}
+{{- $gate := printf "%s/.local/bin/harness-command-gate" $home }}
+{{- $dcg := printf "%s/.local/bin/dcg" $home }}
+{{- $hooks := list
+      (dict "matcher" "bash" "hooks" (list (dict "type" "command" "command" $dcg)))
+      (dict "matcher" "bash" "hooks" (list (dict "type" "command" "command" $gate)))
+}}
+{{- $policy := dict
+      "settings" $muse.settings
+      "profile_id" $muse.profile.id
+      "profile" $profile
+      "hooks" $hooks
+      "managed_commands" (list $dcg $gate)
+}}
+set -o pipefail
+umask 022
+
+policy=$(mktemp "${TMPDIR:-/tmp}/muse-policy.XXXXXX") || exit 1
+trap 'command rm -f "$policy"' EXIT
+
+cat > "$policy" <<'FORGE_POLICY'
+{{ $policy | toJson }}
+FORGE_POLICY
+
+# The deep merge (*) adds keys and never removes them. The policy owns its own
+# profile outright, so a rule retired from the policy drops out on the next
+# apply. default_profile is set back on every apply: the TUI picker saves a
+# choice there, and a saved :unrestricted would start every session in yolo.
+# This is a reset, not a lock. `--yolo` and the picker still work in a session.
+# The managed hook entries are replaced, and other hooks stay.
+jq -n --slurpfile policy "$policy" '
+    $policy[0] as $p
+    | ([inputs][0] // {})
+    | . * $p.settings
+    | .permissions.profiles[$p.profile_id] = $p.profile
+    | .permissions.default_profile = $p.profile_id
+    | .hooks.PreToolUse = (
+        [(.hooks.PreToolUse // [])[]
+            | select(any(.hooks[]?.command; IN($p.managed_commands[])) | not)]
+        + $p.hooks)
+'

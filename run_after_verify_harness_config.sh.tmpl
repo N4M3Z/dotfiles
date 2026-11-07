@@ -13,6 +13,11 @@
 # under configWarnings, so the probe reads both. GROK_SANDBOX=off stops inspect
 # from applying the sandbox profile, which fails when apply itself runs inside
 # an agent sandbox. tests/test-grok-sandbox.sh checks the profiles instead.
+# muse: Muse Code refuses a permission profile with a rule it cannot enforce,
+# and then refuses to start. `muse exec` with the echo provider makes no model
+# call and prints that refusal, an unknown key, or a bad hook at startup. Inside
+# an agent sandbox that hides ~/.gnupg, Muse cannot resolve the gpg-agent socket
+# rule. Only that exact message with exit 1 can be skipped there.
 set -o pipefail
 
 status=0
@@ -49,6 +54,27 @@ if command -v grok >/dev/null 2>&1; then
             printf '%s\n' "$problems" >&2
             status=1
         fi
+    fi
+fi
+
+if command -v muse >/dev/null 2>&1; then
+    probe_dir=$(mktemp -d "${TMPDIR:-/tmp}/muse-verify.XXXXXX")
+    output=$(cd "$probe_dir" && muse exec --provider echo --no-session-log --disable-reminders probe 2>&1)
+    code=$?
+    command rm -rf "$probe_dir"
+    problems=$(printf '%s\n' "$output" \
+        | grep -E 'ermission profile|unknown (key|field)|refusing run|Hooks: .*warning|UnsupportedEvent|MalformedConfig')
+    # Muse quotes the path in literal backticks.
+    # shellcheck disable=SC2016
+    socket=$(printf '%s\n' "$problems" | sed -n 's/^Named permission profiles are unavailable: unresolvable Unix socket path `\(.*\)`\.$/\1/p')
+    socket_problem="Named permission profiles are unavailable: unresolvable Unix socket path \`${socket}\`."
+    if [ "$code" -eq 1 ] && [ -n "$socket" ] && [ "$output" = "$socket_problem" ] \
+        && [ ! -r "$(dirname "$socket")" ]; then
+        echo "skip:harness-config (muse socket folder is unreadable in this sandbox)" >&2
+    elif [ "$code" -ne 0 ] || [ -n "$problems" ]; then
+        echo "fail:harness-config (muse does not load its settings)" >&2
+        printf '%s\n' "${problems:-$output}" | tail -n 5 >&2
+        status=1
     fi
 fi
 

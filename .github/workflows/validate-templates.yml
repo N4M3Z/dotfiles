@@ -62,5 +62,17 @@ jobs:
             - name: Test grok dcg profile
               run: bash tests/test-grok-dcg.sh
 
+            - name: Test muse sandbox
+              run: bash tests/test-muse-sandbox.sh
+
+            - name: Test muse dcg hook
+              run: bash tests/test-muse-dcg.sh
+
+            - name: Test muse startup failures
+              run: bash tests/test-muse-startup.sh
+
+            - name: Test command gate
+              run: bash tests/test-command-gate.sh
+
             - name: Validate just tree
               run: bash tests/validate-just-tree.sh
