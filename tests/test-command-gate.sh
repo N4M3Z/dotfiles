@@ -85,6 +85,8 @@ ask|rtk proxy git push
 ask|GIT_TRACE=1 git push
 ask|git -C ~/Developer/x push origin HEAD
 ask|git -C "a b" push
+ask|git 'push' origin main
+ask|"gh" pr create --fill
 ask|git --git-dir .git push
 ask|git --bare push
 ask|git  push
