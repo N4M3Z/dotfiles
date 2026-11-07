@@ -44,9 +44,11 @@ deny_unreadable() {
 }
 
 payload=$(cat) || deny_unreadable
-[ -n "${payload//[[:space:]]/}" ] || deny_unreadable
 
-jq -c --argjson rules "${RULES}" '
+# -n with `input` makes empty or blank stdin an error instead of no output, so
+# it is denied below. A bash pattern test on the payload would do the same,
+# but macOS /bin/bash 3.2 needs minutes for one on a 20 KB command.
+jq -nc --argjson rules "${RULES}" '
     # Claude rule text to an anchored regex. "X:*" is the old spelling of "X *".
     def rule_regex:
         (if endswith(":*") then .[:-2] + " *" else . end)
@@ -105,7 +107,8 @@ jq -c --argjson rules "${RULES}" '
         first(.[] | select(test("^eval( |$)") or
             (test("^(bash|sh|zsh|dash|ksh|fish)( |$)") and test("(^| )(-[^ -]*c[^ ]*|--command)( |$)")))
             | {kind: "ask", source: "evaluation", part: .});
-    if (.tool_name // "") != "bash" then empty
+    input
+    | if (.tool_name // "") != "bash" then empty
     else
         (.tool_input.command // "" | segments)
         | (verdict("deny") // verdict("ask") // evaluation)

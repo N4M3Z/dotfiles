@@ -147,6 +147,25 @@ else
     fail "the gate does not fail closed on a bad payload, or it answers for other tools"
 fi
 
+# Muse runs the hook with the script's own interpreter, /bin/bash, which is 3.2
+# on macOS. A heredoc or inline JSON makes a long command, and the gate must
+# still answer quickly. A slow answer may let Muse run the call ungated.
+if command -v timeout > /dev/null 2>&1; then
+    long=$(printf 'a%.0s' $(seq 1 20000))
+    started=${SECONDS}
+    result=$(jq -cn --arg c "echo ${long}; git push" \
+            '{hook_event_name: "PreToolUse", tool_name: "bash", tool_input: {command: $c}}' \
+        | timeout 20 /bin/bash "${WORKDIR}/gate" \
+        | jq -r '.hookSpecificOutput.permissionDecision // empty' 2> /dev/null)
+    if [[ "${result}" == ask ]]; then
+        echo "ok the gate answers a 20 KB command in $((SECONDS - started)) s with /bin/bash"
+    else
+        fail "the gate does not answer a 20 KB command within 20 s with /bin/bash (got '${result}')"
+    fi
+else
+    echo "skip timeout is not installed, so the long-command check does not run"
+fi
+
 if [[ ${failures} -gt 0 ]]; then
     echo "test-command-gate: ${failures} failure(s)"
     exit 1
