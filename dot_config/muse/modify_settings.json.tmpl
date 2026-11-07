@@ -156,7 +156,9 @@
       "network" $network
 }}
 {{- $gate := printf "%s/.local/bin/harness-command-gate" $home }}
+{{- $dcg := printf "%s/.local/bin/dcg" $home }}
 {{- $hooks := list
+      (dict "matcher" "bash" "hooks" (list (dict "type" "command" "command" $dcg)))
       (dict "matcher" "bash" "hooks" (list (dict "type" "command" "command" $gate)))
 }}
 {{- $policy := dict
@@ -164,7 +166,7 @@
       "profile_id" $muse.profile.id
       "profile" $profile
       "hooks" $hooks
-      "managed_commands" (list $gate)
+      "managed_commands" (list $dcg $gate)
 }}
 set -o pipefail
 umask 022
