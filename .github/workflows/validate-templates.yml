@@ -56,5 +56,8 @@ jobs:
             - name: Test grok sandbox
               run: bash tests/test-grok-sandbox.sh
 
+            - name: Test grok dcg profile
+              run: bash tests/test-grok-dcg.sh
+
             - name: Validate just tree
               run: bash tests/validate-just-tree.sh
