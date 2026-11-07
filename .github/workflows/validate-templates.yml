@@ -62,6 +62,9 @@ jobs:
             - name: Test muse sandbox
               run: bash tests/test-muse-sandbox.sh
 
+            - name: Test muse dcg hook
+              run: bash tests/test-muse-dcg.sh
+
             - name: Test command gate
               run: bash tests/test-command-gate.sh
 
