@@ -10,6 +10,9 @@ set -o pipefail
 SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 WORKDIR=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-just.XXXXXX") || exit 1
 trap 'command rm -rf "$WORKDIR"' EXIT
+# just prints the resolved path of the justfile folder. On macOS TMPDIR is
+# under /var, a symlink to /private/var, so resolve it before paths compare.
+WORKDIR=$(cd "${WORKDIR}" && pwd -P) || exit 1
 failures=0
 
 command -v just >/dev/null 2>&1 || { echo "validate-just-tree: just is not installed"; exit 1; }
