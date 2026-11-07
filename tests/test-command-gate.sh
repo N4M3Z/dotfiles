@@ -81,19 +81,50 @@ done <<'CASES'
 ask|git push origin main
 ask|cd ~/Developer/x && git push
 ask|rtk git push -u origin change/x
+ask|rtk proxy git push
 ask|GIT_TRACE=1 git push
 ask|git -C ~/Developer/x push origin HEAD
+ask|git -C "a b" push
+ask|git --git-dir .git push
+ask|git --bare push
+ask|git  push
+ask|/usr/bin/git push
+ask|\git push
+ask|timeout 60 git push
+ask|timeout -s TERM 60 git push
+ask|nice -n 5 git push
+ask|stdbuf -oL git push
+ask|echo | xargs -n 1 gh pr comment 12 --body ok
+ask|bash -c 'git push'
+ask|/bin/zsh -fc 'gh pr create'
+ask|eval "gh pr create"
+ask|env -C /tmp git push
+ask|time -o /tmp/time.log git push
 ask|echo body | gh pr create --fill
 ask|gh pr comment 12 --body ok
 deny|gh pr merge 12 --squash
 deny|git push --force origin main
 deny|true; sudo rm -rf /tmp/x
+deny|env sudo rm -rf /tmp/x
+deny|timeout 60 git push --force origin main
+deny|for b in a; do git push --force origin main; done
+deny|if true; then git push --force origin main; fi
+deny|{ git push --force origin main; }
+deny|! git push --force origin main
+deny|env -C /tmp git push --force origin main
+deny|sudo -g wheel rm -rf /tmp/x
 pass|git status
 pass|gh pr view 12
 pass|jj log -r @
 pass|cargo test
 pass|rg -n push src
+pass|nice git status
+pass|bash tests/test-command-gate.sh
 CASES
+for command_text in $'git push \\\n  --force origin main' $'git p\\\nush --force origin main'; do
+    result=$(decide "${command_text}")
+    [[ "${result}" == deny ]] || wrong+=("${result:-pass} (want deny): continued force push")
+done
 if [[ ${#wrong[@]} -gt 0 ]]; then
     fail "the gate decides these commands wrong:"
     printf '    %s\n' "${wrong[@]}"
@@ -101,9 +132,14 @@ else
     echo "ok the gate asks for remote writes in chains and passes routine work"
 fi
 
-broken=$(printf 'not json' | bash "${WORKDIR}/gate" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2> /dev/null)
+for payload in '' $' \t\n' 'not json'; do
+    broken=$(printf '%s' "${payload}" | bash "${WORKDIR}/gate" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2> /dev/null)
+    if [[ "${broken}" != deny ]]; then
+        fail "the gate does not deny an empty, blank, or malformed payload"
+    fi
+done
 other=$(jq -cn '{tool_name: "read_file", tool_input: {path: "/tmp/x"}}' | bash "${WORKDIR}/gate")
-if [[ "${broken}" == deny && -z "${other}" ]]; then
+if [[ -z "${other}" ]]; then
     echo "ok the gate denies a payload it cannot read and ignores other tools"
 else
     fail "the gate does not fail closed on a bad payload, or it answers for other tools"

@@ -12,11 +12,11 @@
 # cannot drift. A deny rule wins over an ask rule, as in Claude.
 #
 # Matching works on command text, the way Claude's rules do. The command is
-# split at && || ; | & and newlines, and at $( ` ( ). Each part loses leading
-# VAR=value words, the wrappers rtk, command, exec, env, nohup and time, and
-# git's global options (-C dir, -c key=value). A rule "X *" matches X alone and
-# X with arguments. A script that runs `git push` inside itself gets past this
-# gate. The sandbox and the network rules still apply to it.
+# split at && || ; | & and newlines, and at $( ` ( ). Each part normalizes
+# quoted words, command paths, whitespace, wrappers, and git global options.
+# Shell evaluation with -c or eval asks the owner. A rule "X *" matches X
+# alone and X with arguments. A script that runs `git push` inside itself
+# gets past this gate. The sandbox and network rules still apply to it.
 #
 # The gate fails closed: a payload it cannot read is denied.
 # Source: https://github.com/N4M3Z/dotfiles
@@ -44,6 +44,7 @@ deny_unreadable() {
 }
 
 payload=$(cat) || deny_unreadable
+[ -n "${payload//[[:space:]]/}" ] || deny_unreadable
 
 jq -c --argjson rules "${RULES}" '
     # Claude rule text to an anchored regex. "X:*" is the old spelling of "X *".
@@ -54,28 +55,66 @@ jq -c --argjson rules "${RULES}" '
         | gsub("\\*"; ".*")
         | gsub("\u0001"; "( .*)?")
         | "^" + . + "$";
-    def wrappers:
-        "^(?:[A-Za-z_][A-Za-z0-9_]*=\\S*|rtk|command|exec|env|nohup|time)\\s+";
-    def git_options:
-        "^git(?:\\s+(?:-C\\s+\\S+|-c\\s+\\S+|--no-pager|-P|--git-dir=\\S+|--work-tree=\\S+))+\\s+";
+    def words:
+        [scan("(?:[^\\s\"\u0027\\\\]+|\\\\.|\"(?:[^\"\\\\]|\\\\.)*\"|\u0027[^\u0027]*\u0027)+")]
+        | map(gsub("\"|\u0027"; "") | gsub("\\\\(?<c>.)"; "\(.c)"));
+    def executable:
+        if length > 0 then .[0] |= split("/")[-1] else . end;
+    def options($values):
+        if .[0] == "--" then .[1:]
+        elif length > 0 and (.[0] | startswith("-")) then
+            (if .[0] as $option | $values | index($option) then .[2:] else .[1:] end)
+            | options($values)
+        else . end;
+    def unwrap:
+        if length == 0 then empty
+        elif .[0] | test("^[A-Za-z_][A-Za-z0-9_]*=") then .[1:]
+        elif .[0] | IN("do", "then", "else", "elif", "if", "while", "until", "{", "!") then .[1:]
+        elif .[0] == "rtk" then .[1:] | if .[0] == "proxy" then .[1:] else . end
+        elif .[0] | IN("command", "exec", "nohup") then .[1:] | options(["-a"])
+        elif .[0] == "env" then .[1:] | options(["-u", "--unset", "-C", "--chdir", "-P"])
+        elif .[0] == "time" then .[1:] | options(["-o", "--output", "-f", "--format"])
+        elif .[0] == "sudo" then
+            .[1:] | options(["-u", "-g", "-h", "-p", "-D", "-U", "-r", "-t", "-C", "-T"])
+        elif .[0] == "timeout" then
+            .[1:] | options(["-k", "--kill-after", "-s", "--signal"]) | .[1:]
+        elif .[0] == "nice" then .[1:] | options(["-n", "--adjustment"])
+        elif .[0] == "stdbuf" then .[1:] | options(["-i", "-o", "-e", "--input", "--output", "--error"])
+        elif .[0] == "xargs" then
+            .[1:] | options(["-a", "--arg-file", "-d", "--delimiter", "-E", "-I", "--replace",
+                            "-L", "--max-lines", "-n", "--max-args", "-P", "--max-procs", "-s", "--max-chars"])
+        else empty end
+        | executable;
+    def git_command:
+        if .[0] != "git" or length < 2 then .
+        elif .[1] | IN("-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env") then
+            ([.[0]] + .[3:]) | git_command
+        elif .[1] | test("^(?:--(?:bare|no-pager|paginate|no-optional-locks|literal-pathspecs|glob-pathspecs|noglob-pathspecs|icase-pathspecs)|-[pP])$|^(?:--(?:git-dir|work-tree|namespace|config-env)=|-[Cc].+)") then
+            ([.[0]] + .[2:]) | git_command
+        else . end;
     def segments:
-        [splits("\\s*(?:&&|\\|\\||;|\\||&|\\n|\\$\\(|`|\\(|\\))\\s*")]
-        | map(gsub("^\\s+|\\s+$"; ""))
-        | map(until(test(wrappers) | not; sub(wrappers; "")))
-        | map(sub(git_options; "git "))
-        | map(select(length > 0));
+        gsub("\\\\\n"; "")
+        | [splits("\\s*(?:&&|\\|\\||;|\\||&|\\n|\\$\\(|`|\\(|\\))\\s*")]
+        | [ .[] | words | executable | recurse(unwrap) | git_command | select(length > 0) | join(" ") ]
+        | unique;
     def verdict($kind):
         first($rules[$kind][] as $rule
             | .[] | select(test($rule | rule_regex))
             | {kind: $kind, rule: $rule, part: .});
+    def evaluation:
+        first(.[] | select(test("^eval( |$)") or
+            (test("^(bash|sh|zsh|dash|ksh|fish)( |$)") and test("(^| )(-[^ -]*c[^ ]*|--command)( |$)")))
+            | {kind: "ask", source: "evaluation", part: .});
     if (.tool_name // "") != "bash" then empty
     else
         (.tool_input.command // "" | segments)
-        | (verdict("deny") // verdict("ask"))
+        | (verdict("deny") // verdict("ask") // evaluation)
         | {hookSpecificOutput: {
             hookEventName: "PreToolUse",
             permissionDecision: .kind,
-            permissionDecisionReason: (if .kind == "deny"
+            permissionDecisionReason: (if .source == "evaluation"
+                then "Shell evaluation needs owner approval because command text can hide a remote write."
+                elif .kind == "deny"
                 then "Claude Code denies Bash(\(.rule)) on this host, and `\(.part)` matches it. Ask the owner to run it."
                 else "Claude Code asks the owner before Bash(\(.rule)), and `\(.part)` matches it." end)}}
     end
