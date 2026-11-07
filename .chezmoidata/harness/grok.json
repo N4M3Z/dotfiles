@@ -86,6 +86,7 @@
           "Read(~/Library/Keychains/**)",
           "Read(~/.password-store/**)",
           "Read(~/.grok/auth.json)",
+          "Read(~/.grok/mcp_credentials.json)",
           "Edit(~/.bashrc)",
           "Edit(~/.zshrc)",
           "Edit(~/.bash_profile)",

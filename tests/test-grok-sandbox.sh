@@ -93,6 +93,20 @@ else
     failures=$((failures + 1))
 fi
 
+# Grok must read its own login files at startup, so a kernel deny would stop
+# it from signing in. A permission deny keeps Grok's tools out of them.
+token_gaps=$(jq -r '
+    ["Read(~/.grok/auth.json)", "Read(~/.grok/mcp_credentials.json)"]
+    - (.permission.deny // []) | .[]
+' "${WORKDIR}/grok.json") || exit 1
+if [[ -n "${token_gaps}" ]]; then
+    echo "FAIL grok tools can read grok's own login files:"
+    echo "${token_gaps}" | sed 's/^/    /'
+    failures=$((failures + 1))
+else
+    echo "ok grok tools cannot read grok's login or MCP tokens"
+fi
+
 # Grok saves an always-approve choice in ui.yolo, and the next session starts
 # in yolo. Each apply resets it, and keeps the keys that grok writes itself.
 live_config=$'[ui]\nyolo = true\n\n[session]\nlast_model = "kept"\n'
