@@ -1,0 +1,82 @@
+#!/bin/bash
+# PreToolUse gate that holds a harness to Claude Code's Bash ask and deny rules.
+#
+# Muse Code runs it before each bash call (dot_config/muse/modify_settings.json.tmpl).
+# Muse sends Claude's hook payload on stdin and obeys Claude's answer:
+# permissionDecision "deny" blocks the call, and "ask" goes to the owner instead
+# of the AI reviewer. Without this gate, `git push` and `gh pr create` would go
+# to the reviewer, which can approve them on its own.
+#
+# The rules are the Bash(...) entries of permissions.ask and permissions.deny in
+# .chezmoidata/harness/claude.json, embedded at apply time, so the two lists
+# cannot drift. A deny rule wins over an ask rule, as in Claude.
+#
+# Matching works on command text, the way Claude's rules do. The command is
+# split at && || ; | & and newlines, and at $( ` ( ). Each part loses leading
+# VAR=value words, the wrappers rtk, command, exec, env, nohup and time, and
+# git's global options (-C dir, -c key=value). A rule "X *" matches X alone and
+# X with arguments. A script that runs `git push` inside itself gets past this
+# gate. The sandbox and the network rules still apply to it.
+#
+# The gate fails closed: a payload it cannot read is denied.
+# Source: https://github.com/N4M3Z/dotfiles
+{{- $deny := list }}
+{{- $ask := list }}
+{{- range .harness.claude.permissions.deny }}
+  {{- if and (hasPrefix "Bash(" .) (hasSuffix ")" .) }}
+    {{- $deny = append $deny (trimSuffix ")" (trimPrefix "Bash(" .)) }}
+  {{- end }}
+{{- end }}
+{{- range .harness.claude.permissions.ask }}
+  {{- if and (hasPrefix "Bash(" .) (hasSuffix ")" .) }}
+    {{- $ask = append $ask (trimSuffix ")" (trimPrefix "Bash(" .)) }}
+  {{- end }}
+{{- end }}
+set -o pipefail
+
+read -r -d '' RULES <<'FORGE_RULES'
+{{ dict "deny" $deny "ask" $ask | toJson }}
+FORGE_RULES
+
+deny_unreadable() {
+    printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"harness-command-gate could not read this call, so it is denied. Ask the owner to run it."}}'
+    exit 0
+}
+
+payload=$(cat) || deny_unreadable
+
+jq -c --argjson rules "${RULES}" '
+    # Claude rule text to an anchored regex. "X:*" is the old spelling of "X *".
+    def rule_regex:
+        (if endswith(":*") then .[:-2] + " *" else . end)
+        | gsub("(?<c>[.+?^${}()|\\[\\]\\\\])"; "\\\(.c)")
+        | (if endswith(" *") then .[:-2] + "\u0001" else . end)
+        | gsub("\\*"; ".*")
+        | gsub("\u0001"; "( .*)?")
+        | "^" + . + "$";
+    def wrappers:
+        "^(?:[A-Za-z_][A-Za-z0-9_]*=\\S*|rtk|command|exec|env|nohup|time)\\s+";
+    def git_options:
+        "^git(?:\\s+(?:-C\\s+\\S+|-c\\s+\\S+|--no-pager|-P|--git-dir=\\S+|--work-tree=\\S+))+\\s+";
+    def segments:
+        [splits("\\s*(?:&&|\\|\\||;|\\||&|\\n|\\$\\(|`|\\(|\\))\\s*")]
+        | map(gsub("^\\s+|\\s+$"; ""))
+        | map(until(test(wrappers) | not; sub(wrappers; "")))
+        | map(sub(git_options; "git "))
+        | map(select(length > 0));
+    def verdict($kind):
+        first($rules[$kind][] as $rule
+            | .[] | select(test($rule | rule_regex))
+            | {kind: $kind, rule: $rule, part: .});
+    if (.tool_name // "") != "bash" then empty
+    else
+        (.tool_input.command // "" | segments)
+        | (verdict("deny") // verdict("ask"))
+        | {hookSpecificOutput: {
+            hookEventName: "PreToolUse",
+            permissionDecision: .kind,
+            permissionDecisionReason: (if .kind == "deny"
+                then "Claude Code denies Bash(\(.rule)) on this host, and `\(.part)` matches it. Ask the owner to run it."
+                else "Claude Code asks the owner before Bash(\(.rule)), and `\(.part)` matches it." end)}}
+    end
+' <<< "${payload}" 2> /dev/null || deny_unreadable

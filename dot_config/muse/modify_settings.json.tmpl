@@ -26,6 +26,9 @@
 #     goes to the approval reviewer, which approves it or asks the owner.
 # - When the shell sandbox cannot start (inside another Seatbelt sandbox, for
 #   example), every shell command fails and is never run.
+# - hooks takes Claude Code's shape. The PreToolUse payload is Claude's too,
+#   with tool_name "bash". A hook answer of deny blocks the call, and ask goes
+#   to the owner, not to the AI reviewer.
 #
 # Lists copied from Claude Code: denyRead, allowedDomains and allowUnixSockets
 # in dot_claude/modify_private_settings.json.tmpl. tests/test-muse-sandbox.sh
@@ -152,10 +155,16 @@
       "filesystem" $filesystem
       "network" $network
 }}
+{{- $gate := printf "%s/.local/bin/harness-command-gate" $home }}
+{{- $hooks := list
+      (dict "matcher" "bash" "hooks" (list (dict "type" "command" "command" $gate)))
+}}
 {{- $policy := dict
       "settings" $muse.settings
       "profile_id" $muse.profile.id
       "profile" $profile
+      "hooks" $hooks
+      "managed_commands" (list $gate)
 }}
 set -o pipefail
 umask 022
@@ -172,10 +181,15 @@ FORGE_POLICY
 # apply. default_profile is set back on every apply: the TUI picker saves a
 # choice there, and a saved :unrestricted would start every session in yolo.
 # This is a reset, not a lock. `--yolo` and the picker still work in a session.
+# The managed hook entries are replaced, and other hooks stay.
 jq -n --slurpfile policy "$policy" '
     $policy[0] as $p
     | ([inputs][0] // {})
     | . * $p.settings
     | .permissions.profiles[$p.profile_id] = $p.profile
     | .permissions.default_profile = $p.profile_id
+    | .hooks.PreToolUse = (
+        [(.hooks.PreToolUse // [])[]
+            | select(any(.hooks[]?.command; IN($p.managed_commands[])) | not)]
+        + $p.hooks)
 '
