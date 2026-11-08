@@ -124,10 +124,13 @@
   {{- if $relative }}
     {{- $_ := set $workspace $path "deny" }}
   {{- else if regexMatch `[*?\[]` $path }}
-    {{- /* A deny on a folder covers what is under it, so glob for the folder. */}}
-    {{- range glob (trimSuffix "/**" $path) }}
-      {{- $_ := set $filesystem . "deny" }}
-    {{- end }}
+    {{- /*
+      Muse refuses a glob outside the workspace, and a glob expanded at apply
+      time misses a folder created later, such as a second ProtonDrive-*
+      folder. So deny the literal folder above the first glob. It covers
+      every match, now and later, and is wider than the glob.
+    */}}
+    {{- $_ := set $filesystem (regexReplaceAll `/[^/]*[*?\[].*$` $path "") "deny" }}
   {{- else }}
     {{- $_ := set $filesystem $path "deny" }}
   {{- end }}

@@ -45,8 +45,10 @@ jq '.permissions.profiles[.permissions.default_profile] // {}' "${WORKDIR}/muse.
 
 # Write each Claude path the way the muse template writes it: ~/ is the home,
 # a leading // marks an absolute path, ./ goes under :workspace_roots, and a
-# trailing /** on a literal path becomes the path itself. An absolute glob is
-# checked against what it matches on this host, as the template expands it.
+# trailing /** on a literal path becomes the path itself. Muse refuses an
+# absolute glob, so the template denies the literal folder above the first
+# glob, and the test expects that folder. A match created after apply then
+# stays denied.
 jq -r '
     ([.sandbox.filesystem.denyRead[]]
         + [.permissions.deny[] | select(startswith("Read(") and endswith(")")) | .[5:-1]])
@@ -65,9 +67,8 @@ while IFS= read -r path; do
     literal="${path%/\*\*}"
     [[ "${literal}" == *[\*\?\[]* ]] || path="${literal}"
     if [[ "${scope}" == absolute && "${path}" == *[\*\?\[]* ]]; then
-        while IFS= read -r match; do
-            [[ -n "${match}" ]] && printf 'absolute\t%s\n' "${match}"
-        done < <(compgen -G "${path%/\*\*}")
+        parent="${path%%[\*\?\[]*}"
+        printf 'absolute\t%s\n' "${parent%/*}"
     else
         printf '%s\t%s\n' "${scope}" "${path}"
     fi
@@ -86,6 +87,14 @@ if [[ -n "${missing}" ]]; then
     fail "the muse profile leaves paths open that Claude denies:" "${missing}"
 else
     echo "ok the muse profile denies every path Claude denies"
+fi
+
+absolute_globs=$(jq -r '.filesystem | keys[] | select(. != ":workspace_roots" and test("[*?\\[]"))' \
+    "${WORKDIR}/profile.json")
+if [[ -n "${absolute_globs}" ]]; then
+    fail "the muse profile holds a glob outside the workspace, which muse refuses:" "${absolute_globs}"
+else
+    echo "ok the muse profile holds no glob outside the workspace"
 fi
 
 if jq -e --arg auth "${HOME}/.config/muse/auth.json" '.filesystem[$auth] == "deny"' \
