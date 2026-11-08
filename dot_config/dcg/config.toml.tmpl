@@ -59,3 +59,34 @@ custom_paths = [
 {{- end }}
 # sed-no-in-place has no relax entry: the redirect target is the harness
 # Edit tool, which every agent context provides.
+
+# Muse Code runs dcg as a PreToolUse hook with Claude's payload, but dcg 0.14.4
+# reads that payload as Codex, because it carries a turn_id field, and its hook
+# mode takes no agent override. So there is no [agents.muse] here: it would
+# never apply. A future [agents.codex] binds Muse too. tests/test-muse-dcg.sh
+# fails when dcg starts to tell Muse apart.
+
+# Grok gets more packs than the other agents. dcg knows Grok from the shape of
+# its hook event, so this profile applies whether dcg runs from Grok's own
+# hook file (`dcg install --grok`) or from the Claude settings Grok also reads.
+# On macOS no Grok setting limits a shell command's network, so the egress
+# packs are the only check on uploads and tunnels. They match command text
+# only: a script that opens its own connection gets past them. Grok writes
+# through jj, so the strict_git rules cost it nothing. The guardrails pack
+# stops Grok from weakening dcg itself (allow-once, allowlist, uninstall).
+[agents.grok]
+trust_level = "low"
+disabled_allowlist = true
+extra_packs = [
+    "strict_git",
+    "careful_company_running_windows.upload",
+    "careful_company_running_windows.tunnel",
+    "careful_company_running_windows.transfer",
+    "careful_company_running_windows.chat",
+    "careful_company_running_windows.email",
+    "careful_company_running_windows.guardrails",
+    "secret_disclosure",
+    "platform.github",
+    "package_managers",
+    "system.permissions",
+]

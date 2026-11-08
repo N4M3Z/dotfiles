@@ -1,0 +1,28 @@
+{
+  "harness": {
+    "muse": {
+      "settings": {
+        "schema_version": 1,
+        "permissions": {
+          "schema_version": 1
+        }
+      },
+      "profile": {
+        "id": "nexus",
+        "extends": ":auto-review",
+        "description": "Auto-review with the paths and hosts Claude Code allows or denies on this host.",
+        "network": {
+          "mode": "proxy_only",
+          "local_ports": {
+            "5432": "allow",
+            "11434": "allow",
+            "31415": "allow"
+          }
+        },
+        "deny": [
+          "~/.config/muse/auth.json"
+        ]
+      }
+    }
+  }
+}

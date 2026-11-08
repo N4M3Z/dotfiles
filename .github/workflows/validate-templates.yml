@@ -53,5 +53,26 @@ jobs:
             - name: Test home targets
               run: bash tests/test-home-targets.sh
 
+            - name: Test grok sandbox
+              run: bash tests/test-grok-sandbox.sh
+
+            - name: Test grok check failures
+              run: bash tests/test-grok-checks.sh
+
+            - name: Test grok dcg profile
+              run: bash tests/test-grok-dcg.sh
+
+            - name: Test muse sandbox
+              run: bash tests/test-muse-sandbox.sh
+
+            - name: Test muse dcg hook
+              run: bash tests/test-muse-dcg.sh
+
+            - name: Test muse startup failures
+              run: bash tests/test-muse-startup.sh
+
+            - name: Test command gate
+              run: bash tests/test-command-gate.sh
+
             - name: Validate just tree
               run: bash tests/validate-just-tree.sh

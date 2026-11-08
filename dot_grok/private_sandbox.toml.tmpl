@@ -1,16 +1,42 @@
 # Grok sandbox profiles, rendered by chezmoi into ~/.grok/sandbox.toml.
 #
-# The profile format (extends, read_only, read_write, deny, restrict_network)
-# is the one the grok README documents under "Sandbox > Custom Profiles".
-# Paths are literal directories, no globs. Grok has no per-domain network
-# allowlist: restrict_network is all or nothing for child processes, so the
-# workspace profiles keep the child network open and rely on the Claude
-# allowlist only where Claude runs. The grok API hosts are in-process and
-# never blocked by the sandbox.
+# The profile fields (extends, read_only, read_write, deny, restrict_network)
+# are documented in ~/.grok/docs/user-guide/18-sandbox.md. That guide is
+# newer than the sandbox section of ~/.grok/README.md, so trust the guide.
+#
+# What the grok 1.0.77 guide says, and what these profiles rely on:
+# - A custom profile that cannot be applied stops grok from starting. A
+#   built-in profile only warns and runs without enforcement, so the default
+#   profile is a custom one. tests/test-grok-sandbox.sh checks that.
+# - Every profile built on workspace write-protects ~/.grok/config.toml,
+#   sandbox.toml and requirements.toml, so a session cannot widen its own
+#   policy. A /yolo or Shift+Tab switch lasts for that session only.
+# - read_only and read_write take directories only. Cargo's .package-cache
+#   and .package-cache-mutate are files, so they stay off the write list.
+# - deny takes paths and globs. On macOS a glob also covers files created
+#   later. On Linux it covers only the files that exist at launch.
+# - restrict_network does nothing on macOS, and grok has no domain
+#   allowlist, so child processes keep the network. The grok API calls run
+#   in-process. The config reference (26-config-reference.md) has no other
+#   network key: toolset.web_fetch.proxy_endpoint and the web_fetch and
+#   web_search domain lists cover in-process tools only, and
+#   shell_environment_policy.set can only name a proxy, which no filtering
+#   proxy on the host backs. The one egress control for grok's shell on
+#   macOS is a Little Snitch rule group keyed on grok's code identity
+#   (identifier.5Y6N3AJ54S/xai-grok-pager): a rule for a process with no
+#   via field also matches that process as the parent of a helper tool
+#   (https://help.obdev.at/littlesnitch6/adv-lsrules-file-format). That
+#   group lives outside this repo. Until it is imported and verified,
+#   sandbox.auto_allow_bash stays false in grok.json: turning it on skips
+#   bash prompts whenever a profile is active, and with an open network the
+#   auto-mode review is one of the few checks on what a command sends out.
+# - grok has no excluded commands and no unsandboxed retry. gh cannot read
+#   ~/.config/gh, jj cannot sign, and brew cannot write /opt/homebrew.
 #
 # Keep the lists in step with the Claude sandbox block in
-# dot_claude/private_settings.json.tmpl: read_write mirrors allowWrite,
-# read_only mirrors denyWrite, deny mirrors denyRead.
+# dot_claude/modify_private_settings.json.tmpl: read_write mirrors
+# allowWrite, read_only mirrors denyWrite, deny mirrors denyRead plus the
+# Read(...) deny rules in .chezmoidata/harness/claude.json.
 # Source: https://github.com/N4M3Z/dotfiles
 {{- $home := .chezmoi.homeDir -}}
 {{- $deny := list
@@ -34,14 +60,52 @@
       (printf "%s/.password-store" $home)
       (printf "%s/.pypirc" $home)
       (printf "%s/Library/Keychains" $home)
+      (printf "%s/Library/Application Support/mkcert/rootCA-key.pem" $home)
       "/Volumes/Keyvault"
       "/Volumes/.timemachine"
       "/Volumes/com.apple.TimeMachine.localsnapshots"
 -}}
+{{- /*
+  Claude Code also turns its Read(...) deny rules into kernel denies, so a
+  path that Claude blocks only by a permission rule (~/.env, the proxy keys,
+  the private Atlas folders) is still closed to Claude's shell. Grok checks
+  those rules against its own tools and against the paths that a shell
+  command names, such as `cat ~/.env`. A program that opens the file itself
+  gets past that check, and only a kernel deny covers every process. So the
+  same paths are added here from claude.json. ~/ becomes the home, a leading
+  // marks an absolute path, and ./ becomes a relative entry, which the deny
+  field anchors at the workspace. A trailing /** on a literal path becomes the
+  directory itself, so the entry stays exact on Linux, where globs expand only
+  at launch.
+*/ -}}
+{{- range .harness.claude.permissions.deny -}}
+  {{- if and (hasPrefix "Read(" .) (hasSuffix ")" .) -}}
+    {{- $path := trimSuffix ")" (trimPrefix "Read(" .) -}}
+    {{- if hasPrefix "~/" $path -}}
+      {{- $path = printf "%s/%s" $home (trimPrefix "~/" $path) -}}
+    {{- else if hasPrefix "//" $path -}}
+      {{- $path = trimPrefix "/" $path -}}
+    {{- else if hasPrefix "./" $path -}}
+      {{- $path = trimPrefix "./" $path -}}
+    {{- end -}}
+    {{- $literal := trimSuffix "/**" $path -}}
+    {{- if not (regexMatch `[*?\[]` $literal) -}}
+      {{- $path = $literal -}}
+    {{- end -}}
+    {{- $deny = append $deny $path -}}
+  {{- end -}}
+{{- end -}}
+{{- $deny = uniq $deny -}}
 {{- $readWrite := list
       (printf "%s/Agents" $home)
       (printf "%s/.cache/uv" $home)
+      (printf "%s/.cache/act" $home)
+      (printf "%s/.cache/prek" $home)
+      (printf "%s/.cargo/registry" $home)
+      (printf "%s/.cargo/git" $home)
       (printf "%s/.local/share/Trash" $home)
+      (printf "%s/.local/state/rune" $home)
+      (printf "%s/.local/state/sd-job" $home)
       "/tmp/claude"
       "/var/folders"
       (printf "%s/Atlas" $home)
@@ -52,7 +116,6 @@
       (printf "%s/.local/share/openspec" $home)
       (printf "%s/.semgrep" $home)
       (printf "%s/Library/Caches" $home)
-      "/opt/homebrew"
       (printf "%s/Data/Memex" $home)
       (printf "%s/Data/Sessions" $home)
       (printf "%s/Data/SessionVersions" $home)
