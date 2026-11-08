@@ -3,6 +3,7 @@
     "cursor": {
       "sandbox": {
         "type": "workspace_readwrite",
+        "readBoundary": "workspace",
         "additionalReadwritePaths": [
           "~/Developer",
           "~/Atlas",

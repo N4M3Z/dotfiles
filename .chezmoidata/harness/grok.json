@@ -67,6 +67,8 @@
           "Bash(osascript *Finder*)",
           "Read(~/.ssh/**)",
           "Edit(~/.ssh/**)",
+          "Read(~/**/dotfiles-private/**)",
+          "Edit(~/**/dotfiles-private/**)",
           "Read(~/.aws/**)",
           "Read(~/.azure/**)",
           "Read(~/.config/gcloud/**)",

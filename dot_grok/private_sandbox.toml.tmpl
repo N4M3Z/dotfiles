@@ -39,9 +39,12 @@
 # Read(...) deny rules in .chezmoidata/harness/claude.json.
 # Source: https://github.com/N4M3Z/dotfiles
 {{- $home := .chezmoi.homeDir -}}
+{{- /* This repository is public, so it does not record where the private folder lives. It is found at render time. */ -}}
+{{- $dotfilesPrivate := glob "Developer/*/dotfiles-private" | first | default "dotfiles-private" -}}
 {{- $deny := list
       (printf "%s/.claude.json" $home)
       (printf "%s/.ssh" $home)
+      (printf "%s/%s" $home $dotfilesPrivate)
       (printf "%s/.aws" $home)
       (printf "%s/.azure" $home)
       (printf "%s/.cargo/credentials.toml" $home)

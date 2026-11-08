@@ -15,8 +15,10 @@ umask 077
 policy=$(mktemp "${TMPDIR:-/tmp}/antigravity-policy.XXXXXX") || exit 1
 trap 'command rm -f "$policy"' EXIT
 
+{{/* This repository is public, so it does not record where the private folder lives. Antigravity has no recursive wildcard, so the path is found at render time. */ -}}
+{{ $dotfilesPrivate := glob "Developer/*/dotfiles-private" | first | default "dotfiles-private" -}}
 cat > "$policy" <<'FORGE_POLICY'
-{{ .harness.antigravity | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir }}
+{{ .harness.antigravity | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir | replace "@DOTFILES_PRIVATE@" $dotfilesPrivate }}
 FORGE_POLICY
 
 jq -n --slurpfile policy "$policy" '((try input) // {}) * $policy[0]'

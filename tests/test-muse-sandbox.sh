@@ -64,6 +64,12 @@ while IFS= read -r path; do
         //*) path="${path#/}" ;;
         ./*) path="${path#./}"; scope=workspace ;;
     esac
+    # The template resolves this one wildcard to the real folder, because the
+    # folder above its first glob is the home folder.
+    if [[ "${path}" == */\*\*/dotfiles-private/\*\* ]]; then
+        path=$(compgen -G "${HOME}/Developer/*/dotfiles-private" | head -n 1)
+        path="${path:-${HOME}/dotfiles-private}"
+    fi
     literal="${path%/\*\*}"
     [[ "${literal}" == *[\*\?\[]* ]] || path="${literal}"
     if [[ "${scope}" == absolute && "${path}" == *[\*\?\[]* ]]; then
@@ -87,6 +93,12 @@ if [[ -n "${missing}" ]]; then
     fail "the muse profile leaves paths open that Claude denies:" "${missing}"
 else
     echo "ok the muse profile denies every path Claude denies"
+fi
+
+if jq -e --arg home "${HOME}" '.filesystem | has($home)' "${WORKDIR}/profile.json" > /dev/null; then
+    fail "the muse profile denies the whole home folder"
+else
+    echo "ok the muse profile keeps the home folder readable"
 fi
 
 absolute_globs=$(jq -r '.filesystem | keys[] | select(. != ":workspace_roots" and test("[*?\\[]"))' \

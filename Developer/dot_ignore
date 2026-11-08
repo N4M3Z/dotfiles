@@ -1,0 +1,3 @@
+# ripgrep and fd read this file. A search from this folder or above it skips
+# the private folder, including in harnesses that have no OS sandbox.
+dotfiles-private/
