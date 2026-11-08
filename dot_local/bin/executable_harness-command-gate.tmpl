@@ -61,7 +61,8 @@ jq -nc --argjson rules "${RULES}" '
         [scan("(?:[^\\s\"\u0027\\\\]+|\\\\.|\"(?:[^\"\\\\]|\\\\.)*\"|\u0027[^\u0027]*\u0027)+")]
         | map(gsub("\"|\u0027"; "") | gsub("\\\\(?<c>.)"; "\(.c)"));
     def executable:
-        if length > 0 then .[0] |= split("/")[-1] else . end;
+        if length > 0 and (.[0] | test("^[A-Za-z_][A-Za-z0-9_]*=") | not)
+        then .[0] |= split("/")[-1] else . end;
     def options($values):
         if .[0] == "--" then .[1:]
         elif length > 0 and (.[0] | startswith("-")) then

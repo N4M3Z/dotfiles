@@ -83,6 +83,11 @@ ask|cd ~/Developer/x && git push
 ask|rtk git push -u origin change/x
 ask|rtk proxy git push
 ask|GIT_TRACE=1 git push
+ask|HOME=/tmp git push
+ask|env FOO=/a/b git push
+ask|A=1 B=/x gh pr create
+ask|GIT_SSH_COMMAND="ssh -i /k/id" git push
+ask|/usr/bin/env FOO=/a/b /usr/bin/git push
 ask|git -C ~/Developer/x push origin HEAD
 ask|git -C "a b" push
 ask|git 'push' origin main
@@ -108,6 +113,9 @@ deny|gh pr merge 12 --squash
 deny|git push --force origin main
 deny|true; sudo rm -rf /tmp/x
 deny|env sudo rm -rf /tmp/x
+deny|HOME=/tmp sudo rm -rf /tmp/x
+deny|env FOO=/a/b sudo rm -rf /tmp/x
+deny|A=1 B=/x git push --force origin main
 deny|timeout 60 git push --force origin main
 deny|for b in a; do git push --force origin main; done
 deny|if true; then git push --force origin main; fi
@@ -116,6 +124,8 @@ deny|! git push --force origin main
 deny|env -C /tmp git push --force origin main
 deny|sudo -g wheel rm -rf /tmp/x
 pass|git status
+pass|HOME=/tmp git status
+pass|env FOO=/a/b git status
 pass|gh pr view 12
 pass|jj log -r @
 pass|cargo test
