@@ -171,7 +171,13 @@ if [[ -z "${MUSE}" ]]; then
 else
     mkdir -p "${WORKDIR}/xdg/muse" "${WORKDIR}/ws"
     cp -f "${WORKDIR}/muse.json" "${WORKDIR}/xdg/muse/settings.json"
-    output=$(cd "${WORKDIR}/ws" && XDG_CONFIG_HOME="${WORKDIR}/xdg" timeout 120 "${MUSE}" exec \
+    muse_timeout=()
+    if command -v timeout > /dev/null 2>&1; then
+        muse_timeout=(timeout 120)
+    elif command -v gtimeout > /dev/null 2>&1; then
+        muse_timeout=(gtimeout 120)
+    fi
+    output=$(cd "${WORKDIR}/ws" && XDG_CONFIG_HOME="${WORKDIR}/xdg" "${muse_timeout[@]}" "${MUSE}" exec \
         --provider echo --no-session-log --disable-reminders probe 2>&1)
     code=$?
     problems=$(printf '%s\n' "${output}" \
