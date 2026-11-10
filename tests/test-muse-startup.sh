@@ -62,7 +62,7 @@ chmod +x "${WORKDIR}/timeout-wrapper"
 for mode in none gtimeout timeout; do
     tool_path="${WORKDIR}/path-${mode}"
     mkdir -p "${tool_path}"
-    for tool in bash cat chezmoi cp dirname grep jq mkdir mktemp rm sed tail; do
+    for tool in bash cat chezmoi cp dirname grep head jq mkdir mktemp rm sed tail; do
         tool_binary=$(command -v "${tool}") || exit 1
         ln -s "${tool_binary}" "${tool_path}/${tool}" || exit 1
     done
