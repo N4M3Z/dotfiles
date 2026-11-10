@@ -37,6 +37,16 @@ desired=$(cat <<'DESIRED'
     "OTEL_METRIC_EXPORT_INTERVAL": "60000",
     "OTEL_LOG_USER_PROMPTS": "1",
     "OTEL_LOG_TOOL_DETAILS": "1",
+    {{- /*
+    T3 Code starts Claude Code without a login shell, so ~/.zshenv and
+    otel.zsh never run for its sessions, and only this block reaches them.
+    From the switch to T3 on 2026-11-02, Nexus logged 13,080 API requests
+    and 251 request bodies (2026-11-03 to 11-09). The two keys below are the
+    ones otel.zsh sets and this block lacked. The path must be absolute:
+    settings values are not expanded by a shell.
+    */}}
+    "OTEL_LOG_TOOL_CONTENT": "1",
+    "OTEL_LOG_RAW_API_BODIES": "file:{{ .chezmoi.homeDir }}/Data/Claude/telemetry",
     "OTEL_METRICS_INCLUDE_SESSION_ID": "true",
     {{- /*
     The Seatbelt sandbox blocks the keychain lookup (trustd), so a sandboxed
