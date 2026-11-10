@@ -1,5 +1,7 @@
 {{- /* Permission policy is shared: edit .chezmoidata/harness/claude.json, not this block. */ -}}
 {{- $harness := .harness.claude -}}
+{{- /* This repository is public, so it does not record where the private folder lives. It is found at render time. */ -}}
+{{- $dotfilesPrivate := glob "Developer/*/dotfiles-private" | first | default "dotfiles-private" -}}
 #!/bin/sh
 # A modify script: chezmoi hands the live settings.json on stdin and takes
 # the new file from stdout. Everything but `hooks` comes from the template
@@ -228,6 +230,7 @@ desired=$(cat <<'DESIRED'
       "denyRead": [
         "~/.claude.json",
         "~/.ssh",
+        "~/{{ $dotfilesPrivate }}",
         "~/.aws",
         "~/.azure",
         "~/.gnupg",

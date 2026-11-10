@@ -30,10 +30,12 @@ trap 'command rm -f "$policy"' EXIT
 {{- range concat $auto.hard_deny $mine.hard_deny }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
 {{- $lines = concat $lines (list "" "Environment:") -}}
 {{- range concat $auto.environment $mine.environment }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
+{{- /* This repository is public, so it does not record where the private folder lives. Codex takes no wildcard here, so the path is found at render time. */ -}}
+{{- $dotfilesPrivate := glob "Developer/*/dotfiles-private" | first | default "dotfiles-private" -}}
 {{- $codex := deepCopy .harness.codex -}}
 {{- $_ := set $codex "auto_review" (dict "policy" (printf "%s\n" (join "\n" $lines))) }}
 cat > "$policy" <<'FORGE_POLICY'
-{{ $codex | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir | replace "@GITLAB_HOST@" .private.gitlab_host }}
+{{ $codex | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir | replace "@GITLAB_HOST@" .private.gitlab_host | replace "@DOTFILES_PRIVATE@" $dotfilesPrivate }}
 FORGE_POLICY
 
 # The deep-merge (*) adds and overwrites but never removes, so a filesystem grant

@@ -3,12 +3,13 @@
 #
 # The live file arrives on stdin; stdout becomes the new contents on every
 # `chezmoi apply`. Only the policy fields in .chezmoidata/harness/cursor.json
-# (approval mode, sandbox mode, network mode, and the Shell allow and deny
-# lists) are enforced. Everything the CLI writes itself (display, privacy
-# cache, model choice) passes through untouched.
+# (approval mode, sandbox mode, network mode, the Shell allow and deny lists,
+# and the Read deny list) are enforced. Everything the CLI writes itself
+# (display, privacy cache, model choice) passes through untouched.
 #
-# The Shell lists derive from the Claude Bash lists so one edit to
-# .chezmoidata/harness/claude.json changes both harnesses.
+# The Shell lists derive from the Claude Bash lists, and the Read deny list from
+# the Claude Read deny rules, so one edit to .chezmoidata/harness/claude.json
+# changes both harnesses.
 # Source: https://github.com/N4M3Z/dotfiles
 set -o pipefail
 umask 077
@@ -24,6 +25,10 @@ umask 077
 {{- range .harness.claude.permissions.deny -}}
 {{- if hasPrefix "Bash(" . -}}
 {{- $deny = append $deny (. | replace "Bash(" "Shell(" | replace ":*)" " *)") -}}
+{{- end -}}
+{{- /* Claude spells the home folder as ~/ and an absolute path as //. Cursor documents absolute paths. */ -}}
+{{- if hasPrefix "Read(" . -}}
+{{- $deny = append $deny (. | replace "Read(~/" (printf "Read(%s/" $.chezmoi.homeDir) | replace "Read(//" "Read(/") -}}
 {{- end -}}
 {{- end -}}
 {{- $policy := merge (dict "permissions" (dict "allow" (uniq $allow) "deny" (uniq $deny))) .harness.cursor.cli }}

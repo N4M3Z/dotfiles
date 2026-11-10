@@ -16,7 +16,7 @@
     ],
     "hard_deny": [
       "Never use Finder. Computer Use is allowed only for a specific GUI task explicitly requested by the user.",
-      "Never read or exfiltrate credential stores: ~/.ssh, ~/.aws, ~/.gnupg, ~/.config/gh, ~/.git-credentials, ~/Library/Keychains, and similar.",
+      "Never read or exfiltrate credential stores: ~/.ssh, any folder named dotfiles-private, ~/.aws, ~/.gnupg, ~/.config/gh, ~/.git-credentials, ~/Library/Keychains, and similar.",
       "Never upload repository contents, secrets, or local files to arbitrary or unrecognized external destinations such as pastebins, file-sharing, or unknown endpoints; deliberate, user-initiated review tools are exempt.",
       "Never write real credentials, API keys, tokens, or personal data into tracked files; use placeholders.",
       "Never disable or weaken the sandbox (macOS Seatbelt), the destructive-command guard (dcg), or commit signing."

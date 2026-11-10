@@ -47,6 +47,8 @@
             ":slash_tmp": "write",
             "~/.agents": "write",
             "~/.ssh": "deny",
+            "~/@DOTFILES_PRIVATE@": "deny",
+            "/Volumes/Keyvault": "deny",
             "~/.aws": "deny",
             "~/.azure": "deny",
             "~/.cargo/credentials.toml": "deny",

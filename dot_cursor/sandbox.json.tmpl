@@ -1,4 +1,29 @@
 {{- /* Sandbox policy is shared: edit .chezmoidata/harness/cursor.json, not this file. */ -}}
 {{- /* Cursor merges this with its built-in defaults (Settings > Agents > Approvals & Execution: "sandbox.json + Defaults"). */ -}}
 {{- /* Paths are absolute: Cursor does not document tilde expansion. */ -}}
-{{ .harness.cursor.sandbox | toPrettyJson | replace "\"~/" (printf "\"%s/" .chezmoi.homeDir) | replace "@GITLAB_HOST@" .private.gitlab_host }}
+{{- /* Cursor has no key that denies one path, so the ~/Developer grant is expanded here and leaves out the private folder. */ -}}
+{{- /* A folder cloned later is granted at the next chezmoi apply. A session opened inside it already has its workspace. */ -}}
+{{- $developer := joinPath .chezmoi.homeDir "Developer" -}}
+{{- $private := glob (joinPath $developer "*" "dotfiles-private") | first | default "" -}}
+{{- $parent := dir $private -}}
+{{- $grants := list -}}
+{{- range $path := .harness.cursor.sandbox.additionalReadwritePaths -}}
+{{-   if ne $path "~/Developer" -}}
+{{-     $grants = append $grants $path -}}
+{{-   else -}}
+{{-     range $entry := glob (joinPath $developer "*") -}}
+{{-       if ne $entry $parent -}}
+{{-         $grants = append $grants $entry -}}
+{{-       else -}}
+{{-         range $repo := glob (joinPath $parent "*") -}}
+{{-           if ne $repo $private -}}
+{{-             $grants = append $grants $repo -}}
+{{-           end -}}
+{{-         end -}}
+{{-       end -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- /* Under the workspace boundary, additionalReadPaths keeps these roots readable without a prompt. */ -}}
+{{- $sandbox := merge (dict "additionalReadwritePaths" $grants "additionalReadPaths" $grants) .harness.cursor.sandbox -}}
+{{ $sandbox | toPrettyJson | replace "\"~/" (printf "\"%s/" .chezmoi.homeDir) | replace "@GITLAB_HOST@" .private.gitlab_host }}

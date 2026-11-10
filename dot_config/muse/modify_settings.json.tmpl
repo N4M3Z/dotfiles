@@ -37,9 +37,12 @@
 # Source: https://github.com/N4M3Z/dotfiles
 {{- $home := .chezmoi.homeDir }}
 {{- $muse := .harness.muse }}
+{{- /* This repository is public, so it does not record where the private folder lives. It is found at render time. */}}
+{{- $dotfilesPrivate := glob "Developer/*/dotfiles-private" | first | default "dotfiles-private" }}
 {{- $claudeDenyRead := list
       "~/.claude.json"
       "~/.ssh"
+      (printf "~/%s" $dotfilesPrivate)
       "~/.aws"
       "~/.azure"
       "~/.gnupg"
@@ -116,6 +119,10 @@
     {{- $path = trimPrefix "/" $path }}
   {{- else if $relative }}
     {{- $path = trimPrefix "./" $path }}
+  {{- end }}
+  {{- /* The folder above this glob is the home folder, so the widening below would deny all of it. */}}
+  {{- if hasSuffix "/**/dotfiles-private/**" $path }}
+    {{- $path = printf "%s/%s" $home $dotfilesPrivate }}
   {{- end }}
   {{- $literal := trimSuffix "/**" $path }}
   {{- if not (regexMatch `[*?\[]` $literal) }}
