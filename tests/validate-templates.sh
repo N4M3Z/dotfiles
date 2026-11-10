@@ -62,6 +62,22 @@ while IFS= read -r template; do
 done < <(find "${SOURCE_DIR}" -name '*.tmpl' -not -name '.chezmoi.toml.tmpl' -not -path '*/.git/*' \
     -not -path "${SOURCE_DIR}/.workspaces/*" | sort)
 
+# This repository is public. A literal macOS home path in a tracked file shows
+# the author's folder layout and fits no other machine. Policy data writes ~/
+# and the template fills in the home folder. docs/ keeps its records as written.
+if git -C "${SOURCE_DIR}" rev-parse --git-dir > /dev/null 2>&1; then
+    literal_home=$(git -C "${SOURCE_DIR}" ls-files -z -- . ':!docs' \
+        | (cd "${SOURCE_DIR}" && xargs -0 grep -nIE '/Users/[A-Za-z0-9._-]+' -- 2>/dev/null) \
+        || true)
+    if [[ -n "${literal_home}" ]]; then
+        echo "FAIL literal home path in a tracked file:"
+        while IFS= read -r hit; do printf '    %s\n' "${hit}"; done <<< "${literal_home}"
+        failures=$((failures + 1))
+    else
+        echo "ok no literal home path in a tracked file"
+    fi
+fi
+
 if [[ ${failures} -gt 0 ]]; then
     echo "validate-templates: ${failures} failure(s)"
     exit 1

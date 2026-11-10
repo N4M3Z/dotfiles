@@ -17,8 +17,9 @@ trap 'command rm -f "$policy"' EXIT
 
 {{/* This repository is public, so it does not record where the private folder lives. Antigravity has no recursive wildcard, so the path is found at render time. */ -}}
 {{ $dotfilesPrivate := glob "Developer/*/dotfiles-private" | first | default "dotfiles-private" -}}
+{{/* Antigravity matches a rule path as written, so the policy data writes ~/ and the home folder is filled in at render time. */ -}}
 cat > "$policy" <<'FORGE_POLICY'
-{{ .harness.antigravity | toJson | replace "/Users/N4M3Z" .chezmoi.homeDir | replace "@DOTFILES_PRIVATE@" $dotfilesPrivate }}
+{{ .harness.antigravity | toJson | replace "(~/" (printf "(%s/" .chezmoi.homeDir) | replace "@DOTFILES_PRIVATE@" $dotfilesPrivate }}
 FORGE_POLICY
 
 jq -n --slurpfile policy "$policy" '((try input) // {}) * $policy[0]'

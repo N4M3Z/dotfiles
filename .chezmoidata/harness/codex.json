@@ -33,7 +33,7 @@
             "args": [
               "-n",
               "s/^CLIPROXY_API_KEY_CODEX=//p",
-              "/Users/N4M3Z/.env"
+              "~/.env"
             ]
           }
         }
@@ -144,8 +144,8 @@
         ],
         "set": {
           "GITLAB_HOST": "@GITLAB_HOST@",
-          "GLAB_CONFIG_DIR": "/Users/N4M3Z/.config/glab-cli-agent",
-          "NPM_CONFIG_CACHE": "/Users/N4M3Z/Data/State/codex/npm-cache"
+          "GLAB_CONFIG_DIR": "~/.config/glab-cli-agent",
+          "NPM_CONFIG_CACHE": "~/Data/State/codex/npm-cache"
         }
       }
     }
