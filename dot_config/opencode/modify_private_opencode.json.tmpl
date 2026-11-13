@@ -24,4 +24,7 @@ FORGE_POLICY
 # retired from opencode.json would linger in the live file forever. The policy
 # owns the permission map outright: replace it after the merge so retired
 # entries drop out on the next apply.
-jq -n --slurpfile policy "$policy" '(((try input) // {}) * $policy[0]) | .permission = $policy[0].permission'
+#
+# --slurp reads an absent live file as an empty list. A live file that does not
+# parse stops jq, so the apply fails and the file stays as it is.
+jq --slurp --slurpfile policy "$policy" '((.[0] // {}) * $policy[0]) | .permission = $policy[0].permission'

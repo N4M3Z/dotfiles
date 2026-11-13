@@ -20,4 +20,6 @@ cat > "$policy" <<'POLICY'
 {{ .harness.gemini | toJson }}
 POLICY
 
-jq -n --slurpfile policy "$policy" '((try input) // {}) * $policy[0]'
+# --slurp reads an absent live file as an empty list. A live file that does not
+# parse stops jq, so the apply fails and the file stays as it is.
+jq --slurp --slurpfile policy "$policy" '(.[0] // {}) * $policy[0]'

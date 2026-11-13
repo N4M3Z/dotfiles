@@ -49,6 +49,14 @@ while IFS= read -r template; do
             cat "${rendered}.merr"
             failures=$((failures + 1))
         fi
+        # A live file that does not parse must stop the script. A script that
+        # answers anyway replaces the live config with the policy alone.
+        if printf '{"broken' | bash "${rendered}" > /dev/null 2>&1; then
+            echo "FAIL modify (broken stdin): ${relative}"
+            failures=$((failures + 1))
+        else
+            echo "ok modify (broken stdin): ${relative}"
+        fi
     fi
 # .chezmoi.toml.tmpl reads the password store, which CI and agent sandboxes
 # cannot reach; tests/test-private-data.sh renders it against a stub pass.
