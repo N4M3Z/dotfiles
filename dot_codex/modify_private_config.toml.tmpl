@@ -66,10 +66,10 @@ FORGE_POLICY
 yq -p=toml -o=json '.' - \
     | jq --slurpfile policy "$policy" --arg home "$HOME" '
         ([
-            "Agents/N4M3Z/ai-stack/.codex/hooks.json:post_tool_use:0:0",
-            "Agents/N4M3Z/ai-stack/.codex/hooks.json:session_start:0:0",
-            "Agents/N4M3Z/ai-stack/.codex/hooks.json:stop:0:0",
-            "Agents/N4M3Z/ai-stack/.codex/hooks.json:user_prompt_submit:0:0",
+            "Agents/tools/ai-stack/.codex/hooks.json:post_tool_use:0:0",
+            "Agents/tools/ai-stack/.codex/hooks.json:session_start:0:0",
+            "Agents/tools/ai-stack/.codex/hooks.json:stop:0:0",
+            "Agents/tools/ai-stack/.codex/hooks.json:user_prompt_submit:0:0",
             ".codex/hooks.json:stop:0:0",
             ".codex/hooks.json:stop:1:0",
             ".codex/hooks.json:user_prompt_submit:0:0",
