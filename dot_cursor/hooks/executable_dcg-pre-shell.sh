@@ -26,10 +26,14 @@ if [ -n "$cwd" ] && [ -d "$cwd" ]; then
     cd "$cwd" || exit 1
 fi
 
-# dcg prints its human-readable box on stderr and one JSON line on stdout.
-verdict=$(printf '%s' "$input" \
+# dcg prints its human-readable box on stderr and one JSON line on stdout. It
+# exits 0 for an allowed and for a blocked command. Its status is checked on
+# its own: inside one pipeline the last jq would hide a missing or crashed dcg,
+# and the empty answer would read as allow.
+answer=$(printf '%s' "$input" \
     | jq -c '{tool_name: "Bash", tool_input: {command: .command}}' \
-    | dcg 2>/dev/null \
+    | dcg 2>/dev/null) || exit 1
+verdict=$(printf '%s' "$answer" \
     | jq -c 'fromjson? | select(type == "object") | .hookSpecificOutput // empty' -R) || exit 1
 
 if [ -z "$verdict" ]; then

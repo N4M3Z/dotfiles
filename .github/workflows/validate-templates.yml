@@ -74,6 +74,9 @@ jobs:
             - name: Test command gate
               run: bash tests/test-command-gate.sh
 
+            - name: Test Cursor dcg hook
+              run: bash tests/test-cursor-dcg.sh
+
             - name: Validate just tree
               run: bash tests/validate-just-tree.sh
 
