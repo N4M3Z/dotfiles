@@ -7,14 +7,16 @@ email = "N4M3Z@users.noreply.github.com"
 [signing]
 backend = "gpg"
 # Commits and pushes stay unsigned: "drop" keeps jj from signing working-copy
-# snapshots, and sign-on-push stays off so agent sessions never hit pinentry
-# or the YubiKey mid-push. The owner's signature enters at release tags, and
-# the signed tag vouches for the history beneath it.
+# snapshots, and the push signs no commit (revsets.git-sign-on-push below) so
+# agent sessions never hit pinentry or the YubiKey mid-push. The owner's
+# signature enters at release tags, and the signed tag vouches for the history
+# beneath it.
 behavior = "drop"
 key = "0x29DD2145CE7A818929459B2649F08103D3DA399E"
 
-[git]
-sign-on-push = false
+# The commits a push signs. jj 0.47 warns on the older git.sign-on-push key.
+[revsets]
+git-sign-on-push = "none()"
 
 [aliases]
 push = ["util", "exec", "--", "bash", "-c", "cd \"$(jj workspace root)\" && if [ -x .githooks/jj-push ]; then exec .githooks/jj-push \"$@\"; else exec jj git push \"$@\"; fi", "jj-push"]
