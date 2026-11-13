@@ -1,20 +1,11 @@
-# Global defaults — applied to every host.
+# OpenSSH keeps the first value it reads for each option. Host blocks come
+# first and the defaults for every host come last, so a host block can set its
+# own value.
+
+# This line must stand before the first UseKeychain. A system whose OpenSSH
+# does not know the option then skips it.
 Host *
-    Port 22
-    ServerAliveInterval 60
-    ServerAliveCountMax 120
-    TCPKeepAlive yes
-
-    AddKeysToAgent yes
     IgnoreUnknown UseKeychain
-    UseKeychain yes
-    # No ForwardAgent here. A server that gets the forwarded agent can sign
-    # with every key in it while the session lasts. A host that needs it sets
-    # ForwardAgent yes in its own block in the private hosts file. OpenSSH
-    # keeps the first value it reads, so a value here would win over that block.
-
-    ForwardX11 no
-    ForwardX11Trusted no
 
 # YubiKey-resident FIDO2 SSH key for github.com (push + commit signing).
 Host github.com
@@ -36,3 +27,19 @@ Host */*
 # Inline-credential chaining with '+' delimiter, ':' for port, '%' for user.
 Host *+*
     ProxyCommand ssh -W $(echo %h | sed 's/^.*+//;s/^\([^:]*$\)/\1:22/') $(echo %h | sed 's/+[^+]*$//;s/\([^+%%]*\)%%\([^+]*\)$/\2 -l \1/;s/:\([^:+]*\)$/ -p \1/')
+
+# Defaults for every host. A host block above wins over a value here.
+Host *
+    Port 22
+    ServerAliveInterval 60
+    ServerAliveCountMax 120
+    TCPKeepAlive yes
+
+    AddKeysToAgent yes
+    UseKeychain yes
+    # No ForwardAgent here. A server that gets the forwarded agent can sign
+    # with every key in it while the session lasts. A host that needs it sets
+    # ForwardAgent yes in its own block in the private hosts file.
+
+    ForwardX11 no
+    ForwardX11Trusted no
