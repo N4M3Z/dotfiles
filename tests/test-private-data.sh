@@ -1,7 +1,8 @@
 #!/bin/bash
 # Render the templates against the private values both ways. Stub pass and
 # pass-cli commands on PATH answer only the dotfiles/proton entry, with a
-# fixture NAME=value line for each key of .chezmoidata/private.yaml.
+# fixture NAME=value line for each key of .chezmoidata/private.yaml. A stub
+# secretspec command answers one name at a time from the same fixture.
 # .chezmoi.toml.tmpl renders once for each store into a temporary config, which
 # must set every key. With the config no template may keep a placeholder, and
 # every template that reads .private must carry a fixture value. Without a
@@ -49,9 +50,24 @@ cat > "${WORKDIR}/bin/pass-cli" <<'STUB'
 [ "$#" -eq 3 ] && [ "$1" = item ] && [ "$2" = view ] && [ "$3" = pass://dotfiles/proton/note ] || exit 2
 cat "$FIXTURE_BODY"
 STUB
-chmod +x "${WORKDIR}/bin/pass" "${WORKDIR}/bin/pass-cli"
+cat > "${WORKDIR}/bin/secretspec" <<'STUB'
+#!/bin/sh
+# `secretspec --file <manifest> --reason <text> get NAME` prints the fixture
+# value of NAME with no newline, and fails for a name the fixture lacks.
+[ "$#" -eq 6 ] && [ "$1" = --file ] && [ -f "$2" ] && [ "$3" = --reason ] && [ "$5" = get ] || exit 2
+grep -q "^$6=" "$FIXTURE_BODY" || exit 1
+sed -n "s/^$6=//p" "$FIXTURE_BODY" | tr -d '\n'
+STUB
+chmod +x "${WORKDIR}/bin/pass" "${WORKDIR}/bin/pass-cli" "${WORKDIR}/bin/secretspec"
 
-for store in pass proton-pass; do
+# The secretspec store reads a value by the name that secretspec.toml declares.
+declared=$(yq -p=toml -o=json '.profiles.default | keys' "${SOURCE_DIR}/secretspec.toml" | jq -r '.[]') \
+    || { echo "FAIL read: secretspec.toml"; exit 1; }
+while IFS= read -r name; do
+    grep -qxF -- "${name}" <<< "${declared}" || fail "secretspec.toml does not declare ${name}"
+done < <(jq -r 'keys[] | ascii_upcase' <<< "${placeholder_map}")
+
+for store in pass proton-pass secretspec; do
     PATH="${WORKDIR}/bin:${PATH}" chezmoi --config "${WORKDIR}/empty.toml" execute-template --init \
         --promptChoice "Store for private values=${store}" --source "${SOURCE_DIR}" \
         < "${SOURCE_DIR}/.chezmoi.toml.tmpl" > "${WORKDIR}/${store}.toml" \

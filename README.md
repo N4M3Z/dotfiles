@@ -103,7 +103,19 @@ chezmoi init
 
 When a value is new and the config is from an earlier `chezmoi init`, `chezmoi apply` stops before it writes a file and names the missing value (`run_before_check_private_values.sh.tmpl`).
 
-To change the store, run `chezmoi init --prompt`. `tests/test-private-data.sh` renders `.chezmoi.toml.tmpl` against stub `pass` and `pass-cli` commands, then every template with and without the result. It fails on a missing key, a wrong entry name, or a leftover placeholder.
+To change the store, run `chezmoi init --prompt`. `tests/test-private-data.sh` renders `.chezmoi.toml.tmpl` against stub `pass`, `pass-cli`, and `secretspec` commands, then every template with and without the result. It fails on a missing key, a wrong entry name, or a leftover placeholder.
+
+### SecretSpec
+
+`secretspec.toml` names each private value and key that this setup expects. It holds no value. [SecretSpec][SSPEC] reads a name from the provider you configure, such as the system keychain, pass, or Proton Pass.
+
+```sh
+secretspec config global init   # choose your default provider, one time
+secretspec check                # report what this machine has and what it lacks
+secretspec set PROXY_HOST       # store one value
+```
+
+With the store choice `secretspec`, `chezmoi init` reads each private value with `secretspec get`. The keys of the local AI proxy and of Browserbase stay in `~/.env`. The manifest reads them from that file, so `secretspec check` reports them too.
 
 ## Verification
 
@@ -154,4 +166,5 @@ The choice of chezmoi as the dotfiles engine is captured in [`forge-provision/do
 [CZPASS]: https://www.chezmoi.io/user-guide/password-managers/pass/
 [CZPP]: https://www.chezmoi.io/user-guide/password-managers/proton-pass/
 [PPCLI]: https://protonpass.github.io/pass-cli/
+[SSPEC]: https://secretspec.dev
 [ADR]: ../forge-provision/docs/decisions/ARCH-0005%20Dotfiles%20engine%20chezmoi.md

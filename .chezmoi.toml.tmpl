@@ -1,31 +1,40 @@
 {{- /* chezmoi init renders this into ~/.config/chezmoi/chezmoi.toml. Run it again after you edit it. */ -}}
 {{- /* The first init asks for the store and keeps the answer. The store unlocks once for each init, not for each apply. */ -}}
-{{- /* The pass entry dotfiles/proton, or the note of item proton in the Proton Pass vault dotfiles, holds NAME=value lines. */ -}}
+{{- /* pass and proton-pass: the pass entry dotfiles/proton, or the note of item proton in the Proton Pass vault dotfiles, holds NAME=value lines. */ -}}
 {{- /* NAME is the lowercase key in upper case: GITLAB_HOST sets gitlab_host. Blank lines and # comments are skipped. */ -}}
+{{- /* With the third store choice, the SecretSpec CLI reads each NAME that its manifest declares, from the provider the user configured. */ -}}
 {{- /* Every key here overrides its placeholder in .chezmoidata/private.yaml. */ -}}
-{{- $store := promptChoiceOnce . "privateStore" "Store for private values" (list "pass" "proton-pass") "pass" -}}
-{{- $body := "" -}}
-{{- if eq $store "pass" -}}
-{{-   $body = passRaw "dotfiles/proton" -}}
-{{- else -}}
-{{-   $body = protonPass "pass://dotfiles/proton/note" -}}
-{{- end -}}
+{{- $keys := list "gitlab_host" "proxy_host" -}}
+{{- $store := promptChoiceOnce . "privateStore" "Store for private values" (list "pass" "proton-pass" "secretspec") "pass" -}}
 {{- $values := dict -}}
-{{- range $line := splitList "\n" $body -}}
-{{-   $line = trim $line -}}
-{{-   if and $line (not (hasPrefix "#" $line)) -}}
-{{-     if not (contains "=" $line) -}}
-{{-       fail "dotfiles/proton must hold NAME=value lines such as GITLAB_HOST=gitlab.example.com" -}}
+{{- if eq $store "secretspec" -}}
+{{-   $manifest := joinPath .chezmoi.sourceDir "secretspec.toml" -}}
+{{-   range $key := $keys -}}
+{{-     $_ := set $values $key (output "secretspec" "--file" $manifest "--reason" "chezmoi init renders the private values" "get" (upper $key)) -}}
+{{-   end -}}
+{{- else -}}
+{{-   $body := "" -}}
+{{-   if eq $store "pass" -}}
+{{-     $body = passRaw "dotfiles/proton" -}}
+{{-   else -}}
+{{-     $body = protonPass "pass://dotfiles/proton/note" -}}
+{{-   end -}}
+{{-   range $line := splitList "\n" $body -}}
+{{-     $line = trim $line -}}
+{{-     if and $line (not (hasPrefix "#" $line)) -}}
+{{-       if not (contains "=" $line) -}}
+{{-         fail "dotfiles/proton must hold NAME=value lines such as GITLAB_HOST=gitlab.example.com" -}}
+{{-       end -}}
+{{-       $pair := splitn "=" 2 $line -}}
+{{-       $_ := set $values (lower (trim $pair._0)) (trimAll "\"'" (trim $pair._1)) -}}
 {{-     end -}}
-{{-     $pair := splitn "=" 2 $line -}}
-{{-     $_ := set $values (lower (trim $pair._0)) (trimAll "\"'" (trim $pair._1)) -}}
 {{-   end -}}
 {{- end -}}
 [data]
     privateStore = {{ $store | quote }}
 
 [data.private]
-{{- range $key := list "gitlab_host" "proxy_host" }}
-{{-   if not (hasKey $values $key) }}{{ fail (printf "dotfiles/proton has no %s= line" (upper $key)) }}{{ end }}
+{{- range $key := $keys }}
+{{-   if not (get $values $key | toString | trim) }}{{ fail (printf "the %s store has no value for %s" $store (upper $key)) }}{{ end }}
     {{ $key }} = {{ get $values $key | toString | trim | quote }}
 {{- end }}

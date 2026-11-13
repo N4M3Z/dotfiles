@@ -12,3 +12,6 @@ openspec
 # The rune module manifest describes this repository, not the home folder.
 defaults.yaml
 module.yaml
+
+# The SecretSpec manifest names the secrets this repository expects.
+secretspec.toml
