@@ -8,7 +8,10 @@ Host *
     AddKeysToAgent yes
     IgnoreUnknown UseKeychain
     UseKeychain yes
-    ForwardAgent yes
+    # No ForwardAgent here. A server that gets the forwarded agent can sign
+    # with every key in it while the session lasts. A host that needs it sets
+    # ForwardAgent yes in its own block in the private hosts file. OpenSSH
+    # keeps the first value it reads, so a value here would win over that block.
 
     ForwardX11 no
     ForwardX11Trusted no
