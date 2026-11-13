@@ -44,10 +44,10 @@
 
 [".config/tmux/plugins/catppuccin"]
     type = "archive"
-    url = "https://github.com/catppuccin/tmux/archive/refs/tags/v2.3.0.tar.gz"
+    url = "https://github.com/catppuccin/tmux/archive/refs/tags/v2.3.2.tar.gz"
     stripComponents = 1
     [".config/tmux/plugins/catppuccin".checksum]
-        sha256 = "6072ac982aaba71a1ee2a4780a2b5debecfb272857d6ae2ffb9b52649ee07b1a"
+        sha256 = "c6ec7f1d265e1bc439675784fc5a9a41bce347d89543564a1cb6df884997ffae"
 
 [".config/tmux/plugins/tmux-fingers"]
     type = "archive"
