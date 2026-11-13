@@ -15,14 +15,22 @@
 #
 #   GH_TOKEN=$(gh-app-token) gh pr create ...
 #
-# Env overrides: GH_APP_ID, GH_APP_PASS_ENTRY, GH_APP_CACHE_DIR.
+# Env overrides: GH_APP_ID, GH_APP_PASS_ENTRY, GH_APP_CACHE_DIR,
+# GH_APP_ACCOUNT, GH_APP_INSTALLATION_ID.
 
 set -euo pipefail
 
 app_id=${GH_APP_ID:-4369275}
 pass_entry=${GH_APP_PASS_ENTRY:-personal/keys/github.com/n4m3z}
 cache_dir=${GH_APP_CACHE_DIR:-"${XDG_CACHE_HOME:-$HOME/.cache}/gh-app-token"}
-cache_file="${cache_dir}/${app_id}.json"
+# The app can be installed on several accounts (personal + orgs); each
+# installation's tokens cover only its own repos. Select by account login
+# (GH_APP_ACCOUNT, default the personal account) or pin GH_APP_INSTALLATION_ID.
+# The cache is one file for each selection: one file for the app would hand
+# the token of the first installation to a later call for another one.
+account=${GH_APP_ACCOUNT:-N4M3Z}
+selection=${GH_APP_INSTALLATION_ID:-$account}
+cache_file="${cache_dir}/${app_id}-${selection//[^A-Za-z0-9._-]/_}.json"
 api=https://api.github.com
 
 now=$(date +%s)
@@ -47,10 +55,6 @@ signature=$(printf '%s.%s' "$header" "$payload" \
     | b64url)
 jwt="${header}.${payload}.${signature}"
 
-# The app can be installed on several accounts (personal + orgs); each
-# installation's tokens cover only its own repos. Select by account login
-# (GH_APP_ACCOUNT, default the personal account) or pin GH_APP_INSTALLATION_ID.
-account=${GH_APP_ACCOUNT:-N4M3Z}
 installation_id=${GH_APP_INSTALLATION_ID:-$(curl -fsS -H "Authorization: Bearer $jwt" \
     -H "Accept: application/vnd.github+json" \
     "$api/app/installations" | awk -v target="$account" '
