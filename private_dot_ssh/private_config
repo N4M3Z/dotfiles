@@ -20,7 +20,9 @@ Host github.com
 
 # Private host blocks (clone of dotfiles-private). Files referenced here are
 # symlinked or cloned into place at chezmoi-apply time. Missing files are
-# silently ignored by OpenSSH.
+# silently ignored by OpenSSH. An Include inside a Host block applies only to
+# that block's hosts, so Match all ends the github.com block first.
+Match all
 Include hosts
 Include vendor/*
 
