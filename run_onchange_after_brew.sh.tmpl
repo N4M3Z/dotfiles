@@ -9,7 +9,8 @@
 # before it touches one; with no terminal it only reports.
 # Decision: workspace docs/Setup Review.md (converge through chezmoi apply).
 #
-# Brewfile: {{ output "shasum" "-a" "256" (joinPath .chezmoi.homeDir "Developer/N4M3Z/forge-provision/manifests/Brewfile") | trim }}
+{{- /* A machine without the forge-provision checkout renders "absent" for both. This note stays out of the script, so the script text is the same as before. */}}
+# Brewfile: {{ output "sh" "-c" "if [ -f \"$1\" ]; then shasum -a 256 \"$1\"; else printf absent; fi" "sh" (joinPath .chezmoi.homeDir "Developer/N4M3Z/forge-provision/manifests/Brewfile") | trim }}
 # Brewfile.work: {{ output "sh" "-c" "if [ -f \"$1\" ]; then shasum -a 256 \"$1\"; else printf absent; fi" "sh" (joinPath .chezmoi.homeDir "Developer/N4M3Z/forge-provision/manifests/Brewfile.work") | trim }}
 {{ if eq .chezmoi.os "darwin" -}}
 set -euo pipefail

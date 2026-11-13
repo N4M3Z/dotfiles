@@ -12,13 +12,6 @@ SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 WORKDIR=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-home-targets.XXXXXX") || exit 1
 trap 'command rm -rf "$WORKDIR"' EXIT
 
-# run_onchange_after_brew.sh.tmpl hashes the provisioning Brewfile at render
-# time; only the path needs to exist for rendering, not real content.
-BREWFILE_DIR="${HOME}/Developer/N4M3Z/forge-provision/manifests"
-mkdir -p "${BREWFILE_DIR}"
-[[ -f "${BREWFILE_DIR}/Brewfile" ]] || touch "${BREWFILE_DIR}/Brewfile"
-[[ -f "${BREWFILE_DIR}/Brewfile.work" ]] || touch "${BREWFILE_DIR}/Brewfile.work"
-
 # Visible home folders a source may deploy into. Keep in step with
 # forge-provision scripts/verify/home-hygiene.sh.
 allowed=(Agents Applications Atlas Data Desktop Developer Documents Downloads

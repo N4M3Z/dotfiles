@@ -15,12 +15,6 @@ SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 WORKDIR=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-private.XXXXXX") || exit 1
 trap 'command rm -rf "$WORKDIR"' EXIT
 
-# run_onchange_after_brew.sh.tmpl hashes the provisioning Brewfile at render
-# time; only the path needs to exist for rendering, not real content.
-BREWFILE_DIR="${HOME}/Developer/N4M3Z/forge-provision/manifests"
-mkdir -p "${BREWFILE_DIR}"
-[[ -f "${BREWFILE_DIR}/Brewfile" ]] || touch "${BREWFILE_DIR}/Brewfile"
-
 failures=0
 fail() {
     echo "FAIL $*"
