@@ -46,6 +46,15 @@ else
     pass 'pre-push rejects a missing expected harness trailer'
 fi
 
+# The remote tip is a commit this repository does not have, so git cannot list
+# the pushed commits. The hook must stop, not pass with nothing checked.
+if printf 'refs/heads/main %s refs/heads/main %040d\n' "$wip_sha" 1 \
+    | (cd "$repo" && PATH="/usr/bin:/bin" "$HOOK" origin) >/dev/null 2>&1; then
+    fail 'pre-push stops when it cannot list the pushed commits'
+else
+    pass 'pre-push stops when it cannot list the pushed commits'
+fi
+
 attributed_sha=$(
     printf '%s\n\n%s\n' 'material attributed change' "$expected" \
         | GIT_AUTHOR_NAME='Fixture User' GIT_AUTHOR_EMAIL='fixture@example.invalid' \

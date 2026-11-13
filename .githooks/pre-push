@@ -23,16 +23,24 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     # Deleting a remote branch pushes no commits; nothing to check.
     [ "$local_sha" = "$zero_sha" ] && continue
 
+    # A list that git cannot make is not an empty list. Without the exit, a
+    # remote commit that is absent here would skip every check below.
     if [ "$remote_sha" = "$zero_sha" ]; then
         # New remote branch: check every commit the remote does not already have.
-        revisions=$(git rev-list "$local_sha" --not --remotes="$remote_name")
+        revisions=$(git rev-list "$local_sha" --not --remotes="$remote_name") || {
+            echo "pre-push: cannot list the commits of $local_ref" >&2
+            exit 1
+        }
     else
         # Existing branch: check only the commits this push adds.
-        revisions=$(git rev-list "${remote_sha}..${local_sha}")
+        revisions=$(git rev-list "${remote_sha}..${local_sha}") || {
+            echo "pre-push: cannot list the commits of $local_ref, fetch $remote_name first" >&2
+            exit 1
+        }
     fi
 
     for revision in $revisions; do
-        message=$(git log -1 --format=%B "$revision")
+        message=$(git log -1 --format=%B "$revision") || exit 1
 
         # harness-run describes an agent's in-progress change as "WIP: <Harness>
         # session ..." and only renames it once the session finishes cleanly.
