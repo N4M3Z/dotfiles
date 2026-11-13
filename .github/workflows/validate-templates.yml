@@ -76,3 +76,22 @@ jobs:
 
             - name: Validate just tree
               run: bash tests/validate-just-tree.sh
+
+            - name: Test push gate
+              run: bash tests/test-harness-pre-push.sh
+
+            - name: Test Obsidian config
+              run: python3 tests/test-obsidian-config.py
+
+            - name: Test OpenLogi config
+              run: python3 tests/test-openlogi-config.py
+
+            - name: Test SpecStory config
+              run: python3 tests/test-specstory-config.py
+
+            - name: Test Excalidraw scripts
+              run: node --test tests/excalidraw-*.test.cjs
+
+            # Two tests stay local. tests/test-dcg-packs.sh needs dcg and the
+            # packs that chezmoi apply deploys. tests/test-agent-run.sh needs jj
+            # and a detached child process, which not every runner allows.
