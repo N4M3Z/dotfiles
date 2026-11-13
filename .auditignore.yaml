@@ -32,3 +32,33 @@ acknowledged:
     sha256: 4fe3183dec4b8f4695f16127e0721927dd6eaed7fa9cb4c9972e9f220881f918
     commit: 578aa1f54cd077d29d17c9f11cec816bcf541ee0
     reason: a jj revset in a comment of the renamed push script, not an address
+  # The seven items below cover the template versions from before the proxy
+  # host became a private value. The current templates no longer hold it.
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: 35d6bea436b27f82d1e5aa8a77c4d006dacb1a93
+    reason: local proxy hostname under a private TLD, in an earlier template version
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: 531e3121027412ced9d65fa7a0f78747f779b129
+    reason: local proxy hostname under a private TLD, in an earlier template version
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: 8d9284a6a2305f2cb92f508ce918628a73d5bb6b
+    reason: local proxy hostname under a private TLD, in an earlier template version
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: a84fc2bcf0325a593b7b4e8e1d482421cc2317c4
+    reason: local proxy hostname under a private TLD, in an earlier template version
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: a46f0bd237b4336b2ca1137af4f90d0228584c4c
+    reason: local proxy hostname under a private TLD, in an earlier template version
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: a6f41e34cc1488ed260c574cc78616e4ea81c023
+    reason: local proxy hostname under a private TLD, in an earlier template version
+  - rule: host-private-tld
+    sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
+    commit: 30735e8ad8c9f1c3b9d34c597598a9d6088f4a21
+    reason: local proxy hostname under a private TLD, in the last commit before it moved to the private values
