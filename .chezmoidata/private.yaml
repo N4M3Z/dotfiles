@@ -3,3 +3,4 @@
 # [data.private] section overrides these. See "Private values" in README.md.
 private:
     gitlab_host: "@GITLAB_HOST@"
+    proxy_host: "@PROXY_HOST@"

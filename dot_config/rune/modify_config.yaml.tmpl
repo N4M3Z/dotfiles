@@ -93,7 +93,7 @@ launch:
                     - "--settings"
                     - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "gpt-6-luna"
@@ -103,7 +103,7 @@ launch:
                     - "--settings"
                     - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "gpt-6-luna"
@@ -113,7 +113,7 @@ launch:
                     - "--settings"
                     - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "lumo-lite"
@@ -123,7 +123,7 @@ launch:
                     - "--settings"
                     - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "grok-composer-2.5-fast"
@@ -133,7 +133,7 @@ launch:
                     - "--settings"
                     - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "kimi-k2.7-code-highspeed"
@@ -143,21 +143,21 @@ launch:
                     - "--settings"
                     - '{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"0"}}'
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "gpt-6-luna"
             main:
                 model: fable-main
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"
             alt:
                 model: fable-alt
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"
@@ -165,21 +165,21 @@ launch:
             fable:
                 model: fable-main
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"
             opus:
                 model: opus
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"
             sonnet:
                 model: sonnet
                 env:
-                    ANTHROPIC_BASE_URL: "https://cliproxy.internal"
+                    ANTHROPIC_BASE_URL: "https://{{ .private.proxy_host }}"
                     ANTHROPIC_AUTH_TOKEN:
                         from_env: CLIPROXY_API_KEY
                     ANTHROPIC_SMALL_FAST_MODEL: "claude-haiku-5-5"

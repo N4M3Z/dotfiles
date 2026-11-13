@@ -25,7 +25,7 @@
     privateStore = {{ $store | quote }}
 
 [data.private]
-{{- range $key := list "gitlab_host" }}
+{{- range $key := list "gitlab_host" "proxy_host" }}
 {{-   if not (hasKey $values $key) }}{{ fail (printf "dotfiles/proton has no %s= line" (upper $key)) }}{{ end }}
     {{ $key }} = {{ get $values $key | toString | trim | quote }}
 {{- end }}

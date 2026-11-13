@@ -110,6 +110,19 @@ done < <(find "${SOURCE_DIR}" -name '*.tmpl' -not -name '.chezmoi.toml.tmpl' \
 if [[ ${consumers} -eq 0 ]]; then
     fail "no template reads .private"
 fi
+
+# A config from an earlier init lacks a value that was added later. The guard
+# script must stop that apply, and must render nothing in the two good states.
+guard="${SOURCE_DIR}/run_before_check_private_values.sh.tmpl"
+printf '[data]\n    privateStore = "pass"\n' > "${WORKDIR}/stale.toml"
+if ! render "${WORKDIR}/stale.toml" < "${guard}" | grep -qx 'exit 1'; then
+    fail "the guard does not stop an apply with a stale config"
+fi
+for config in pass empty; do
+    if [[ -n "$(render "${WORKDIR}/${config}.toml" < "${guard}")" ]]; then
+        fail "the guard renders a script with the ${config} config"
+    fi
+done
 if [[ ${failures} -gt 0 ]]; then
     echo "test-private-data: ${failures} failure(s)"
     exit 1

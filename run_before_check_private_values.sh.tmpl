@@ -1,0 +1,24 @@
+{{- /*
+  A machine that ran chezmoi init has privateStore in its config. A private
+  value that is still its placeholder there means the config is older than the
+  list of values: a value was added to .chezmoi.toml.tmpl after the last init.
+  An apply would then write the placeholder into the live configs, so this
+  script stops the apply first. CI and a machine before chezmoi init have no
+  privateStore. They render nothing here, chezmoi skips an empty script, and
+  the placeholders stay by design.
+*/ -}}
+{{- $missing := list -}}
+{{- if hasKey . "privateStore" -}}
+{{-   range $key, $value := .private -}}
+{{-     if regexMatch "^@[A-Z0-9_]+@$" (toString $value) -}}
+{{-       $missing = append $missing (upper $key) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- if $missing -}}
+#!/bin/sh
+# Source: https://github.com/N4M3Z/dotfiles
+echo "chezmoi apply stopped: the chezmoi config has no value for {{ join ", " $missing }}." >&2
+echo "Add a NAME=value line for each name to the private store entry dotfiles/proton, then run: chezmoi init" >&2
+exit 1
+{{- end -}}

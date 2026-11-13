@@ -90,7 +90,7 @@ Sensitive SSH host configuration lives in a separate `dotfiles-private` repo at 
 
 ## Private values
 
-Values that must not be public, such as the work GitLab host, live in [pass][PASS] (encrypted to the GPG key on the YubiKey) or in [Proton Pass][PPCLI]. The first `chezmoi init` asks which store the machine uses and keeps the answer. It renders `.chezmoi.toml.tmpl`, which reads each value with chezmoi's [`pass`][CZPASS] or [`protonPass`][CZPP] function into the `[data.private]` section of `~/.config/chezmoi/chezmoi.toml`. That config holds the values in plain text, as the deployed files do. `chezmoi apply` never reads a store, so it needs no YubiKey touch or Proton Pass session, and agent sandboxes, which deny `~/.password-store`, still render the real values.
+Values that must not be public, such as the work GitLab host and the local AI proxy host, live in [pass][PASS] (encrypted to the GPG key on the YubiKey) or in [Proton Pass][PPCLI]. The first `chezmoi init` asks which store the machine uses and keeps the answer. It renders `.chezmoi.toml.tmpl`, which reads each value with chezmoi's [`pass`][CZPASS] or [`protonPass`][CZPP] function into the `[data.private]` section of `~/.config/chezmoi/chezmoi.toml`. That config holds the values in plain text, as the deployed files do. `chezmoi apply` never reads a store, so it needs no YubiKey touch or Proton Pass session, and agent sandboxes, which deny `~/.password-store`, still render the real values.
 
 Templates read a value as data, for example `{{ .private.gitlab_host }}`. `.chezmoidata/private.yaml` holds a public placeholder for each value, such as `@GITLAB_HOST@`, so CI and a machine without the config render the placeholders. Data in `.chezmoidata` cannot be a template, so a data file uses the placeholder, and the template that renders the data replaces it with the value.
 
@@ -100,6 +100,8 @@ The pass entry `dotfiles/proton`, or the note of the item `proton` in the Proton
 pass edit dotfiles/proton   # with Proton Pass, edit the note instead
 chezmoi init
 ```
+
+When a value is new and the config is from an earlier `chezmoi init`, `chezmoi apply` stops before it writes a file and names the missing value (`run_before_check_private_values.sh.tmpl`).
 
 To change the store, run `chezmoi init --prompt`. `tests/test-private-data.sh` renders `.chezmoi.toml.tmpl` against stub `pass` and `pass-cli` commands, then every template with and without the result. It fails on a missing key, a wrong entry name, or a leftover placeholder.
 

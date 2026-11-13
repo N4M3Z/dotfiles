@@ -50,7 +50,7 @@ desired=$(cat <<'DESIRED'
     "OTEL_METRICS_INCLUDE_SESSION_ID": "true",
     {{- /*
     The Seatbelt sandbox blocks the keychain lookup (trustd), so a sandboxed
-    harness cannot verify the mkcert certificate that cliproxy.internal
+    harness cannot verify the mkcert certificate that the local AI proxy
     serves (probed 2026-10-20). This file is the mkcert trust root: with it,
     Node verifies the proxy beside its built-in roots. The variable only
     adds a root and removes none.
@@ -164,7 +164,7 @@ desired=$(cat <<'DESIRED'
         "{{ .private.gitlab_host }}",
         "localhost",
         "127.0.0.1",
-        "cliproxy.internal",
+        "{{ .private.proxy_host }}",
         "lumo.proton.me",
         "models.opencode.ai"
       ],
