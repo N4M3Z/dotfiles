@@ -23,10 +23,13 @@ CLIPROXY_OFF_FLAG="${HOME}/.config/zsh/cliproxy.off"
 
 [[ -r "${HOME}/.env" ]] || return 0
 
-# Load keys for status checks and explicit proxy launchers.
+# Load keys for status checks and explicit proxy launchers. The management key
+# is not loaded: it controls the proxy, and an exported value reaches every
+# child process, agent sessions included. Read CLIPROXY_MGMT_KEY from ~/.env in
+# the one command that needs it.
 () {
     local key value
-    for key in CLIPROXY_API_KEY CLIPROXY_API_KEY_CODEX CLIPROXY_API_KEY_GEMINI CLIPROXY_MGMT_KEY; do
+    for key in CLIPROXY_API_KEY CLIPROXY_API_KEY_CODEX CLIPROXY_API_KEY_GEMINI; do
         value="$(grep "^${key}=" "${HOME}/.env" 2>/dev/null | cut -d= -f2-)"
         [[ -n "${value}" ]] && export "${key}=${value}"
     done
