@@ -71,6 +71,9 @@ jobs:
             - name: Test muse startup failures
               run: bash tests/test-muse-startup.sh
 
+            - name: Test muse telemetry env
+              run: bash tests/test-muse-telemetry.sh
+
             - name: Test command gate
               run: bash tests/test-command-gate.sh
 
