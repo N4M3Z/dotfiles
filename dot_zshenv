@@ -54,7 +54,7 @@ export PATH="${BUN_INSTALL}/bin:${PATH}"
 # meters their spend. Reads keys from secretspec; `noproxy <cmd>` bypasses it.
 [ -r "${HOME}/.config/zsh/cliproxy.zsh" ] && source "${HOME}/.config/zsh/cliproxy.zsh"
 
-# Browserbase key for the `browse` CLI. Reads one value from ~/.env.
+# Browserbase key for the `browse` CLI. Reads one value from secretspec.
 [ -r "${HOME}/.config/zsh/browserbase.zsh" ] && source "${HOME}/.config/zsh/browserbase.zsh"
 
 # Autoloaded functions: personal (project, atlas) and prezto module functions

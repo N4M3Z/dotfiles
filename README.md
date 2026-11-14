@@ -115,7 +115,7 @@ secretspec check                # report what this machine has and what it lacks
 secretspec set PROXY_HOST       # store one value
 ```
 
-With the store choice `secretspec`, `chezmoi init` reads each private value with `secretspec get`. The keys of the local AI proxy and of Browserbase stay in `~/.env`. The manifest reads them from that file, so `secretspec check` reports them too.
+With the store choice `secretspec`, `chezmoi init` reads each private value with `secretspec get`. The keys of the local AI proxy and of Browserbase are not in this manifest. [runedeck/provision][PROVISION] declares them with the other machine secrets and publishes its manifest at `~/.config/provision/secretspec.toml`. The shell reads them from there at startup.
 
 ## Verification
 
@@ -167,4 +167,5 @@ The choice of chezmoi as the dotfiles engine is captured in [`forge-provision/do
 [CZPP]: https://www.chezmoi.io/user-guide/password-managers/proton-pass/
 [PPCLI]: https://protonpass.github.io/pass-cli/
 [SSPEC]: https://secretspec.dev
+[PROVISION]: https://github.com/runedeck/provision
 [ADR]: ../forge-provision/docs/decisions/ARCH-0005%20Dotfiles%20engine%20chezmoi.md

@@ -94,6 +94,9 @@ jobs:
             - name: Test cliproxy.zsh
               run: bash tests/test-cliproxy-zsh.sh
 
+            - name: Test browserbase.zsh
+              run: bash tests/test-browserbase-zsh.sh
+
             - name: Test push gate
               run: bash tests/test-harness-pre-push.sh
 
