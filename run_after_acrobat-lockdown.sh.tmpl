@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Keeps the Adobe admin lockdown for Acrobat Reader in place. Runs after every apply, and asks for
+# the admin password only when the installed file differs, so an Adobe installer that rewrites it
+# gets corrected on the next apply.
+# Acrobat reads /Library/Preferences/com.adobe.Reader.plist at launch. The keys turn off product
+# updates, all Adobe online services (cloud, sign-in, PDF Spaces, AI), notifications, upsell, the
+# app center, and the feedback icon. Signing with a certificate from Keychain keeps working.
+# Keys: https://www.adobe.com/devnet-docs/acrobatetk/tools/PrefRef/Macintosh/FeatureLockDown.html
+# Decision: docs/decisions/DOT-0008 Acrobat Reader Admin Lockdown.md
+# Undo: delete this script, then sudo rm /Library/Preferences/com.adobe.Reader.plist
+{{ if eq .chezmoi.os "darwin" -}}
+set -euo pipefail
+
+target="${ACROBAT_LOCKDOWN_PLIST:-/Library/Preferences/com.adobe.Reader.plist}"
+plist=$(mktemp "${TMPDIR:-/tmp}/acrobat-lockdown.XXXXXX")
+trap 'command rm -f "$plist"' EXIT
+
+cat >| "$plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>DC</key>
+	<dict>
+		<key>FeatureLockdown</key>
+		<dict>
+			<key>bUpdater</key>
+			<false/>
+			<key>bAcroSuppressUpsell</key>
+			<true/>
+			<key>bToggleDCAppCenter</key>
+			<true/>
+			<key>bToggleSophiaWebInfra</key>
+			<false/>
+			<key>bEnableTrialistLaunchCard</key>
+			<false/>
+			<key>bToggleShareFeedback</key>
+			<false/>
+			<key>cServices</key>
+			<dict>
+				<key>bUpdater</key>
+				<false/>
+				<key>bToggleNotifications</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+</dict>
+</plist>
+PLIST
+
+plutil -lint -s "$plist"
+
+# An identical installed file needs no root, so apply stays silent until something changes it.
+if cmp -s "$plist" "$target"; then
+    exit 0
+fi
+
+echo "acrobat-lockdown: installing ${target}, sudo asks for the admin password"
+sudo install -m 644 -o root -g wheel "$plist" "$target"
+{{- end }}
