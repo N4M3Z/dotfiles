@@ -1,0 +1,338 @@
+#!/usr/bin/env bash
+# Keep the gittuf reference state log (RSL) for agents/* branches and tags on every push.
+#
+#   gittuf-rsl enabled                           exit 0 when this repository keeps an RSL here
+#   gittuf-rsl tips <remote>...                  the remote-tracking tips, taken before a jj push
+#   gittuf-rsl jj-precheck                       stdin: `jj git push --dry-run` output; exit 1 when a ref must not go, else print the remotes
+#   gittuf-rsl after-jj-push <tips> <remote>...  record each agents/* branch the jj push moved, then publish
+#   gittuf-rsl pre-push <remote>                 git pre-push: record each agents/* branch or tag on stdin, then publish
+#   gittuf-rsl catch-up <remote> <branch>...     record what the remote holds now, for a push no hook saw
+#   gittuf-rsl check <remote> <branch>...        fetch, then verify what the remote holds
+#   gittuf-rsl alarm <remote> [<RSL tip>]        for CI: verify every agents/* branch and tag, and that the RSL still holds <RSL tip>
+#
+# jj pushes with `git push --no-verify`, so .githooks/jj-push calls tips,
+# jj-precheck and after-jj-push. git pushes run .githooks/pre-push, which calls
+# pre-push. Each entry names the commit the remote gets, and git's signing key
+# signs it (user.signingkey and gpg.format, not jj's signing.key). Publishing
+# reconciles with the remote RSL first, so the owner and each agent machine can
+# all write it.
+#
+# Two things stop a push before anything is sent: a ref the gittuf policy
+# refuses (an agent key on a tag), and a commit on an agents/* branch without a
+# signature git accepts. Any other gittuf failure is a warning, and the push
+# goes on. This runs on the pusher's machine, so it catches mistakes, not
+# attacks: the forge's rulesets block, and the alarm verifies afterwards.
+# `git push --no-verify` and a plain `jj git push` skip it.
+set -uo pipefail
+
+warn() { echo "gittuf-rsl: $*" >&2; }
+
+# Only agents/* branches and tags get entries. The forge moves main and every
+# other branch through its merge button, so those stay outside the log.
+wanted() { [[ "$1" == refs/heads/agents/* || "$1" == refs/tags/* ]]; }
+
+stopped() { warn "$1: push stopped, the gittuf policy does not let this signing key move it (gittuf verify-ref --verbose $1)"; }
+
+# signed <oid> <remote> <dst>: every commit the push adds needs a signature
+# that git accepts. gittuf checks who signed the RSL entry, not the commits
+# under it. For an SSH key, git reads gpg.ssh.allowedSignersFile.
+signed() {
+    local oid="$1" remote="$2" dst="$3" commit commits why
+    commits="$(git rev-list "${oid}" --not --remotes="${remote}")" \
+        || { warn "${dst}: push stopped, cannot list its commits"; return 1; }
+    for commit in ${commits}; do
+        why="$(git verify-commit "${commit}" 2>&1)" && continue
+        warn "${dst}: push stopped, commit ${commit:0:12} has no signature that git accepts: ${why:-no signature}"
+        return 1
+    done
+}
+
+enabled() {
+    command -v gittuf >/dev/null 2>&1 \
+        && git rev-parse -q --verify refs/gittuf/reference-state-log >/dev/null
+}
+
+tips() {
+    local remote
+    for remote in "$@"; do
+        git for-each-ref --format='%(refname) %(objectname)' "refs/remotes/${remote}/"
+    done
+}
+
+reconcile() { gittuf rsl remote reconcile "$1" >/dev/null 2>&1 || warn "could not reconcile the RSL with $1"; }
+
+# jj would import gittuf's copy of the remote RSL as a remote bookmark, and
+# reconcile fetches a fresh copy every time, so it is dropped after use.
+drop_tracker() { git update-ref -d "refs/remotes/$1/gittuf/reference-state-log" 2>/dev/null || true; }
+
+# Record that <dst> now points at <oid>, then check the new entry against the
+# policy. A scratch ref carries the oid, so a push by commit id or from another
+# local name records exactly what is sent. An entry the policy refuses (the
+# agents key on main) is dropped before anything is published: published, it
+# would fail verify-ref on that ref for everyone, even when the branch push
+# itself is refused (GitHub's ruleset covers branches, not refs/gittuf).
+# Exit 0 kept, 1 not recorded, 2 refused by the policy.
+record() {
+    local oid="$1" dst="$2" scratch="refs/gittuf-pending/$$" prior status=0
+    prior="$(git rev-parse -q --verify refs/gittuf/reference-state-log)" || return 1
+    git update-ref "${scratch}" "${oid}" || return 1
+    if ! gittuf rsl record "${scratch}" --dst-ref "${dst}" --local-only >/dev/null 2>&1; then
+        status=1
+    elif ! gittuf verify-ref "${scratch}" --remote-ref-name "${dst}" >/dev/null 2>&1; then
+        git update-ref refs/gittuf/reference-state-log "${prior}"
+        status=2
+    fi
+    git update-ref -d "${scratch}"
+    return "${status}"
+}
+
+# vet <oid> <dst> <remote>: before a push. The commit check for a branch, then
+# record. Exit as record, and say why on 2.
+vet() {
+    local status=0
+    if [[ "$2" == refs/heads/* ]] && ! signed "$1" "$3" "$2"; then return 2; fi
+    record "$1" "$2" || status=$?
+    [[ "${status}" != 2 ]] || stopped "$2"
+    return "${status}"
+}
+
+# keep <oid> <dst>: record, and say why when no entry was kept.
+keep() {
+    local status=0
+    record "$1" "$2" || status=$?
+    case "${status}" in
+        0) return 0 ;;
+        2) warn "$2: no entry kept, the gittuf policy does not let this signing key move it (gittuf verify-ref --verbose $2)" ;;
+        *) warn "could not record $2" ;;
+    esac
+    return 1
+}
+
+# Push the gittuf refs that differ from the remote. The RSL always goes, so a
+# remote whose RSL moved on refuses it and publish reconciles; the policy refs
+# go only when they are ahead, since a stale copy is not ours to push.
+push_gittuf_refs() {
+    local remote="$1" ref oid remote_oid remote_refs refspecs=()
+    remote_refs="$(git ls-remote "${remote}" 'refs/gittuf/*')" || return 1
+    while read -r oid ref; do
+        remote_oid="$(awk -v r="${ref}" '$2 == r { print $1 }' <<<"${remote_refs}")"
+        [[ "${remote_oid}" == "${oid}" ]] && continue
+        if [[ "${ref}" == refs/gittuf/reference-state-log || -z "${remote_oid}" ]] \
+            || git merge-base --is-ancestor "${remote_oid}" "${oid}" 2>/dev/null; then
+            refspecs+=("${ref}:${ref}")
+        fi
+    done < <(git for-each-ref --format='%(objectname) %(refname)' refs/gittuf/)
+    [[ ${#refspecs[@]} -eq 0 ]] || git push --quiet --no-verify "${remote}" "${refspecs[@]}"
+}
+
+# publish <remote> <ref>...: push the RSL, once more after a reconcile if the
+# remote moved on. Each ref was verified when it was recorded.
+publish() {
+    local remote="$1" ref
+    shift
+    if ! push_gittuf_refs "${remote}" 2>/dev/null; then
+        reconcile "${remote}"
+        if ! push_gittuf_refs "${remote}"; then
+            warn "the RSL did not reach ${remote}; retry with: git push --no-verify ${remote} 'refs/gittuf/*'"
+            return 1
+        fi
+    fi
+    for ref in "$@"; do echo "gittuf-rsl: ${ref} recorded, verified and pushed to ${remote}"; done
+}
+
+# jj runs no push hooks, so the jj-push wrapper asks first. The dry run prints
+#   Changes to push to <remote>:
+#     bookmark: <name> [add to <oid>]   or   [move forward from <oid> to <oid>]
+# or `Nothing changed.` when there is nothing to send. Each agents/* bookmark is
+# vetted, then the RSL goes back to where it was: after-jj-push keeps the real
+# entries once the push is done. Text this cannot read stops the push, so a jj
+# release that words the dry run differently cannot turn the check off.
+jj_precheck() {
+    local plan remote ref oid full start status refused=0 seen=" "
+    plan="$(cat)"
+    if ! grep -q '^Changes to push to ' <<<"${plan}"; then
+        grep -q '^Nothing changed' <<<"${plan}" && return 0
+        warn "push stopped, cannot read the jj dry run: ${plan}"
+        return 1
+    fi
+    while read -r -u 3 remote ref oid; do
+        if [[ "${remote}" == "?" ]]; then
+            warn "push stopped, cannot read this line of the jj dry run: ${ref} ${oid}"
+            refused=1
+            continue
+        fi
+        wanted "${ref}" || continue
+        # A deletion needs no entry.
+        [[ "${oid}" != - ]] || continue
+        if ! full="$(git rev-parse -q --verify "${oid}^{commit}")"; then
+            warn "${ref}: push stopped, cannot resolve ${oid}"
+            refused=1
+            continue
+        fi
+        [[ "${seen}" == *" ${remote} "* ]] || { reconcile "${remote}"; seen+="${remote} "; }
+        start="$(git rev-parse -q --verify refs/gittuf/reference-state-log)" || continue
+        status=0
+        vet "${full}" "${ref}" "${remote}" || status=$?
+        git update-ref refs/gittuf/reference-state-log "${start}"
+        case "${status}" in
+            0) ;;
+            2) refused=1 ;;
+            *) warn "could not record ${ref}" ;;
+        esac
+    done 3< <(awk '
+        /^Changes to push to / { remote = $5; sub(/:$/, "", remote); inside = 1; next }
+        inside && /^[^ \t]/ { inside = 0 }
+        inside && /^[ \t]+bookmark: / {
+            name = $2; sub(/:$/, "", name); oid = $NF; sub(/\]$/, "", oid)
+            if ($0 ~ /\[delete/) oid = "-"
+            print remote, "refs/heads/" name, oid
+            next
+        }
+        inside && NF { print "?", $0 }' <<<"${plan}")
+    for remote in ${seen}; do drop_tracker "${remote}"; done
+    [[ "${refused}" == 0 ]] || return 1
+    # The remotes this push reaches, for tips and after-jj-push.
+    awk '/^Changes to push to / { remote = $5; sub(/:$/, "", remote); print remote }' <<<"${plan}" | sort -u
+}
+
+after_jj_push() {
+    local before remote ref oid branch recorded
+    before="$(cat "$1")"
+    shift
+    for remote in "$@"; do
+        reconcile "${remote}"
+        recorded=()
+        while read -r ref oid; do
+            branch="${ref#refs/remotes/${remote}/}"
+            wanted "refs/heads/${branch}" || continue
+            grep -qxF "${ref} ${oid}" <<<"${before}" && continue
+            keep "${oid}" "refs/heads/${branch}" && recorded+=("refs/heads/${branch}")
+        done < <(tips "${remote}")
+        [[ ${#recorded[@]} -eq 0 ]] || publish "${remote}" "${recorded[@]}"
+        drop_tracker "${remote}"
+    done
+}
+
+# git pre-push hands over one line per ref: <local ref> <local oid> <remote ref> <remote oid>.
+pre_push() {
+    local remote="$1" local_oid remote_ref recorded=() lines="" line
+    # A deletion needs no entry.
+    while read -r line; do
+        read -r _ local_oid remote_ref _ <<<"${line}"
+        [[ -n "${remote_ref:-}" ]] || continue
+        [[ "${local_oid}" =~ ^0+$ ]] && continue
+        wanted "${remote_ref}" && lines+="${line}"$'\n'
+    done
+    [[ -n "${lines}" ]] || return 0
+    reconcile "${remote}"
+    # One refused ref stops the whole push, before anything is sent.
+    local refused=0 status start
+    start="$(git rev-parse -q --verify refs/gittuf/reference-state-log)"
+    while read -r _ local_oid remote_ref _; do
+        [[ -n "${remote_ref:-}" ]] || continue
+        status=0
+        vet "${local_oid}" "${remote_ref}" "${remote}" || status=$?
+        case "${status}" in
+            0) recorded+=("${remote_ref}") ;;
+            2) refused=1 ;;
+            *) warn "could not record ${remote_ref}" ;;
+        esac
+    done <<<"${lines}"
+    if [[ "${refused}" == 1 ]]; then
+        # The refs that passed are not sent either, so their entries go too.
+        [[ -z "${start}" ]] || git update-ref refs/gittuf/reference-state-log "${start}"
+        drop_tracker "${remote}"
+        return 1
+    fi
+    [[ ${#recorded[@]} -eq 0 ]] || publish "${remote}" "${recorded[@]}"
+    drop_tracker "${remote}"
+}
+
+# The branches, the RSL and the applied policy. The policy fetch never forces,
+# so a local policy that is ahead of the remote stays.
+fetch() {
+    git fetch --quiet "$1" || { warn "could not fetch $1"; return 1; }
+    git fetch --quiet "$1" 'refs/gittuf/policy:refs/gittuf/policy' 2>/dev/null || true
+    if git rev-parse -q --verify refs/gittuf/reference-state-log >/dev/null; then
+        reconcile "$1"
+    else
+        # gittuf 0.17 reconcile refuses a repository with no RSL yet, though its help says otherwise.
+        gittuf rsl remote pull "$1" >/dev/null 2>&1 || warn "could not pull the RSL from $1"
+    fi
+}
+
+# Look at the remote's tip before you run this: the entry vouches for it.
+catch_up() {
+    local remote="$1" branch oid recorded=()
+    shift
+    fetch "${remote}" || return 1
+    for branch in "$@"; do
+        branch="${branch#refs/heads/}"
+        wanted "refs/heads/${branch}" || { warn "${branch}: only agents/* gets entries"; continue; }
+        oid="$(git rev-parse -q --verify "refs/remotes/${remote}/${branch}")" \
+            || { warn "${remote} has no ${branch}"; continue; }
+        keep "${oid}" "refs/heads/${branch}" && recorded+=("refs/heads/${branch}")
+    done
+    [[ ${#recorded[@]} -eq 0 ]] || publish "${remote}" "${recorded[@]}"
+    drop_tracker "${remote}"
+}
+
+# verify <local ref> <name on the remote>: say what gittuf makes of it.
+verify() {
+    if gittuf verify-ref "$1" --remote-ref-name "$2" >/dev/null 2>&1; then
+        echo "gittuf-rsl: $2 verified"
+    else
+        echo "gittuf-rsl: $2 FAILS: gittuf verify-ref --verbose $1 --remote-ref-name $2"
+        return 1
+    fi
+}
+
+check() {
+    local remote="$1" branch failed=0
+    shift
+    fetch "${remote}" || return 1
+    for branch in "$@"; do
+        branch="${branch#refs/heads/}"
+        verify "refs/remotes/${remote}/${branch}" "refs/heads/${branch}" || failed=1
+    done
+    drop_tracker "${remote}"
+    return "${failed}"
+}
+
+# For CI, in a clone it may overwrite: take every branch and tag as the remote
+# holds them, then verify each agents/* branch and each tag. <last> is the RSL
+# tip an earlier run saw. An RSL that no longer contains it was rewound or
+# replaced, which the forge allows, because its rulesets do not cover refs/gittuf.
+alarm() {
+    local remote="$1" last="${2:-}" ref tip failed=0
+    git fetch --quiet --prune "${remote}" "+refs/heads/*:refs/remotes/${remote}/*" '+refs/tags/*:refs/tags/*' \
+        || { warn "could not fetch ${remote}"; return 1; }
+    fetch "${remote}" || return 1
+    tip="$(git rev-parse -q --verify refs/gittuf/reference-state-log)" || { warn "${remote} has no RSL"; return 1; }
+    if [[ -n "${last}" ]] && ! git merge-base --is-ancestor "${last}" "${tip}" 2>/dev/null; then
+        echo "gittuf-rsl: the RSL FAILS: ${last} is no longer under its tip ${tip}"
+        failed=1
+    fi
+    while read -r ref; do
+        case "${ref}" in
+            refs/tags/*) verify "${ref}" "${ref}" || failed=1 ;;
+            *) verify "${ref}" "refs/heads/${ref#"refs/remotes/${remote}/"}" || failed=1 ;;
+        esac
+    done < <(git for-each-ref --format='%(refname)' "refs/remotes/${remote}/agents/" refs/tags/)
+    drop_tracker "${remote}"
+    return "${failed}"
+}
+
+mode="${1:-}"
+[[ $# -gt 0 ]] && shift
+case "${mode}" in
+    enabled) enabled ;;
+    tips) tips "$@" ;;
+    jj-precheck) enabled || { cat >/dev/null; exit 0; }; jj_precheck ;;
+    after-jj-push) enabled || exit 0; after_jj_push "$@" ;;
+    pre-push) enabled || { cat >/dev/null; exit 0; }; pre_push "$@" ;;
+    catch-up) enabled || { warn "gittuf is not installed, or this repository has no RSL"; exit 1; }; catch_up "$@" ;;
+    check) command -v gittuf >/dev/null 2>&1 || { warn "gittuf is not installed"; exit 1; }; check "$@" ;;
+    alarm) command -v gittuf >/dev/null 2>&1 || { warn "gittuf is not installed"; exit 1; }; alarm "$@" ;;
+    *) echo "usage: gittuf-rsl enabled | tips <remote>... | jj-precheck | after-jj-push <tips-file> <remote>... | pre-push <remote> | catch-up <remote> <branch>... | check <remote> <branch>... | alarm <remote> [<RSL tip>]" >&2; exit 2 ;;
+esac
