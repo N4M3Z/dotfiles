@@ -1,0 +1,67 @@
+name: gittuf-alarm
+
+# Verifies what the remote holds against the gittuf policy: every agents/*
+# branch, every tag, and that the reference state log (RSL) still contains the
+# tip the last run saw. A failed run is the alarm.
+#
+# It runs on a schedule, never on push. On a push, GitHub runs the workflow
+# file from the pushed commit, so an account with Write could push a copy with
+# the check removed. A scheduled run always takes this file from main.
+#
+# The first run needs the owner's gittuf policy on the remote (refs/gittuf/*).
+# Without it the job fails with "has no RSL".
+on:
+    schedule:
+        - cron: "23 4 * * *"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+# The release binary, pinned by the digest GitHub publishes on the release
+# asset (gh release view v0.18.0 -R gittuf/gittuf --json assets).
+env:
+    GITTUF_VERSION: 0.18.0
+    GITTUF_SHA256: b860b20d5d2b3b8793e96a701dba5ad46d79174644aff11467def4d03c4245fa
+
+jobs:
+    alarm:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Install gittuf
+              run: |
+                  curl -fsSL -o /tmp/gittuf \
+                      "https://github.com/gittuf/gittuf/releases/download/v${GITTUF_VERSION}/gittuf_${GITTUF_VERSION}_linux_amd64"
+                  actual=$(sha256sum /tmp/gittuf)
+                  actual=${actual%% *}
+                  [ "$actual" = "$GITTUF_SHA256" ] || { echo "gittuf checksum mismatch: $actual"; exit 1; }
+                  sudo install -m 755 /tmp/gittuf /usr/local/bin/gittuf
+                  gittuf version
+
+            # A cache is scoped to its branch, so only a run on main can write
+            # the tip that the next scheduled run reads.
+            - name: Restore the RSL tip the last run saw
+              uses: actions/cache/restore@v4
+              with:
+                  path: .gittuf-rsl-tip
+                  key: gittuf-rsl-tip-${{ github.run_id }}
+                  restore-keys: gittuf-rsl-tip-
+
+            - name: Verify agents/* branches, tags and the RSL
+              run: |
+                  last=$(cat .gittuf-rsl-tip 2>/dev/null || true)
+                  bash .githooks/gittuf-rsl alarm origin "$last"
+
+            # Skipped when the check fails, so the alarm repeats until the
+            # owner resolves it.
+            - name: Remember the RSL tip
+              run: git rev-parse refs/gittuf/reference-state-log > .gittuf-rsl-tip
+
+            - uses: actions/cache/save@v4
+              with:
+                  path: .gittuf-rsl-tip
+                  key: gittuf-rsl-tip-${{ github.run_id }}
