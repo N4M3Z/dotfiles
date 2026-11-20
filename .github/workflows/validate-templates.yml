@@ -110,7 +110,7 @@ jobs:
               run: python3 tests/test-specstory-config.py
 
             - name: Test PdfCraft config
-              run: python3 tests/test-pdfcraft-config.py
+              run: bash tests/test-pdfcraft-config.sh
 
             - name: Test Excalidraw scripts
               run: node --test tests/excalidraw-*.test.cjs
