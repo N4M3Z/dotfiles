@@ -1,0 +1,11 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* PdfCraft writes its prefs as compact JSON inside a RON string. Only this token changes, so no other byte is read or written again. */ -}}
+{{- $on := `\"update_check_at_start\":true` -}}
+{{- $off := `\"update_check_at_start\":false` -}}
+{{- if eq (trim .chezmoi.stdin) "" -}}
+{{ printf "{\n    \"pdfcraft\": \"{%s}\",\n}\n" $off }}
+{{- else if or (contains $on .chezmoi.stdin) (contains $off .chezmoi.stdin) -}}
+{{ .chezmoi.stdin | replace $on $off }}
+{{- else -}}
+{{ fail "PdfCraft app.ron has no update_check_at_start pref. Start and quit PdfCraft, then apply again." }}
+{{- end -}}
