@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# jj push for this repository. jj runs no git hooks, so the `push` alias in
+# dot_config/jj/config.toml runs this file where a repository has one.
+#
+# Where the repository keeps a gittuf reference state log (RSL), a dry run
+# names each bookmark the push moves, and gittuf-rsl stops the push when one
+# must not go. After the push, gittuf-rsl records each agents/* bookmark it
+# moved and pushes the RSL. A plain `jj git push` skips all of this.
+# Source: https://github.com/N4M3Z/dotfiles
+set -uo pipefail
+
+cd "$(jj workspace root)" || exit 1
+rsl=.githooks/gittuf-rsl
+bash "${rsl}" enabled || exec jj git push "$@"
+
+plan="$(jj git push --dry-run "$@" 2>&1)" || { printf '%s\n' "${plan}" >&2; exit 1; }
+remotes="$(printf '%s\n' "${plan}" | bash "${rsl}" jj-precheck)" || exit 1
+# Nothing to send: jj says so itself.
+[[ -n "${remotes}" ]] || exec jj git push "$@"
+
+tips="$(mktemp "${TMPDIR:-/tmp}/jj-push-tips.XXXXXX")" || exit 1
+trap 'rm -f "${tips}"' EXIT
+# shellcheck disable=SC2086 # remote names are single words
+bash "${rsl}" tips ${remotes} > "${tips}" || true
+
+status=0
+jj git push "$@" || status=$?
+# shellcheck disable=SC2086
+bash "${rsl}" after-jj-push "${tips}" ${remotes} || true
+exit "${status}"

@@ -97,6 +97,18 @@ require_allow 'cp  -f /tmp/a /tmp/b'
 require_allow 'cd /tmp &&  rm  -f x'
 require_block 'cp  /tmp/a /tmp/b' user.aliases:cp-needs-flag
 
+# user.gitpush: a push must not go past the repository's push checks
+require_block 'git push --no-verify origin v9.9.9' user.gitpush:push-no-verify
+require_block 'git -C repo push origin agents/x --no-verify' user.gitpush:push-no-verify
+require_block 'jj git push -b agents/x' user.gitpush:jj-git-push-direct
+require_block 'jj -R repo git push --all' user.gitpush:jj-git-push-direct
+require_block 'cd repo && jj git push' user.gitpush:jj-git-push-direct
+# The alias, a plain git push, a dry run and a fetch stay allowed.
+require_allow 'jj push -b agents/x'
+require_allow 'git push origin agents/x'
+require_allow 'jj git push -b agents/x --dry-run'
+require_allow 'jj git fetch'
+
 if [ "${failures}" -ne 0 ]; then
     echo "${failures} failure(s)"
     exit 1

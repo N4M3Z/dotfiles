@@ -66,5 +66,11 @@ done < "$refs_file"
 [ "$failures" -eq 0 ] || exit 1
 
 if command -v entire >/dev/null 2>&1; then
-    entire hooks git pre-push "$remote_name" < "$refs_file"
+    entire hooks git pre-push "$remote_name" < "$refs_file" || exit $?
 fi
+
+# gittuf runs last, because it publishes. Where the repository keeps a
+# reference state log, it records each agents/* branch and tag this push sends
+# and pushes the log ahead of them. It stops the push when the gittuf policy
+# refuses a ref, or when an agents/* commit has no signature git accepts.
+bash "$(dirname "$0")/gittuf-rsl" pre-push "$remote_name" < "$refs_file"
