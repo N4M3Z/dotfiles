@@ -97,6 +97,8 @@ drop_tracker() { git update-ref -d "refs/remotes/$1/gittuf/reference-state-log" 
 # itself is refused (GitHub's ruleset covers branches, not refs/gittuf).
 # gittuf checks a tag entry against the local tag of that name, so a tag pushed
 # under another name gets that local tag for the check, and loses it after.
+# Each run writes its own entry, also when the latest entry for <dst> names the
+# same oid: otherwise the check would pass on the key that signed that entry.
 # Exit 0 kept, 1 not recorded, 2 refused by the policy.
 record() {
     local oid="$1" dst="$2" scratch="refs/gittuf-pending/$$" prior held lent="" status=0
@@ -113,7 +115,7 @@ record() {
         [[ -z "${lent}" ]] || git update-ref -d "${lent}" "${oid}"
         return 1
     fi
-    if ! gittuf rsl record "${scratch}" --dst-ref "${dst}" --local-only >/dev/null 2>&1; then
+    if ! gittuf rsl record "${scratch}" --dst-ref "${dst}" --local-only --skip-duplicate-check >/dev/null 2>&1; then
         status=1
     elif ! gittuf verify-ref "${scratch}" --remote-ref-name "${dst}" >/dev/null 2>&1; then
         git update-ref refs/gittuf/reference-state-log "${prior}"
@@ -295,10 +297,12 @@ pre_push() {
     drop_tracker "${remote}"
 }
 
-# The branches, the RSL and the applied policy. The policy fetch never forces,
-# so a local policy that is ahead of the remote stays.
+# The branches, the RSL and the applied policy. A branch the remote deleted
+# loses its remote-tracking ref, so catch-up and check see only what the remote
+# holds. The policy fetch never forces, so a local policy that is ahead of the
+# remote stays.
 fetch() {
-    git fetch --quiet "$1" || { warn "could not fetch $1"; return 1; }
+    git fetch --quiet --prune "$1" || { warn "could not fetch $1"; return 1; }
     git fetch --quiet "$1" 'refs/gittuf/policy:refs/gittuf/policy' 2>/dev/null || true
     if git rev-parse -q --verify refs/gittuf/reference-state-log >/dev/null; then
         reconcile "$1"
