@@ -1,0 +1,18 @@
+{{- /*
+  Windows only: .rules (a list of permission rules) as JSON, where each rule
+  that starts Tool(<.home>/** and a slash is followed by the same rule under
+  .root. A rule like Read(~/** then /dotfiles-private/**) is meant for every
+  folder in the home folder, where the Macs keep the repositories; on Windows
+  they live under devRoot, outside it, so the rule must name that folder too. .home is how the
+  rules spell the home folder (~ or its absolute path), .root how this harness
+  spells devRoot. The home-folder rules stay.
+*/ -}}
+{{- $pattern := printf `^(\w+)\(%s/\*\*/(.*)\)$` (regexQuoteMeta .home) -}}
+{{- $out := list -}}
+{{- range .rules -}}
+{{-   $out = append $out . -}}
+{{-   if and (kindIs "string" .) (regexMatch $pattern .) -}}
+{{-     $out = append $out (regexReplaceAll $pattern . (printf "${1}(%s/**/${2})" $.root)) -}}
+{{-   end -}}
+{{- end -}}
+{{- uniq $out | toJson -}}

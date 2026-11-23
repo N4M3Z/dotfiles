@@ -18,10 +18,36 @@
 {{- $_ := set $env "OTEL_LOG_RAW_API_BODIES" (printf "file:%s/.local/state/claude-code/api-bodies" .chezmoi.homeDir) -}}
 {{- $mkcert := joinPath (env "LOCALAPPDATA" | replace "\\" "/") "mkcert/rootCA.pem" | replace "\\" "/" -}}
 {{- if stat $mkcert }}{{ $_ := set $env "NODE_EXTRA_CA_CERTS" $mkcert }}{{ else }}{{ $_ := unset $env "NODE_EXTRA_CA_CERTS" }}{{ end -}}
+{{- /*
+  Claude Code's sandbox does not run on native Windows, and with
+  failIfUnavailable set it exits at startup there (code.claude.com/docs/en/sandboxing).
+  The rest of the sandbox block stays, for a machine that later runs Claude
+  Code under WSL2.
+*/ -}}
+{{- $sandbox := get $config "sandbox" -}}
+{{- if kindIs "map" $sandbox }}{{ $_ := set $sandbox "enabled" false }}{{ $_ := set $sandbox "failIfUnavailable" false }}{{ end -}}
+{{- /*
+  Rules for every folder in the home folder (those that start ~/** and a
+  slash) also name devRoot, in Claude's form for an absolute Windows path:
+  C:/Developer is matched as /c/Developer, written //c/Developer
+  (code.claude.com/docs/en/permissions).
+*/ -}}
+{{- $devRoot := includeTemplate "dev-root" . -}}
+{{- $ruleRoot := $devRoot -}}
+{{- if regexMatch `^[A-Za-z]:` $devRoot }}{{ $ruleRoot = printf "//%s%s" (lower (substr 0 1 $devRoot)) (substr 2 (len $devRoot) $devRoot) }}{{ end -}}
+{{- $permissions := get $config "permissions" -}}
+{{- if kindIs "map" $permissions -}}
+{{-   range $kind := list "deny" "ask" -}}
+{{-     with get $permissions $kind -}}
+{{-       $_ := set $permissions $kind (includeTemplate "harness/windows/home-wide" (dict "rules" . "home" "~" "root" $ruleRoot) | fromJson) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
 {{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "json")) -}}
 {{- $hooks := get $live "hooks" | default dict -}}
 {{- $_ := set $config "hooks" ($hooks | toJson | replace "/.sd/hook " "/.config/just/hook " | fromJson) -}}
+{{- /* Copied only when the live file has the key: sprig's get gives "" for a missing one. */ -}}
 {{- range list "model" "outputStyle" -}}
-{{-   if not (eq (get $live . | toJson) "null") }}{{ $_ := set $config . (get $live .) }}{{ end -}}
+{{-   if and (hasKey $live .) (ne (get $live . | toJson) "null") }}{{ $_ := set $config . (get $live .) }}{{ end -}}
 {{- end -}}
 {{ toPrettyJson $config }}

@@ -23,7 +23,7 @@ $config = Join-Path $work 'chezmoi.toml'
 
 [interpreters.ps1]
     command = "powershell"
-    args = ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass"]
+    args = ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]
 '@ | Set-Content -LiteralPath $config -Encoding utf8NoBOM
 
 $failures = 0
@@ -68,7 +68,11 @@ foreach ($target in $harnesses.Keys) {
         if ($result.Code -eq 0) {
             try {
                 if ($harnesses[$target] -eq 'json') { $null = $result.Output | ConvertFrom-Json -ErrorAction Stop; $parses = $true }
-                else { $parses = ($result.Output -match '(?m)^\s*\[') -or ($result.Output -match '(?m)^\s*[A-Za-z_]+\s*=') }
+                else {
+                    # chezmoi's own TOML parser reads the whole output; it fails on anything that is not TOML.
+                    $null = $result.Output | & chezmoi execute-template --with-stdin '{{ .chezmoi.stdin | fromToml | toJson }}' 2>&1
+                    $parses = $LASTEXITCODE -eq 0
+                }
             } catch { $parses = $false }
         }
         Write-Result $parses "$target renders a config that parses from an empty live file" $result.Output
@@ -77,7 +81,19 @@ foreach ($target in $harnesses.Keys) {
 
 $scratch = Join-Path $work 'full'
 New-Item -ItemType Directory -Path $scratch | Out-Null
-$apply = Invoke-Chezmoi $scratch @('apply', '--exclude', 'externals')
+# The apply ends with run_after_verify_harness_config.ps1, which starts each installed harness.
+# Each one is pointed at the scratch home, so the check reads what this apply wrote, not the
+# real home's configs. On a runner without the harnesses the check skips them.
+$harnessHomes = [ordered]@{
+    CODEX_HOME        = Join-Path $scratch '.codex'
+    CLAUDE_CONFIG_DIR = Join-Path $scratch '.claude'
+    GROK_HOME         = Join-Path $scratch '.grok'
+    XDG_CONFIG_HOME   = Join-Path $scratch '.config'
+}
+$saved = @{}
+foreach ($name in $harnessHomes.Keys) { $saved[$name] = [Environment]::GetEnvironmentVariable($name); [Environment]::SetEnvironmentVariable($name, $harnessHomes[$name]) }
+try { $apply = Invoke-Chezmoi $scratch @('apply', '--exclude', 'externals') }
+finally { foreach ($name in $harnessHomes.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) } }
 Write-Result ($apply.Code -eq 0) 'a full apply finishes' $apply.Output
 $again = Invoke-Chezmoi $scratch @('diff', '--exclude', 'externals,scripts')
 # chezmoi warns that the scratch config is not rendered from .chezmoi.toml.tmpl; that is no difference.
@@ -93,6 +109,14 @@ foreach ($present in '.jjconfig.toml', '.gitconfig', '.local/state/claude-code/a
 $claudePath = Join-Path $scratch '.claude/settings.json'
 $claude = if (Test-Path -LiteralPath $claudePath) { Get-Content -LiteralPath $claudePath -Raw | ConvertFrom-Json } else { $null }
 Write-Result ($claude -and $claude.extraKnownMarketplaces.runedeck.source.path -eq 'C:/Developer/runedeck/mods') "Claude Code's plugin marketplaces sit under devRoot"
+Write-Result ($claude -and $claude.permissions.deny -contains 'Read(//c/Developer/**/dotfiles-private/**)') "Claude Code's home-wide denies also name devRoot (//c/Developer)"
+# Claude Code exits at startup on native Windows when the sandbox it cannot run is required.
+Write-Result ($claude -and $claude.sandbox.enabled -eq $false -and $claude.sandbox.failIfUnavailable -eq $false) "Claude Code's sandbox is off on Windows"
+Write-Result ($claude -and -not $claude.PSObject.Properties['model'] -and -not $claude.PSObject.Properties['outputStyle']) 'Claude Code gets no model or output style the live file did not have'
+$cursorPath = Join-Path $scratch '.cursor/cli-config.json'
+$cursor = if (Test-Path -LiteralPath $cursorPath) { Get-Content -LiteralPath $cursorPath -Raw | ConvertFrom-Json } else { $null }
+Write-Result ($cursor -and $cursor.version -eq 1) "the Cursor CLI config gets version 1 when the live file names none"
+Write-Result ($cursor -and @($cursor.permissions.deny | Where-Object { $_ -like 'Read(C:/Developer/`*`*/dotfiles-private*' }).Count -gt 0) "Cursor's home-wide Read denies also name devRoot"
 foreach ($target in $harnesses.Keys) {
     $file = Join-Path $scratch $target
     $text = if (Test-Path -LiteralPath $file) { Get-Content -LiteralPath $file -Raw } else { '' }

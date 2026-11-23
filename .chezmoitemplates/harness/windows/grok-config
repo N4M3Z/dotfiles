@@ -4,6 +4,10 @@
   the permission map outright, and drops a stale gbrain server and cli.telemetry.
 */ -}}
 {{- $policy := includeTemplate "harness/windows/paths" (dict "text" (.harness.grok | toJson) "data" .) | fromJson -}}
+{{- /* Rules for every folder in the home folder also name devRoot; Grok takes absolute-path patterns as written, not //. */ -}}
+{{- with dig "permission" "deny" nil $policy -}}
+{{-   $_ := set $policy.permission "deny" (includeTemplate "harness/windows/home-wide" (dict "rules" . "home" "~" "root" (includeTemplate "dev-root" $)) | fromJson) -}}
+{{- end -}}
 {{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "toml")) -}}
 {{- $config := fromJson (includeTemplate "harness/deep-merge" (dict "a" $live "b" $policy)) -}}
 {{- $_ := set $config "permission" (get $policy "permission") -}}

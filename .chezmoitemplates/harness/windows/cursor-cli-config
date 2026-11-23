@@ -4,6 +4,11 @@
   dot_cursor/modify_cli-config.json.tmpl does with jq elsewhere.
 */ -}}
 {{- $policy := includeTemplate "harness/windows/paths" (dict "text" (includeTemplate "harness/cursor-cli-policy" .) "data" .) | fromJson -}}
+{{- /* Read denies for every folder in the home folder also name devRoot, in Cursor's absolute form. */ -}}
+{{- with dig "permissions" "deny" nil $policy -}}
+{{-   $_ := set $policy.permissions "deny" (includeTemplate "harness/windows/home-wide" (dict "rules" . "home" $.chezmoi.homeDir "root" (includeTemplate "dev-root" $)) | fromJson) -}}
+{{- end -}}
 {{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "json")) -}}
-{{- if eq (get $live "version" | toString) "<nil>" }}{{ $_ := set $live "version" 1 }}{{ end -}}
+{{- /* jq's `.version // 1`: a missing or null version becomes 1 (sprig's get gives "" for a missing key). */ -}}
+{{- if or (not (hasKey $live "version")) (eq (get $live "version" | toJson) "null") }}{{ $_ := set $live "version" 1 }}{{ end -}}
 {{ fromJson (includeTemplate "harness/deep-merge" (dict "a" $live "b" $policy)) | toPrettyJson }}

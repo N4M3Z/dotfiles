@@ -6,6 +6,15 @@
   provider on Apex) stay as they are.
 */ -}}
 {{- $policy := includeTemplate "harness/windows/paths" (dict "text" (.harness.opencode | toJson) "data" .) | fromJson -}}
+{{- /* A pattern for every folder in the home folder (one that starts ~/** and a slash) gets a twin under devRoot, with the same action. */ -}}
+{{- $devRoot := includeTemplate "dev-root" . -}}
+{{- range $tool, $rules := (get $policy "permission" | default dict) -}}
+{{-   if kindIs "map" $rules -}}
+{{-     range $pattern, $action := $rules -}}
+{{-       if hasPrefix "~/**/" $pattern }}{{ $_ := set $rules (printf "%s/**/%s" $devRoot (trimPrefix "~/**/" $pattern)) $action }}{{ end -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
 {{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "json")) -}}
 {{- $config := fromJson (includeTemplate "harness/deep-merge" (dict "a" $live "b" $policy)) -}}
 {{- $_ := set $config "permission" (get $policy "permission") -}}

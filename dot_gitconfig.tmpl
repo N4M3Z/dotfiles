@@ -1,6 +1,11 @@
 {{- /* Forward slashes: git runs a ! helper through sh, also on Windows. */ -}}
 {{- $gh := lookPath "gh" | default "gh" | replace "\\" "/" -}}
 {{- $glab := lookPath "glab" | default "glab" | replace "\\" "/" -}}
+{{- /* git strips plain double quotes from a value, so a path with a space (C:/Program Files/...) has them escaped to reach the shell. */ -}}
+{{- $ghCmd := printf "\"%s\"" $gh -}}
+{{- if contains " " $gh }}{{ $ghCmd = printf "\\\"%s\\\"" $gh }}{{ end -}}
+{{- $glabCmd := printf "\"%s\"" $glab -}}
+{{- if contains " " $glab }}{{ $glabCmd = printf "\\\"%s\\\"" $glab }}{{ end -}}
 ; ~/.gitconfig — Chezmoi-managed; canonical source at
 ; dotfiles/dot_gitconfig.tmpl, deploys to ~/.gitconfig.
 ;
@@ -49,17 +54,17 @@
 ; GUI-launched process may carry a PATH that never finds gh.
 [credential "https://github.com"]
     helper =
-    helper = !"{{ $gh }}" auth git-credential
+    helper = !{{ $ghCmd }} auth git-credential
 
 [credential "https://gist.github.com"]
     helper =
-    helper = !"{{ $gh }}" auth git-credential
+    helper = !{{ $ghCmd }} auth git-credential
 
 ; Same pattern for Proton GitLab: glab serves the token it keeps in the
 ; keychain, so git needs no separate credential store for that host.
 [credential "https://{{ .private.gitlab_host }}"]
     helper =
-    helper = !"{{ $glab }}" auth git-credential
+    helper = !{{ $glabCmd }} auth git-credential
 
 {{- if ne .chezmoi.os "windows" }}
 
