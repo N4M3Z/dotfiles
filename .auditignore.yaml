@@ -76,3 +76,9 @@ acknowledged:
     sha256: 59ef9760f648c7a372137424174591ad7eed538ccf5064fea0d630497598de08
     commit: 38e23ef4c9487245ed7089f8ffc87f6d63fb89b2
     reason: the synthetic fixture value own-token in tests/test-cliproxy-zsh.sh, not a credential
+  # The same scan: the owner's Mac by its local network name, which #55 took out of the
+  # tree. This item covers every copy in history up to that merge.
+  - rule: host-private-tld
+    sha256: e93bf387ac9d1719793a8c150a4edd040e4c1299f3d19f90d2e5e41ed13c1603
+    commit: c6b0563ce00ede8946d082a8ea57a3eab4a560ef
+    reason: the owner's Mac by its local network name, in history before #55 took it out of the tree
