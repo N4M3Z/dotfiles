@@ -9,7 +9,8 @@
 {{- /*
   Muse Code 1.4.25 on Windows refuses to start on a profile rule it cannot
   enforce there (probed 2026-11-23 with `muse exec --provider echo`):
-  - a filesystem selector spelled C:/Users/..., so home paths go back to ~/;
+  - a filesystem selector that starts with a drive letter, so home paths go
+    back to ~/;
   - a path that starts with /, which names a macOS place (/Volumes);
   - any Unix socket rule;
   - the deny rules under :workspace_roots (".env", ".env.*", "secrets").
