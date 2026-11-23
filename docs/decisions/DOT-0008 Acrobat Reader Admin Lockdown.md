@@ -53,7 +53,7 @@ those switches live in user state that an update can reset.
    the updater, the services, or the PDF Spaces cards.
 2. **Delete the updater and its launch items.** The next Reader install puts them back.
 3. **Adobe's admin lockdown plist at `/Library/Preferences/com.adobe.Reader.plist`.** Reader and its
-   updater read it at launch. Adobe's own updater registration on Nexus.local names `DC/FeatureLockdown/bUpdater`
+   updater read it at launch. Adobe's own updater registration on Nexus names `DC/FeatureLockdown/bUpdater`
    and `DC/FeatureLockdown/cServices/bUpdater` in that file as its off switches.
 
 ## Decision Outcome

@@ -5,7 +5,7 @@
 # otel.zsh exports OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 for
 # Claude Code from every zsh. Muse 1.4.20 withholds its Model API bearer
 # from a non-baseline destination, disables telemetry export, and prints a
-# notice at every interactive start. A PTY probe on Nexus.local showed that
+# notice at every interactive start. A PTY probe on Nexus showed that
 # unsetting the endpoint for the muse process removes the notice and that
 # OTEL_SDK_DISABLED=true does not. So otel.zsh defines a muse() wrapper that
 # unsets its OTEL list for that one process. This test sources otel.zsh in
