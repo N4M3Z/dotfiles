@@ -1,0 +1,64 @@
+{{- /*
+  ~/.codex/config.toml on Windows: the merge that dot_codex/modify_private_config.toml.tmpl
+  runs with yq and jq elsewhere, step for step.
+  1. The old workspace-local permission profile folds into Nexus, and the
+     profile, sandbox_mode and sandbox_workspace_write keys go.
+  2. The policy deep-merges over the result and owns
+     permissions.Nexus.filesystem outright.
+  3. A stale gbrain server goes.
+  4. Hook tables go (hooks live in ~/.codex/hooks.json), and hooks.state keeps
+     only the trust records that still point at a hook. Codex on Windows may
+     write the home folder with backslashes, so both spellings match.
+*/ -}}
+{{- $policy := includeTemplate "harness/codex-policy" . | fromJson -}}
+{{- $homes := list .chezmoi.homeDir (.chezmoi.homeDir | replace "/" "\\") -}}
+{{- $staleTails := list
+      "Agents/tools/ai-stack/.codex/hooks.json:post_tool_use:0:0"
+      "Agents/tools/ai-stack/.codex/hooks.json:session_start:0:0"
+      "Agents/tools/ai-stack/.codex/hooks.json:stop:0:0"
+      "Agents/tools/ai-stack/.codex/hooks.json:user_prompt_submit:0:0"
+      ".codex/hooks.json:stop:0:0"
+      ".codex/hooks.json:stop:1:0"
+      ".codex/hooks.json:user_prompt_submit:0:0"
+      ".codex/hooks.json:user_prompt_submit:1:0"
+-}}
+{{- $stale := list -}}
+{{- $ownPrefixes := list -}}
+{{- range $homes -}}
+{{-   $home := . -}}
+{{-   range $staleTails }}{{ $stale = append $stale (printf "%s/%s" $home .) }}{{ end -}}
+{{-   $ownPrefixes = append $ownPrefixes (printf "%s/.codex/config.toml:" $home) -}}
+{{- end -}}
+{{- $config := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "toml")) -}}
+{{- /* 1 */ -}}
+{{- $permissions := get $config "permissions" -}}
+{{- if not (kindIs "map" $permissions) }}{{ $permissions = dict }}{{ end -}}
+{{- $workspaceLocal := get $permissions "workspace-local" | default dict -}}
+{{- $nexus := get $permissions "Nexus" | default dict -}}
+{{- $_ := set $permissions "Nexus" (fromJson (includeTemplate "harness/deep-merge" (dict "a" $workspaceLocal "b" $nexus))) -}}
+{{- $_ := unset $permissions "workspace-local" -}}
+{{- $_ := set $config "permissions" $permissions -}}
+{{- range list "profile" "profiles" "sandbox_mode" "sandbox_workspace_write" }}{{ $_ := unset $config . }}{{ end -}}
+{{- /* 2 */ -}}
+{{- $config = fromJson (includeTemplate "harness/deep-merge" (dict "a" $config "b" $policy)) -}}
+{{- $_ := set $config.permissions.Nexus "filesystem" (dig "permissions" "Nexus" "filesystem" nil $policy) -}}
+{{- /* Codex on Windows refuses a path that starts with / ("must be absolute"). Those rules name macOS places (/Volumes, /opt/homebrew) that Windows does not have. */ -}}
+{{- $filesystem := $config.permissions.Nexus.filesystem -}}
+{{- if kindIs "map" $filesystem }}{{ range $key, $_ := $filesystem }}{{ if hasPrefix "/" $key }}{{ $_ := unset $filesystem $key }}{{ end }}{{ end }}{{ end -}}
+{{- /* 3 */ -}}
+{{- with get $config "mcp_servers" }}{{ if kindIs "map" . }}{{ $_ := unset . "gbrain" }}{{ end }}{{ end -}}
+{{- /* 4 */ -}}
+{{- $hooks := get $config "hooks" -}}
+{{- if kindIs "map" $hooks -}}
+{{-   range $event, $value := $hooks }}{{ if kindIs "slice" $value }}{{ $_ := unset $hooks $event }}{{ end }}{{ end -}}
+{{-   $state := get $hooks "state" -}}
+{{-   if kindIs "map" $state -}}
+{{-     range $key, $_ := $state -}}
+{{-       $drop := has $key $stale -}}
+{{-       range $ownPrefixes }}{{ if hasPrefix . $key }}{{ $drop = true }}{{ end }}{{ end -}}
+{{-       if $drop }}{{ $_ := unset $state $key }}{{ end -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- if or (not (hasKey $config "hooks")) (eq (get $config "hooks" | toJson) "null" "{}") }}{{ $_ := unset $config "hooks" }}{{ end -}}
+{{ toToml $config }}

@@ -1,0 +1,34 @@
+{{- /*
+  The Codex policy as JSON, for dot_codex/modify_private_config.toml.tmpl on
+  every OS: .chezmoidata/harness/codex.json with the auto-review prose, the
+  home folder and the private values filled in.
+*/ -}}
+{{- /* auto_review.policy is shared prose: edit .chezmoidata/harness/automode.json, not this file. */ -}}
+{{- $auto := .automode -}}
+{{- $mine := .automode.append.codex -}}
+{{- $lines := list -}}
+{{- $lines = append $lines "Routine:" -}}
+{{- range concat $auto.allow $mine.allow }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
+{{- $lines = concat $lines (list "" "Ask first:") -}}
+{{- range concat $auto.soft_deny $mine.soft_deny }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
+{{- $lines = concat $lines (list "" "Never:") -}}
+{{- range concat $auto.hard_deny $mine.hard_deny }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
+{{- $lines = concat $lines (list "" "Environment:") -}}
+{{- range concat $auto.environment $mine.environment }}{{ $lines = append $lines (printf "- %s" .) }}{{ end -}}
+{{- /* This repository is public, so it does not record where the private folder lives. Codex takes no wildcard here, so the path is found at render time. */ -}}
+{{- $dotfilesPrivate := glob "Developer/*/dotfiles-private" | first | default "dotfiles-private" -}}
+{{- $codex := deepCopy .harness.codex -}}
+{{- $_ := set $codex "auto_review" (dict "policy" (printf "%s\n" (join "\n" $lines))) -}}
+{{- /* Codex expands ~ in a permission path. It passes a command argument and an environment value on as written, so the policy data writes ~/ there and the home folder is filled in at render time. */ -}}
+{{- $home := .chezmoi.homeDir -}}
+{{- $auth := dig "model_providers" "cliproxyapi" "auth" dict $codex -}}
+{{- $args := list -}}
+{{- range (get $auth "args" | default list) -}}
+{{-   $args = append $args (ternary (printf "%s/%s" $home (trimPrefix "~/" .)) . (hasPrefix "~/" .)) -}}
+{{- end -}}
+{{- if $args }}{{ $_ := set $auth "args" $args }}{{ end -}}
+{{- $environment := dig "shell_environment_policy" "set" dict $codex -}}
+{{- range $name, $value := $environment -}}
+{{-   if hasPrefix "~/" $value }}{{ $_ := set $environment $name (printf "%s/%s" $home (trimPrefix "~/" $value)) }}{{ end -}}
+{{- end -}}
+{{- $codex | toJson | replace "@GITLAB_HOST@" .private.gitlab_host | replace "@DOTFILES_PRIVATE@" $dotfilesPrivate -}}

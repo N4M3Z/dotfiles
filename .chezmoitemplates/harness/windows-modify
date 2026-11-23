@@ -1,0 +1,10 @@
+{{- /*
+  Windows has no /bin/sh for chezmoi to run a harness modify_ script with, so
+  on Windows a harness template prints this instead: a modify-template, which
+  chezmoi executes a second time with the live file in .chezmoi.stdin. It
+  hands the whole template data to the named template under
+  .chezmoitemplates/harness/windows/, which does the merge that the jq
+  pipeline does on macOS and Linux. The argument is that template's name.
+*/ -}}
+{{ "{{-" }} /* chezmoi:modify-template */ {{ "-}}" }}
+{{ "{{" }} includeTemplate {{ printf "%q" . }} . {{ "}}" }}

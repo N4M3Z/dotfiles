@@ -1,0 +1,48 @@
+{{- /*
+  ~/.config/muse/settings.json on Windows: the merge that
+  dot_config/muse/modify_settings.json.tmpl runs with jq elsewhere. The
+  settings deep-merge over the live file, the policy owns its profile outright
+  and is the default again, and the managed PreToolUse hooks replace their
+  earlier entries while other hooks stay.
+*/ -}}
+{{- $p := includeTemplate "harness/muse-policy" . | fromJson -}}
+{{- /*
+  Muse Code 1.4.25 on Windows refuses to start on a profile rule it cannot
+  enforce there (probed 2026-11-23 with `muse exec --provider echo`):
+  - a filesystem selector spelled C:/Users/..., so home paths go back to ~/;
+  - a path that starts with /, which names a macOS place (/Volumes);
+  - any Unix socket rule;
+  - the deny rules under :workspace_roots (".env", ".env.*", "secrets").
+  The managed hooks stay off as well: harness-command-gate is a bash script
+  that Windows cannot start, and an untested hook could block every command.
+*/ -}}
+{{- $homePrefix := printf "%s/" .chezmoi.homeDir -}}
+{{- $filesystem := dict -}}
+{{- range $key, $value := $p.profile.filesystem -}}
+{{-   if hasPrefix $homePrefix $key }}{{ $_ := set $filesystem (printf "~/%s" (trimPrefix $homePrefix $key)) $value }}
+{{-   else if not (or (hasPrefix "/" $key) (eq $key ":workspace_roots")) }}{{ $_ := set $filesystem $key $value }}
+{{-   end -}}
+{{- end -}}
+{{- $_ := set $p.profile "filesystem" $filesystem -}}
+{{- $_ := unset $p.profile.network "unix_sockets" -}}
+{{- $_ := set $p "hooks" list -}}
+{{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "json")) -}}
+{{- $config := fromJson (includeTemplate "harness/deep-merge" (dict "a" $live "b" $p.settings)) -}}
+{{- $permissions := get $config "permissions" -}}
+{{- if not (kindIs "map" $permissions) }}{{ $permissions = dict }}{{ $_ := set $config "permissions" $permissions }}{{ end -}}
+{{- $profiles := get $permissions "profiles" -}}
+{{- if not (kindIs "map" $profiles) }}{{ $profiles = dict }}{{ $_ := set $permissions "profiles" $profiles }}{{ end -}}
+{{- $_ := set $profiles $p.profile_id $p.profile -}}
+{{- $_ := set $permissions "default_profile" $p.profile_id -}}
+{{- $hooks := get $config "hooks" -}}
+{{- if not (kindIs "map" $hooks) }}{{ $hooks = dict }}{{ $_ := set $config "hooks" $hooks }}{{ end -}}
+{{- $kept := list -}}
+{{- range (get $hooks "PreToolUse" | default list) -}}
+{{-   $managed := false -}}
+{{-   range (get . "hooks" | default list) }}{{ if has (get . "command") $p.managed_commands }}{{ $managed = true }}{{ end }}{{ end -}}
+{{-   if not $managed }}{{ $kept = append $kept . }}{{ end -}}
+{{- end -}}
+{{- $_ := set $hooks "PreToolUse" (concat $kept $p.hooks) -}}
+{{- if not (get $hooks "PreToolUse") }}{{ $_ := unset $hooks "PreToolUse" }}{{ end -}}
+{{- if not $hooks }}{{ $_ := unset $config "hooks" }}{{ end -}}
+{{ toPrettyJson $config }}

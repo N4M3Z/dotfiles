@@ -1,0 +1,22 @@
+{{- /*
+  jq's `.a * .b` as JSON text: objects merge key by key, recursively, and any
+  other value in .b (array, string, number, boolean, null) replaces the one
+  in .a. Neither input changes. Sprig's mergeOverwrite is not used, because
+  it skips false, 0 and "" in .b, and jq does not.
+*/ -}}
+{{- $a := .a -}}
+{{- $b := .b -}}
+{{- if and (kindIs "map" $a) (kindIs "map" $b) -}}
+{{-   $out := deepCopy $a -}}
+{{-   range $key, $value := $b -}}
+{{-     $mine := get $out $key -}}
+{{-     if and (hasKey $out $key) (kindIs "map" $mine) (kindIs "map" $value) -}}
+{{-       $_ := set $out $key (fromJson (includeTemplate "harness/deep-merge" (dict "a" $mine "b" $value))) -}}
+{{-     else -}}
+{{-       $_ := set $out $key $value -}}
+{{-     end -}}
+{{-   end -}}
+{{-   toJson $out -}}
+{{- else -}}
+{{-   toJson $b -}}
+{{- end -}}
