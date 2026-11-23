@@ -116,6 +116,13 @@ as "$agent" agent
 git -C "$agent" tag -s -m v1 v1 origin/main
 expect 1 'an agent key on a tag stops the push' push v1
 expect 1 'the tag did not reach the remote' on_origin refs/tags/v1
+as "$agent" owner
+git -C "$agent" tag -s -m v2 v2 origin/main
+expect 0 'the owner key pushes a tag under another name' push v2:refs/tags/release-v2
+expect 0 'that tag reached the remote' on_origin refs/tags/release-v2
+expect 1 'the check leaves no local tag of that name' \
+    git -C "$agent" rev-parse -q --verify refs/tags/release-v2
+as "$agent" agent
 
 commit change/other nosign
 expect 0 'a branch outside agents/* is pushed without a check' push change/other
@@ -191,6 +198,10 @@ command rm "${origin}/hooks/pre-receive"
 expect 0 'catch-up records what the remote holds' \
     bash -c "cd '$agent' && bash .githooks/gittuf-rsl catch-up origin agents/signed"
 expect 0 'the alarm passes after catch-up' alarm
+expect 0 'catch-up passes again when the log already matches' \
+    bash -c "cd '$agent' && bash .githooks/gittuf-rsl catch-up origin agents/signed"
+expect 1 'catch-up fails for a branch the remote does not have' \
+    bash -c "cd '$agent' && bash .githooks/gittuf-rsl catch-up origin agents/missing"
 
 tip=$(git -C "$check" rev-parse refs/gittuf/reference-state-log)
 expect 1 'the alarm fails when the log lost the tip it saw before' \

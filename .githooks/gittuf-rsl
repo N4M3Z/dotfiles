@@ -95,11 +95,24 @@ drop_tracker() { git update-ref -d "refs/remotes/$1/gittuf/reference-state-log" 
 # agents key on main) is dropped before anything is published: published, it
 # would fail verify-ref on that ref for everyone, even when the branch push
 # itself is refused (GitHub's ruleset covers branches, not refs/gittuf).
+# gittuf checks a tag entry against the local tag of that name, so a tag pushed
+# under another name gets that local tag for the check, and loses it after.
 # Exit 0 kept, 1 not recorded, 2 refused by the policy.
 record() {
-    local oid="$1" dst="$2" scratch="refs/gittuf-pending/$$" prior status=0
+    local oid="$1" dst="$2" scratch="refs/gittuf-pending/$$" prior held lent="" status=0
     prior="$(git rev-parse -q --verify refs/gittuf/reference-state-log)" || return 1
-    git update-ref "${scratch}" "${oid}" || return 1
+    if [[ "${dst}" == refs/tags/* ]]; then
+        if held="$(git rev-parse -q --verify "${dst}")"; then
+            [[ "${held}" == "${oid}" ]] || { warn "${dst}: the local tag of that name points elsewhere"; return 1; }
+        else
+            git update-ref "${dst}" "${oid}" "" || return 1
+            lent="${dst}"
+        fi
+    fi
+    if ! git update-ref "${scratch}" "${oid}"; then
+        [[ -z "${lent}" ]] || git update-ref -d "${lent}" "${oid}"
+        return 1
+    fi
     if ! gittuf rsl record "${scratch}" --dst-ref "${dst}" --local-only >/dev/null 2>&1; then
         status=1
     elif ! gittuf verify-ref "${scratch}" --remote-ref-name "${dst}" >/dev/null 2>&1; then
@@ -107,6 +120,7 @@ record() {
         status=2
     fi
     git update-ref -d "${scratch}"
+    [[ -z "${lent}" ]] || git update-ref -d "${lent}" "${oid}"
     return "${status}"
 }
 
@@ -239,7 +253,7 @@ after_jj_push() {
 
 # git pre-push hands over one line per ref: <local ref> <local oid> <remote ref> <remote oid>.
 pre_push() {
-    local remote="$1" local_oid remote_ref recorded=() lines="" line
+    local remote="$1" local_oid remote_ref remote_oid recorded=() existing="" lines="" line
     # A deletion needs no entry.
     while read -r line; do
         read -r _ local_oid remote_ref _ <<<"${line}"
@@ -252,12 +266,17 @@ pre_push() {
     # One refused ref stops the whole push, before anything is sent.
     local refused=0 status start
     start="$(git rev-parse -q --verify refs/gittuf/reference-state-log)"
-    while read -r _ local_oid remote_ref _; do
+    while read -r _ local_oid remote_ref remote_oid; do
         [[ -n "${remote_ref:-}" ]] || continue
         status=0
         vet "${local_oid}" "${remote_ref}" "${remote}" || status=$?
         case "${status}" in
-            0) recorded+=("${remote_ref}") ;;
+            0)
+                recorded+=("${remote_ref}")
+                # catch-up can only record a branch that the remote has already.
+                [[ "${remote_ref}" != refs/heads/* || "${remote_oid}" =~ ^0+$ ]] \
+                    || existing+=" ${remote_ref#refs/heads/}"
+                ;;
             2) refused=1 ;;
             *) warn "could not record ${remote_ref}" ;;
         esac
@@ -269,14 +288,9 @@ pre_push() {
         return 1
     fi
     # git has no hook after a push, so the RSL goes first. When the remote then
-    # refuses a branch, the RSL names a tip the remote does not have.
-    local ref branches=""
-    if [[ ${#recorded[@]} -gt 0 ]] && publish "${remote}" "${recorded[@]}"; then
-        for ref in "${recorded[@]}"; do
-            [[ "${ref}" != refs/heads/* ]] || branches+=" ${ref#refs/heads/}"
-        done
-        [[ -z "${branches}" ]] \
-            || warn "if ${remote} refuses a branch now, record what it holds: bash .githooks/gittuf-rsl catch-up ${remote}${branches}"
+    # refuses a branch update, the RSL names a tip the remote does not have.
+    if [[ ${#recorded[@]} -gt 0 ]] && publish "${remote}" "${recorded[@]}" && [[ -n "${existing}" ]]; then
+        warn "if ${remote} refuses a branch now, record what it holds: bash .githooks/gittuf-rsl catch-up ${remote}${existing}"
     fi
     drop_tracker "${remote}"
 }
@@ -296,18 +310,19 @@ fetch() {
 
 # Look at the remote's tip before you run this: the entry vouches for it.
 catch_up() {
-    local remote="$1" branch oid recorded=()
+    local remote="$1" branch oid failed=0 recorded=()
     shift
     fetch "${remote}" || return 1
     for branch in "$@"; do
         branch="${branch#refs/heads/}"
-        wanted "refs/heads/${branch}" || { warn "${branch}: only agents/* gets entries"; continue; }
+        wanted "refs/heads/${branch}" || { warn "${branch}: only agents/* gets entries"; failed=1; continue; }
         oid="$(git rev-parse -q --verify "refs/remotes/${remote}/${branch}")" \
-            || { warn "${remote} has no ${branch}"; continue; }
-        keep "${oid}" "refs/heads/${branch}" && recorded+=("refs/heads/${branch}")
+            || { warn "${remote} has no ${branch}"; failed=1; continue; }
+        if keep "${oid}" "refs/heads/${branch}"; then recorded+=("refs/heads/${branch}"); else failed=1; fi
     done
-    [[ ${#recorded[@]} -eq 0 ]] || publish "${remote}" "${recorded[@]}"
+    [[ ${#recorded[@]} -eq 0 ]] || publish "${remote}" "${recorded[@]}" || failed=1
     drop_tracker "${remote}"
+    return "${failed}"
 }
 
 # verify <local ref> <name on the remote>: say what gittuf makes of it.
