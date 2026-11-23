@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # Pins glab's TLS trust for Proton GitLab to the system CA bundle. glab is a Go
 # binary; inside a sandboxed agent shell the macOS keychain verifier cannot see
@@ -23,3 +24,4 @@ fi
 
 yq -i '.hosts["{{ .private.gitlab_host }}"].ca_cert = "/etc/ssl/cert.pem"' "$CONFIG"
 {{- end }}
+{{ end -}}

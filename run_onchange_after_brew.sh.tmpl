@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # Runs on chezmoi apply whenever a forge-provision Brewfile changes (content
 # hashes below), making `chezmoi apply` the one converge command for packages.
@@ -42,3 +43,4 @@ if ! HOMEBREW_BUNDLE_NO_UPGRADE=1 bash "$BUNDLE_SCRIPT"; then
 fi
 exit 0
 {{- end }}
+{{ end -}}

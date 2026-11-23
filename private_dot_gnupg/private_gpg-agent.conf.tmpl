@@ -10,7 +10,13 @@
 # itself is the cue to touch the key.
 # Decision: docs/decisions/ARCH-0006 Commit signing.md (forge-provision)
 
+{{ if ne .chezmoi.os "windows" -}}
 pinentry-program {{ lookPath "pinentry-mac" }}
 
+{{ else -}}
+# Windows: no pinentry-program line, so gpg-agent starts the pinentry its own
+# GnuPG build ships (Git for Windows' or Gpg4win's).
+
+{{ end -}}
 default-cache-ttl 12
 max-cache-ttl 15

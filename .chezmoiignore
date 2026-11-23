@@ -15,3 +15,73 @@ module.yaml
 
 # The SecretSpec manifest names the secrets this repository expects.
 secretspec.toml
+
+{{ if ne .chezmoi.os "windows" -}}
+# Targets only Windows takes (docs/changes/windows-home): jj on Windows reads
+# ~/.jjconfig.toml instead of ~/.config/jj, and Claude Code's raw API bodies
+# land in the XDG state folder there. The Macs keep ~/Data/Claude/telemetry.
+.jjconfig.toml
+.local/state/claude-code
+{{ else -}}
+# Windows (docs/changes/windows-home). Parts that are macOS-only or need a
+# Unix shell to run:
+Library
+.macos
+.zshrc
+.zshenv
+.zprofile
+.zpreztorc
+.p10k.zsh
+.zsh
+.zsh/**
+.config/zsh
+.config/tmux
+.config/tmux/**
+.config/ghostty
+.config/zed
+.config/cmux
+.config/openlogi
+.config/forge
+.local/share/zed-dev
+.local/bin/zed
+.local/bin/zed-*
+.local/bin/tmux-*
+.local/bin/claude-revive
+.local/bin/git-ssh-sign-macos
+.local/bin/lint-notes
+.local/bin/lint-stats
+.local/bin/openspec
+.local/bin/review-clip
+
+# rune does not build on Windows. jj reads ~/.jjconfig.toml here instead.
+.config/rune
+.config/jj
+
+# Untested on Windows, and each fails closed: Cursor's dcg hook (a .sh bridge
+# that needs jq), Cursor's sandbox grants, and Grok's sandbox profiles, which
+# Grok enforces on macOS and Linux only.
+.cursor/hooks.json
+.cursor/hooks
+.cursor/sandbox.json
+.grok/sandbox.toml
+
+# Vale on Windows reads its config from %LOCALAPPDATA%\vale, not ~/.vale.ini.
+.vale
+.vale.ini
+
+# ~/Developer is the Macs' work tree; on Windows it is devRoot, C:\Developer,
+# outside the home folder (.chezmoitemplates/dev-root). A link whose target is
+# missing at apply becomes a file link that breaks once the folder appears, so
+# these wait for their targets.
+Developer
+{{ if not (stat (joinPath .chezmoi.homeDir "Atlas")) -}}
+Atlas
+{{ end -}}
+{{ if not (stat (joinPath .chezmoi.homeDir ".agents" "rules")) -}}
+.claude/rules
+{{ end -}}
+{{ if not (stat (joinPath (includeTemplate "dev-root" .) "N4M3Z" "dotfiles-private" "ssh")) -}}
+.ssh/hosts
+.ssh/vendor
+{{ end -}}
+{{ end -}}

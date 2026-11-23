@@ -1,1 +1,1 @@
-{{ joinPath .chezmoi.homeDir "Developer/N4M3Z/dotfiles-private/ssh/hosts" }}
+{{ joinPath (includeTemplate "dev-root" .) "N4M3Z/dotfiles-private/ssh/hosts" }}

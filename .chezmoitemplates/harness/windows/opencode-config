@@ -1,0 +1,21 @@
+{{- /*
+  ~/.config/opencode/opencode.json on Windows: the policy deep-merges over the
+  live file and owns the permission map outright, as
+  dot_config/opencode/modify_private_opencode.json.tmpl does with jq elsewhere.
+  Keys the policy does not name (provision's MCP servers and LM Studio
+  provider on Apex) stay as they are.
+*/ -}}
+{{- $policy := includeTemplate "harness/windows/paths" (dict "text" (.harness.opencode | toJson) "data" .) | fromJson -}}
+{{- /* A pattern for every folder in the home folder (one that starts ~/** and a slash) gets a twin under devRoot, with the same action. */ -}}
+{{- $devRoot := includeTemplate "dev-root" . -}}
+{{- range $tool, $rules := (get $policy "permission" | default dict) -}}
+{{-   if kindIs "map" $rules -}}
+{{-     range $pattern, $action := $rules -}}
+{{-       if hasPrefix "~/**/" $pattern }}{{ $_ := set $rules (printf "%s/**/%s" $devRoot (trimPrefix "~/**/" $pattern)) $action }}{{ end -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "json")) -}}
+{{- $config := fromJson (includeTemplate "harness/deep-merge" (dict "a" $live "b" $policy)) -}}
+{{- $_ := set $config "permission" (get $policy "permission") -}}
+{{ toPrettyJson $config }}

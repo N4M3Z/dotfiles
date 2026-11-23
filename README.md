@@ -84,6 +84,23 @@ chezmoi apply
 
 The first `chezmoi apply` will clone the dotzsh Prezto fork into `~/.zsh/` via `.chezmoiexternal.toml`. The private values stay placeholders such as `@GITLAB_HOST@` until a store is back. Restore pass (the YubiKey's GPG key and `~/.password-store`) or run `pass-cli login`, then run `chezmoi init` and `chezmoi apply`.
 
+## Bootstrap on Windows
+
+The Windows machines (Apex) get chezmoi, Git for Windows and secretspec from [runedeck/provision][PROVISION]. The work tree there is `C:\Developer`, outside the home folder.
+
+```powershell
+gh repo clone N4M3Z/dotfiles C:\Developer\N4M3Z\dotfiles
+
+# One-time: the same link as on a Mac (Developer Mode allows it without admin).
+New-Item -ItemType SymbolicLink -Path $HOME\.local\share\chezmoi -Target C:\Developer\N4M3Z\dotfiles
+
+chezmoi init    # choose secretspec; it reads GITLAB_HOST and PROXY_HOST from Credential Manager
+chezmoi diff
+chezmoi apply
+```
+
+On Windows the harness templates merge through chezmoi templates instead of jq ([DOT-0009](docs/decisions/DOT-0009%20Windows%20Home%20Through%20Second-Stage%20Modify%20Templates.md)), and `.chezmoiignore` skips the macOS-only parts. The repositories' folder is devRoot (`.chezmoitemplates/dev-root`): `~/Developer` on a Mac, `C:/Developer` on Windows, or a `devRoot` key under `[data]` in the chezmoi config. `~/.gitconfig` includes `~/.config/git/provision.gitconfig` last and jj reads `~/.jjconfig.toml` before `%APPDATA%\jj\config.toml`, so the machine's own signing settings win there. `run_after_verify_harness_config.ps1` loads each harness's config after the apply, and `tests/test-windows-home.ps1` applies the source into a scratch home.
+
 ## Private host blocks
 
 Sensitive SSH host configuration lives in a separate `dotfiles-private` repo at `~/Developer/N4M3Z/dotfiles-private/ssh/{hosts,vendor}`. The two `symlink_*.tmpl` files under `private_dot_ssh/` create `~/.ssh/hosts` and `~/.ssh/vendor` symlinks pointing into that repo. OpenSSH's `Include` directive silently skips broken symlinks, so a Mac without `dotfiles-private` cloned just loses the private hosts; everything else still works.

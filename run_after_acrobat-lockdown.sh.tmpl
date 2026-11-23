@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # Keeps the Adobe admin lockdown for Acrobat Reader in place. Runs after every apply, and asks for
 # the admin password only when the installed file differs, so an Adobe installer that rewrites it
@@ -59,3 +60,4 @@ fi
 echo "acrobat-lockdown: installing ${target}, sudo asks for the admin password"
 sudo install -m 644 -o root -g wheel "$plist" "$target"
 {{- end }}
+{{ end -}}

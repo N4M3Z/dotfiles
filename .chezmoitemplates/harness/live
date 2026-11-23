@@ -1,0 +1,14 @@
+{{- /*
+  The live config in .text, as JSON text; {} when the file is empty or absent,
+  as jq's `. // {}` reads it. .format is "json" or "toml". A file that does
+  not parse fails the apply, so the policy never replaces the live file alone.
+  A UTF-8 byte order mark, which some Windows editors write, is dropped.
+*/ -}}
+{{- $text := trimPrefix "﻿" .text -}}
+{{- if eq (trim $text) "" -}}
+{}
+{{- else if eq .format "toml" -}}
+{{ fromToml $text | toJson }}
+{{- else -}}
+{{ fromJson $text | toJson }}
+{{- end -}}

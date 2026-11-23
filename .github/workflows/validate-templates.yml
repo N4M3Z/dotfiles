@@ -115,3 +115,29 @@ jobs:
             # Two tests stay local. tests/test-dcg-packs.sh needs dcg and the
             # packs that chezmoi apply deploys. tests/test-agent-run.sh needs jj
             # and a detached child process, which not every runner allows.
+
+    # Windows takes the harness templates' second branch (DOT-0009). The pinned
+    # chezmoi is the one Apex runs; its digest is the release's checksums file.
+    validate-windows:
+        runs-on: windows-latest
+        env:
+            CHEZMOI_WINDOWS_VERSION: 2.74.1
+            CHEZMOI_WINDOWS_SHA256: 208b393f9ad266fc10aab514a8adf87ac4dc5bdd968a54b7eb5b2764ca41eda4
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install chezmoi
+              shell: pwsh
+              run: |
+                  $zip = Join-Path $env:RUNNER_TEMP 'chezmoi.zip'
+                  Invoke-WebRequest -UseBasicParsing -OutFile $zip "https://github.com/twpayne/chezmoi/releases/download/v$env:CHEZMOI_WINDOWS_VERSION/chezmoi_$($env:CHEZMOI_WINDOWS_VERSION)_windows_amd64.zip"
+                  $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+                  if ($actual -ne $env:CHEZMOI_WINDOWS_SHA256) { throw "chezmoi checksum mismatch: $actual" }
+                  $bin = Join-Path $env:RUNNER_TEMP 'chezmoi'
+                  Expand-Archive $zip -DestinationPath $bin
+                  Add-Content -LiteralPath $env:GITHUB_PATH -Value $bin
+                  & (Join-Path $bin 'chezmoi.exe') --version
+
+            - name: Test the Windows home
+              shell: pwsh
+              run: ./tests/test-windows-home.ps1

@@ -1,3 +1,6 @@
+{{- if eq .chezmoi.os "windows" -}}
+{{ template "harness/windows-modify" "harness/windows/cursor-cli-config" }}
+{{- else -}}
 #!/bin/bash
 # chezmoi modify_ script for ~/.cursor/cli-config.json.
 #
@@ -14,24 +17,8 @@
 set -o pipefail
 umask 077
 
-{{- /* Claude's legacy "cmd:*" spelling becomes Cursor's "cmd *". */ -}}
-{{- $allow := list -}}
-{{- range .harness.claude.permissions.allow -}}
-{{- if hasPrefix "Bash(" . -}}
-{{- $allow = append $allow (. | replace "Bash(" "Shell(" | replace ":*)" " *)") -}}
-{{- end -}}
-{{- end -}}
-{{- $deny := list -}}
-{{- range .harness.claude.permissions.deny -}}
-{{- if hasPrefix "Bash(" . -}}
-{{- $deny = append $deny (. | replace "Bash(" "Shell(" | replace ":*)" " *)") -}}
-{{- end -}}
-{{- /* Claude spells the home folder as ~/ and an absolute path as //. Cursor documents absolute paths. */ -}}
-{{- if hasPrefix "Read(" . -}}
-{{- $deny = append $deny (. | replace "Read(~/" (printf "Read(%s/" $.chezmoi.homeDir) | replace "Read(//" "Read(/") -}}
-{{- end -}}
-{{- end -}}
-{{- $policy := merge (dict "permissions" (dict "allow" (uniq $allow) "deny" (uniq $deny))) .harness.cursor.cli }}
+{{- /* The policy is shared with Windows: .chezmoitemplates/harness/cursor-cli-policy. */ -}}
+{{- $policy := includeTemplate "harness/cursor-cli-policy" . | fromJson }}
 
 policy=$(mktemp "${TMPDIR:-/tmp}/cursor-cli-policy.XXXXXX") || exit 1
 trap 'command rm -f "$policy"' EXIT
@@ -42,3 +29,4 @@ CURSOR_POLICY
 
 # --slurp turns empty stdin (target absent) into [] so the merge starts from {}.
 jq --slurp --slurpfile policy "$policy" '((.[0] // {}) | .version = (.version // 1)) * $policy[0]'
+{{ end -}}
