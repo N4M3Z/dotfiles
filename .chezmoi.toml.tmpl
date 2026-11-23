@@ -38,3 +38,11 @@
 {{-   if not (get $values $key | toString | trim) }}{{ fail (printf "the %s store has no value for %s" $store (upper $key)) }}{{ end }}
     {{ $key }} = {{ get $values $key | toString | trim | quote }}
 {{- end }}
+{{- if eq .chezmoi.os "windows" }}
+
+# chezmoi starts a .ps1 script with Windows PowerShell, whose default execution
+# policy refuses an unsigned script. Bypass applies to that one process.
+[interpreters.ps1]
+    command = "powershell"
+    args = ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass"]
+{{- end }}

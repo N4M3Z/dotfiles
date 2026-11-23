@@ -1,5 +1,6 @@
-{{- $gh := lookPath "gh" | default "gh" -}}
-{{- $glab := lookPath "glab" | default "glab" -}}
+{{- /* Forward slashes: git runs a ! helper through sh, also on Windows. */ -}}
+{{- $gh := lookPath "gh" | default "gh" | replace "\\" "/" -}}
+{{- $glab := lookPath "glab" | default "glab" | replace "\\" "/" -}}
 ; ~/.gitconfig — Chezmoi-managed; canonical source at
 ; dotfiles/dot_gitconfig.tmpl, deploys to ~/.gitconfig.
 ;
@@ -34,12 +35,14 @@
 
 [gpg "ssh"]
     allowedSignersFile = {{ .chezmoi.homeDir }}/.config/git/allowed_signers
+{{- if ne .chezmoi.os "windows" }}
     ; Wrapper bypasses Apple's launchd ssh-agent (which refuses FIDO2
     ; sk-ssh-ed25519). Installed by forge-provision/scripts/configure/
     ; git-ssh-sign.sh from forge-core/skills/VersionControl/scripts/
     ; git-ssh-sign-macos. See forge-core CommitSigning.md for the
     ; full diagnosis.
     program = {{ .chezmoi.homeDir }}/.local/bin/git-ssh-sign-macos
+{{- end }}
 
 ; gh resolves at render time: the Homebrew prefix differs between Apple
 ; Silicon and Intel, and git runs a ! helper through the shell, where a
@@ -58,9 +61,20 @@
     helper =
     helper = !"{{ $glab }}" auth git-credential
 
+{{- if ne .chezmoi.os "windows" }}
+
 ; git-ai streams git's trace2 events to its daemon socket so it can attribute
 ; commits to the agent session that produced them. The installer appends this
 ; block itself; declaring it here keeps chezmoi apply from removing it.
 [trace2]
     eventTarget = af_unix:stream:{{ .chezmoi.homeDir }}/.git-ai/internal/daemon/trace2.sock
     eventNesting = 0
+{{- else }}
+
+; Windows: git-ai does not run here, so there is no trace2 socket. The
+; settings a machine adds itself (on Apex: provision's line endings, symlinks,
+; long paths and the agents' signing key) live in their own file. It comes
+; last, so its values win over the identity's signing above.
+[include]
+    path = ~/.config/git/provision.gitconfig
+{{- end }}

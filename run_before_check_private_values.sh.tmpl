@@ -16,6 +16,10 @@
 {{-   end -}}
 {{- end -}}
 {{- if $missing -}}
+{{- /* Windows cannot start a sh script, so the stop happens while rendering. */ -}}
+{{- if eq .chezmoi.os "windows" -}}
+{{- fail (printf "chezmoi apply stopped: the chezmoi config has no value for %s. Add a NAME=value line for each name to the private store entry dotfiles/proton, then run: chezmoi init" (join ", " $missing)) -}}
+{{- end -}}
 #!/bin/sh
 # Source: https://github.com/N4M3Z/dotfiles
 echo "chezmoi apply stopped: the chezmoi config has no value for {{ join ", " $missing }}." >&2

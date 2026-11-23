@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # Runs after chezmoi writes ~/.gnupg/{gpg-agent.conf,scdaemon.conf}, and re-runs whenever either
 # changes (content hashes below). Disables pinentry-mac's Keychain PIN storage — a Keychain-stored
@@ -16,3 +17,4 @@ if command -v gpgconf >/dev/null 2>&1; then
     gpgconf --kill gpg-agent scdaemon
 fi
 {{- end }}
+{{ end -}}

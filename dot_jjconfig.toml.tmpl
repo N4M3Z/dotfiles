@@ -1,0 +1,9 @@
+{{- /*
+  ~/.jjconfig.toml, Windows only (.chezmoiignore skips it elsewhere). jj on
+  Windows does not read ~/.config/jj; it loads $HOME/.jjconfig.toml first and
+  %APPDATA%\jj\config.toml after it. So the shared config lands here, and the
+  machine's own file in AppData (on Apex: provision's signing with the agents'
+  key) wins where the two disagree. The push alias runs Git for Windows' bash:
+  a bare `bash` on Windows starts WSL.
+*/ -}}
+{{ include "dot_config/jj/config.toml" | replace "\"--\", \"bash\", \"-c\"" "\"--\", \"C:/Program Files/Git/bin/bash.exe\", \"-c\"" }}

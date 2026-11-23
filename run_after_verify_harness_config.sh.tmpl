@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # Prove each harness still loads its config after apply. A modify_ template can
 # emit a file the app rejects (a glob in a write grant stopped the Codex desktop
@@ -79,3 +80,4 @@ if command -v muse >/dev/null 2>&1; then
 fi
 
 exit "$status"
+{{ end -}}
