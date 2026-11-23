@@ -55,6 +55,7 @@ Library
 
 # rune does not build on Windows. jj reads ~/.jjconfig.toml here instead.
 .config/rune
+.config/rune/**
 .config/jj
 
 # Untested on Windows, and each fails closed: Cursor's dcg hook (a .sh bridge

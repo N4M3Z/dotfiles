@@ -71,7 +71,12 @@ if (Test-Tool 'muse') {
     $output = (& muse exec --provider echo --no-session-log --disable-reminders probe 2>&1 | Out-String)
     $code = $LASTEXITCODE
     Pop-Location
-    Remove-Item -LiteralPath $probe -Recurse -Force
+    # Muse Code's processes can hold the folder for a moment after the probe returns.
+    foreach ($try in 1..5) {
+        Remove-Item -LiteralPath $probe -Recurse -Force -ErrorAction SilentlyContinue
+        if (-not (Test-Path -LiteralPath $probe)) { break }
+        Start-Sleep -Milliseconds 500
+    }
     $problems = ($output -split "`r?`n" | Where-Object { $_ -match 'ermission profile|unknown (key|field)|refusing run|Hooks: .*warning|UnsupportedEvent|MalformedConfig' })
     if ($code -ne 0 -or $problems) {
         $detail = if ($problems) { $problems -join "`n" } else { ($output -split "`r?`n" | Select-Object -Last 5) -join "`n" }
