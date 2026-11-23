@@ -43,10 +43,6 @@ fi
 # LM Studio CLI (lms)
 [ -d "${HOME}/.lmstudio/bin" ] && export PATH="${PATH}:${HOME}/.lmstudio/bin"
 
-# git-ai CLI. The hooks call it by absolute path; this is for interactive use.
-# Appended, not prepended: the installer's prepend is not needed here.
-[ -d "${HOME}/.git-ai/bin" ] && export PATH="${PATH}:${HOME}/.git-ai/bin"
-
 # Vendor agent binaries answer to their own names (DOT-0007): no wrapper in
 # ~/.local/bin. Grok and the Codex app install outside the usual bin dirs.
 # Appended, so a Homebrew or installer copy earlier on PATH still wins.

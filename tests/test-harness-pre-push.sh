@@ -12,8 +12,7 @@ fail() { echo "FAIL: $1"; failures=$((failures + 1)); }
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/harness-pre-push.XXXXXX")"
 trap 'command rm -rf "$tmp"' EXIT
 repo="${tmp}/repo"
-bin="${tmp}/bin"
-mkdir -p "$repo" "$bin"
+mkdir -p "$repo"
 git -C "$repo" init -q -b main
 empty_tree=$(git -C "$repo" mktree </dev/null)
 wip_sha=$(
@@ -62,25 +61,12 @@ attributed_sha=$(
             git -C "$repo" commit-tree "$empty_tree" -p "$plain_sha"
 )
 git -C "$repo" update-ref refs/heads/main "$attributed_sha"
-# shellcheck disable=SC2016 # ENTIRE_STDIN_LOG expands in the generated fake.
-printf '%s\n' \
-    '#!/bin/bash' \
-    'cat > "$ENTIRE_STDIN_LOG"' \
-    'exit 0' \
-    > "${bin}/entire"
-chmod +x "${bin}/entire"
-export ENTIRE_STDIN_LOG="${tmp}/entire-stdin.log"
 if printf 'refs/heads/main %s refs/heads/main %s\n' "$attributed_sha" "$plain_sha" \
     | (cd "$repo" && HARNESS_EXPECTED_COAUTHOR="$expected" \
-        PATH="${bin}:/usr/bin:/bin" "$HOOK" origin) >/dev/null 2>&1; then
+        PATH="/usr/bin:/bin" "$HOOK" origin) >/dev/null 2>&1; then
     pass 'pre-push accepts an attributed harness revision'
 else
     fail 'pre-push accepts an attributed harness revision'
-fi
-if grep -Fq "$attributed_sha" "$ENTIRE_STDIN_LOG"; then
-    pass 'pre-push forwards original refs to Entire'
-else
-    fail 'pre-push forwards original refs to Entire'
 fi
 
 if (( failures > 0 )); then

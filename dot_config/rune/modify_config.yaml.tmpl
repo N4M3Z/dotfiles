@@ -245,7 +245,7 @@ launch:
                         from_env: CLIPROXY_API_KEY
 # Harness hooks, declared once (DOT-0007, cli one-dispatcher-runs-every-hook):
 # every harness registers `rune hook run` per event, and these handlers run
-# in order. dcg, rtk, and git-ai stay outside rune (owner, 2026-10-25): each
+# in order. dcg and rtk stay outside rune (owner, 2026-10-25): each
 # keeps its own direct entry in ~/.claude/settings.json and
 # ~/.codex/hooks.json, and rune's handover leaves those entries in place
 # because no handler here runs the same program. Timeouts are per handler;

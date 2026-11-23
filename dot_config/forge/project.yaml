@@ -25,5 +25,5 @@ exclude:
     - Templates
     - Templater
 
-# entire/forge protections: `init` copies this .githooks dir and sets core.hooksPath.
+# forge-core git hooks: `init` copies this .githooks dir and sets core.hooksPath.
 githooks: ~/Developer/N4M3Z/forge-core/.githooks
