@@ -112,9 +112,10 @@ jobs:
             - name: Test Excalidraw scripts
               run: node --test tests/excalidraw-*.test.cjs
 
-            # Two tests stay local. tests/test-dcg-packs.sh needs dcg and the
+            # Three tests stay local. tests/test-dcg-packs.sh needs dcg and the
             # packs that chezmoi apply deploys. tests/test-agent-run.sh needs jj
             # and a detached child process, which not every runner allows.
+            # tests/test-gittuf-rsl.sh needs gittuf.
 
     # Windows takes the harness templates' second branch (DOT-0009). The pinned
     # chezmoi is the one Apex runs; its digest is the release's checksums file.
