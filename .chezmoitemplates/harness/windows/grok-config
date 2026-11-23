@@ -3,7 +3,7 @@
   runs with yq and jq elsewhere. The policy deep-merges over the live file, owns
   the permission map outright, and drops a stale gbrain server and cli.telemetry.
 */ -}}
-{{- $policy := .harness.grok -}}
+{{- $policy := includeTemplate "harness/windows/paths" (dict "text" (.harness.grok | toJson) "data" .) | fromJson -}}
 {{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "toml")) -}}
 {{- $config := fromJson (includeTemplate "harness/deep-merge" (dict "a" $live "b" $policy)) -}}
 {{- $_ := set $config "permission" (get $policy "permission") -}}

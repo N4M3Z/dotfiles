@@ -65,14 +65,14 @@ Library
 .cursor/sandbox.json
 .grok/sandbox.toml
 
-# Vale on Windows reads %LOCALAPPDATA%\vale, and the styles link into
-# ~/Developer, which Windows machines do not have.
+# Vale on Windows reads its config from %LOCALAPPDATA%\vale, not ~/.vale.ini.
 .vale
 .vale.ini
 
-# ~/Developer is the Macs' work tree; on Windows it is C:\Developer, outside
-# the home folder. A link whose target is missing at apply becomes a file
-# link that breaks once the folder appears, so these wait for their targets.
+# ~/Developer is the Macs' work tree; on Windows it is devRoot, C:\Developer,
+# outside the home folder (.chezmoitemplates/dev-root). A link whose target is
+# missing at apply becomes a file link that breaks once the folder appears, so
+# these wait for their targets.
 Developer
 {{ if not (stat (joinPath .chezmoi.homeDir "Atlas")) -}}
 Atlas
@@ -80,7 +80,7 @@ Atlas
 {{ if not (stat (joinPath .chezmoi.homeDir ".agents" "rules")) -}}
 .claude/rules
 {{ end -}}
-{{ if not (stat (joinPath .chezmoi.homeDir "Developer" "N4M3Z" "dotfiles-private" "ssh")) -}}
+{{ if not (stat (joinPath (includeTemplate "dev-root" .) "N4M3Z" "dotfiles-private" "ssh")) -}}
 .ssh/hosts
 .ssh/vendor
 {{ end -}}

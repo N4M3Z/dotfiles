@@ -14,6 +14,8 @@
 - [x] 1.7 Windows branches in `dot_gitconfig.tmpl` and `private_gpg-agent.conf.tmpl`;
   `dot_jjconfig.toml.tmpl`
 - [x] 1.8 `tests/test-windows-home.ps1` and the `windows-latest` CI job
+- [x] 1.9 `.chezmoitemplates/dev-root` and `harness/windows/paths`: the repositories' folder for
+  the marketplaces, the SSH and Vale links, and the Windows harness policies
 
 ## 2. Verification
 

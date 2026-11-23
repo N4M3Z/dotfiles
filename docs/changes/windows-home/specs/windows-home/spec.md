@@ -66,6 +66,23 @@ Claude Code, Grok or Muse Code rejects its config, with the harness's own messag
 - **WHEN** Muse Code on Windows refuses to start on a permission profile rule
 - **THEN** the apply fails and prints Muse's refusal
 
+### Requirement: Repository Paths Follow devRoot
+
+Every deployed path into the folder that holds the repositories MUST come from devRoot
+(`.chezmoitemplates/dev-root`): `~/Developer` on the Macs, `C:/Developer` on Windows, or the
+`devRoot` value in the chezmoi config. On Windows no harness config MUST name a `~/Developer` path.
+
+#### Scenario: Claude Code on Apex
+
+- **WHEN** the dotfiles apply on Windows
+- **THEN** Claude Code's plugin marketplaces, its extra directories and the private-folder deny
+  rules name paths under `C:/Developer`, where T3 opens the projects
+
+#### Scenario: Another layout
+
+- **WHEN** a machine sets `devRoot` in its chezmoi config
+- **THEN** those paths name that folder instead
+
 ### Requirement: The Machine's Own Settings Win On Windows
 
 On Windows, `~/.gitconfig` MUST include `~/.config/git/provision.gitconfig` after every setting of

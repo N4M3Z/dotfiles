@@ -1,0 +1,13 @@
+{{- /*
+  The folder that holds the repositories, as an absolute path with forward
+  slashes: ~/Developer on the Macs, C:/Developer on Windows, where the work
+  tree sits outside the home folder (short paths, no OneDrive, no profile
+  indexing). A devRoot key in the chezmoi config's [data] overrides both.
+*/ -}}
+{{- if hasKey . "devRoot" -}}
+{{- .devRoot -}}
+{{- else if eq .chezmoi.os "windows" -}}
+C:/Developer
+{{- else -}}
+{{- .chezmoi.homeDir }}/Developer
+{{- end -}}

@@ -34,6 +34,11 @@ that Windows tries to execute.
     which it cannot enforce there and would refuse to start on, and leaves its managed hooks off.
   - Claude Code writes raw API bodies to `~/.local/state/claude-code/api-bodies`, and takes
     mkcert's Windows root only when it exists.
+- `.chezmoitemplates/dev-root` names the folder that holds the repositories: `~/Developer` on
+  the Macs, `C:/Developer` on Windows, where it sits outside the home folder. A `devRoot` key in
+  the chezmoi config overrides it. Claude Code's plugin marketplaces, the private SSH host links
+  and Vale's style links use it. On Windows the harness merges move `~/Developer` and the private
+  folder there (`harness/windows/paths`), so the rules match the paths the harnesses open.
 - `.chezmoiignore` gets a Windows section, listed under Impact.
 - Every `run_` shell script renders nothing on Windows. `run_after_verify_harness_config.ps1.tmpl`
   is the Windows twin of the harness check. `run_before_check_private_values` stops a Windows

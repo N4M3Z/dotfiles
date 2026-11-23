@@ -77,6 +77,12 @@ and it records the probe that showed the refusal:
 - Codex refuses filesystem paths that start with `/`.
 - Muse Code refuses `C:/` selectors, Unix sockets and workspace deny rules.
 
+The policy data names the repositories as `~/Developer`, where the Macs keep them. Windows keeps
+them in `C:\Developer`, outside the home folder, so `.chezmoitemplates/dev-root` names the folder
+per OS, and `harness/windows/paths` moves those paths there in the Windows merges. A junction
+from `~\Developer` would make the paths exist but not match: the harnesses open projects at
+`C:\Developer` and compare rules with the path they see.
+
 ## Consequences
 
 - A change to a jq merge needs the same change in its Windows template.

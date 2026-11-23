@@ -3,7 +3,7 @@
   names none, and the shared policy deep-merged over it, as
   dot_cursor/modify_cli-config.json.tmpl does with jq elsewhere.
 */ -}}
-{{- $policy := includeTemplate "harness/cursor-cli-policy" . | fromJson -}}
+{{- $policy := includeTemplate "harness/windows/paths" (dict "text" (includeTemplate "harness/cursor-cli-policy" .) "data" .) | fromJson -}}
 {{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "json")) -}}
 {{- if eq (get $live "version" | toString) "<nil>" }}{{ $_ := set $live "version" 1 }}{{ end -}}
 {{ fromJson (includeTemplate "harness/deep-merge" (dict "a" $live "b" $policy)) | toPrettyJson }}

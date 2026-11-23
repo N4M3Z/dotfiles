@@ -10,7 +10,7 @@
      only the trust records that still point at a hook. Codex on Windows may
      write the home folder with backslashes, so both spellings match.
 */ -}}
-{{- $policy := includeTemplate "harness/codex-policy" . | fromJson -}}
+{{- $policy := includeTemplate "harness/windows/paths" (dict "text" (includeTemplate "harness/codex-policy" .) "data" .) | fromJson -}}
 {{- $homes := list .chezmoi.homeDir (.chezmoi.homeDir | replace "/" "\\") -}}
 {{- $staleTails := list
       "Agents/tools/ai-stack/.codex/hooks.json:post_tool_use:0:0"

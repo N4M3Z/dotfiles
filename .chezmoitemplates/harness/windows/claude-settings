@@ -6,7 +6,7 @@
   ~/.config/just/hook), and model and outputStyle, which /model and
   /output-style write per machine.
 */ -}}
-{{- $config := includeTemplate "harness/claude-settings.json" . | fromJson -}}
+{{- $config := includeTemplate "harness/windows/paths" (dict "text" (includeTemplate "harness/claude-settings.json" .) "data" .) | fromJson -}}
 {{- /*
   Two environment values name macOS places. Raw API bodies go to the XDG state
   folder (created by dot_local/state/claude-code/api-bodies/.keep); the Macs

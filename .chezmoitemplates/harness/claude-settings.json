@@ -102,13 +102,13 @@
     "n4m3z": {
       "source": {
         "source": "directory",
-        "path": "{{ .chezmoi.homeDir }}/Developer/N4M3Z/filetree"
+        "path": "{{ includeTemplate "dev-root" $ }}/N4M3Z/filetree"
       }
     },
     "runedeck": {
       "source": {
         "source": "directory",
-        "path": "{{ .chezmoi.homeDir }}/Developer/runedeck/mods"
+        "path": "{{ includeTemplate "dev-root" $ }}/runedeck/mods"
       }
     }
   },

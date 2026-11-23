@@ -89,6 +89,15 @@ foreach ($absent in 'Library', '.macos', '.zshrc', '.config/tmux', '.config/zed'
 foreach ($present in '.jjconfig.toml', '.gitconfig', '.local/state/claude-code/api-bodies') {
     Write-Result (Test-Path -LiteralPath (Join-Path $scratch $present)) "deploys $present"
 }
+# devRoot (.chezmoitemplates/dev-root) is C:/Developer here: no repository path stays under ~/Developer.
+$claudePath = Join-Path $scratch '.claude/settings.json'
+$claude = if (Test-Path -LiteralPath $claudePath) { Get-Content -LiteralPath $claudePath -Raw | ConvertFrom-Json } else { $null }
+Write-Result ($claude -and $claude.extraKnownMarketplaces.runedeck.source.path -eq 'C:/Developer/runedeck/mods') "Claude Code's plugin marketplaces sit under devRoot"
+foreach ($target in $harnesses.Keys) {
+    $file = Join-Path $scratch $target
+    $text = if (Test-Path -LiteralPath $file) { Get-Content -LiteralPath $file -Raw } else { '' }
+    Write-Result ($text -and $text -notmatch '~/Developer') "$target names no ~/Developer path"
+}
 $gitconfig = if (Test-Path -LiteralPath (Join-Path $scratch '.gitconfig')) { Get-Content -LiteralPath (Join-Path $scratch '.gitconfig') -Raw } else { '' }
 Write-Result ($gitconfig -match '(?s)\[include\]\s*path = ~/.config/git/provision.gitconfig\s*$') '.gitconfig ends with the machine include'
 
