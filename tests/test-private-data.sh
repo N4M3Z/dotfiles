@@ -52,11 +52,13 @@ cat "$FIXTURE_BODY"
 STUB
 cat > "${WORKDIR}/bin/secretspec" <<'STUB'
 #!/bin/sh
-# `secretspec --file <manifest> --reason <text> get NAME` prints the fixture
+# `secretspec --file <manifest> --reason <text> get --profile default NAME`
+# prints the fixture
 # value of NAME with no newline, and fails for a name the fixture lacks.
-[ "$#" -eq 6 ] && [ "$1" = --file ] && [ -f "$2" ] && [ "$3" = --reason ] && [ "$5" = get ] || exit 2
-grep -q "^$6=" "$FIXTURE_BODY" || exit 1
-sed -n "s/^$6=//p" "$FIXTURE_BODY" | tr -d '\n'
+[ "$#" -eq 8 ] && [ "$1" = --file ] && [ -f "$2" ] && [ "$3" = --reason ] && [ "$5" = get ] \
+    && [ "$6" = --profile ] && [ "$7" = default ] || exit 2
+grep -q "^$8=" "$FIXTURE_BODY" || exit 1
+sed -n "s/^$8=//p" "$FIXTURE_BODY" | tr -d '\n'
 STUB
 chmod +x "${WORKDIR}/bin/pass" "${WORKDIR}/bin/pass-cli" "${WORKDIR}/bin/secretspec"
 
