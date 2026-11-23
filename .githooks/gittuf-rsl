@@ -22,7 +22,10 @@
 # signature git accepts. Any other gittuf failure is a warning, and the push
 # goes on. This runs on the pusher's machine, so it catches mistakes, not
 # attacks: the forge's rulesets block, and the alarm verifies afterwards.
-# `git push --no-verify` and a plain `jj git push` skip it.
+# `git push --no-verify` and a plain `jj git push` skip it. A deletion is not
+# checked: gittuf 0.18 cannot record a ref that is gone, so its policy says
+# nothing about deletions, and the forge's rulesets must refuse the ones that
+# matter.
 set -uo pipefail
 
 warn() { echo "gittuf-rsl: $*" >&2; }
@@ -33,12 +36,17 @@ wanted() { [[ "$1" == refs/heads/agents/* || "$1" == refs/tags/* ]]; }
 
 stopped() { warn "$1: push stopped, the gittuf policy does not let this signing key move it (gittuf verify-ref --verbose $1)"; }
 
-# signed <oid> <remote> <dst>: every commit the push adds needs a signature
-# that git accepts. gittuf checks who signed the RSL entry, not the commits
-# under it. For an SSH key, git reads gpg.ssh.allowedSignersFile.
+# signed <oid> <remote> <dst>: every commit that the branch adds to the
+# remote's default branch needs a signature that git accepts, also a commit
+# that another remote branch holds already. gittuf checks who signed the RSL
+# entry, not the commits under it. For an SSH key, git reads
+# gpg.ssh.allowedSignersFile.
 signed() {
-    local oid="$1" remote="$2" dst="$3" commit commits why
-    commits="$(git rev-list "${oid}" --not --remotes="${remote}")" \
+    local oid="$1" remote="$2" dst="$3" base commit commits why
+    base="$(git rev-parse -q --verify "refs/remotes/${remote}/HEAD" \
+        || git rev-parse -q --verify "refs/remotes/${remote}/main")" \
+        || { warn "${dst}: push stopped, no default branch of ${remote} here (git remote set-head ${remote} --auto)"; return 1; }
+    commits="$(git rev-list "${oid}" --not "${base}")" \
         || { warn "${dst}: push stopped, cannot list its commits"; return 1; }
     for commit in ${commits}; do
         why="$(git verify-commit "${commit}" 2>&1)" && continue
@@ -50,6 +58,22 @@ signed() {
 enabled() {
     command -v gittuf >/dev/null 2>&1 \
         && git rev-parse -q --verify refs/gittuf/reference-state-log >/dev/null
+}
+
+# One run at a time in a repository. A run moves the local RSL and can put it
+# back, so two runs at once could drop each other's entries.
+lock_dir=""
+lock() {
+    local tries=0
+    lock_dir="$(git rev-parse --path-format=absolute --git-common-dir)/gittuf-rsl.lock" || return 1
+    until mkdir "${lock_dir}" 2>/dev/null; do
+        if (( ++tries >= 60 )); then
+            warn "another run holds ${lock_dir}; remove it if no push is running"
+            return 1
+        fi
+        sleep 1
+    done
+    trap 'rmdir "${lock_dir}" 2>/dev/null' EXIT
 }
 
 tips() {
@@ -203,7 +227,7 @@ after_jj_push() {
         reconcile "${remote}"
         recorded=()
         while read -r ref oid; do
-            branch="${ref#refs/remotes/${remote}/}"
+            branch="${ref#refs/remotes/"${remote}"/}"
             wanted "refs/heads/${branch}" || continue
             grep -qxF "${ref} ${oid}" <<<"${before}" && continue
             keep "${oid}" "refs/heads/${branch}" && recorded+=("refs/heads/${branch}")
@@ -244,7 +268,16 @@ pre_push() {
         drop_tracker "${remote}"
         return 1
     fi
-    [[ ${#recorded[@]} -eq 0 ]] || publish "${remote}" "${recorded[@]}"
+    # git has no hook after a push, so the RSL goes first. When the remote then
+    # refuses a branch, the RSL names a tip the remote does not have.
+    local ref branches=""
+    if [[ ${#recorded[@]} -gt 0 ]] && publish "${remote}" "${recorded[@]}"; then
+        for ref in "${recorded[@]}"; do
+            [[ "${ref}" != refs/heads/* ]] || branches+=" ${ref#refs/heads/}"
+        done
+        [[ -z "${branches}" ]] \
+            || warn "if ${remote} refuses a branch now, record what it holds: bash .githooks/gittuf-rsl catch-up ${remote}${branches}"
+    fi
     drop_tracker "${remote}"
 }
 
@@ -299,15 +332,17 @@ check() {
     return "${failed}"
 }
 
-# For CI, in a clone it may overwrite: take every branch and tag as the remote
-# holds them, then verify each agents/* branch and each tag. <last> is the RSL
-# tip an earlier run saw. An RSL that no longer contains it was rewound or
-# replaced, which the forge allows, because its rulesets do not cover refs/gittuf.
+# For CI, in a clone it may overwrite: take every branch, tag and gittuf ref
+# as the remote holds them, then verify each agents/* branch and each tag. A
+# local RSL kept in place of the remote's would hide a remote RSL that was
+# rewound. <last> is the RSL tip an earlier run saw. An RSL that no longer
+# contains it was rewound or replaced, which the forge allows, because its
+# rulesets do not cover refs/gittuf.
 alarm() {
     local remote="$1" last="${2:-}" ref tip failed=0
-    git fetch --quiet --prune "${remote}" "+refs/heads/*:refs/remotes/${remote}/*" '+refs/tags/*:refs/tags/*' \
+    git fetch --quiet --prune "${remote}" "+refs/heads/*:refs/remotes/${remote}/*" \
+        '+refs/tags/*:refs/tags/*' '+refs/gittuf/*:refs/gittuf/*' \
         || { warn "could not fetch ${remote}"; return 1; }
-    fetch "${remote}" || return 1
     tip="$(git rev-parse -q --verify refs/gittuf/reference-state-log)" || { warn "${remote} has no RSL"; return 1; }
     if [[ -n "${last}" ]] && ! git merge-base --is-ancestor "${last}" "${tip}" 2>/dev/null; then
         echo "gittuf-rsl: the RSL FAILS: ${last} is no longer under its tip ${tip}"
@@ -319,7 +354,6 @@ alarm() {
             *) verify "${ref}" "refs/heads/${ref#"refs/remotes/${remote}/"}" || failed=1 ;;
         esac
     done < <(git for-each-ref --format='%(refname)' "refs/remotes/${remote}/agents/" refs/tags/)
-    drop_tracker "${remote}"
     return "${failed}"
 }
 
@@ -328,11 +362,11 @@ mode="${1:-}"
 case "${mode}" in
     enabled) enabled ;;
     tips) tips "$@" ;;
-    jj-precheck) enabled || { cat >/dev/null; exit 0; }; jj_precheck ;;
-    after-jj-push) enabled || exit 0; after_jj_push "$@" ;;
-    pre-push) enabled || { cat >/dev/null; exit 0; }; pre_push "$@" ;;
-    catch-up) enabled || { warn "gittuf is not installed, or this repository has no RSL"; exit 1; }; catch_up "$@" ;;
-    check) command -v gittuf >/dev/null 2>&1 || { warn "gittuf is not installed"; exit 1; }; check "$@" ;;
-    alarm) command -v gittuf >/dev/null 2>&1 || { warn "gittuf is not installed"; exit 1; }; alarm "$@" ;;
+    jj-precheck) enabled || { cat >/dev/null; exit 0; }; lock || exit 1; jj_precheck ;;
+    after-jj-push) enabled || exit 0; lock || exit 1; after_jj_push "$@" ;;
+    pre-push) enabled || { cat >/dev/null; exit 0; }; lock || exit 1; pre_push "$@" ;;
+    catch-up) enabled || { warn "gittuf is not installed, or this repository has no RSL"; exit 1; }; lock || exit 1; catch_up "$@" ;;
+    check) command -v gittuf >/dev/null 2>&1 || { warn "gittuf is not installed"; exit 1; }; lock || exit 1; check "$@" ;;
+    alarm) command -v gittuf >/dev/null 2>&1 || { warn "gittuf is not installed"; exit 1; }; lock || exit 1; alarm "$@" ;;
     *) echo "usage: gittuf-rsl enabled | tips <remote>... | jj-precheck | after-jj-push <tips-file> <remote>... | pre-push <remote> | catch-up <remote> <branch>... | check <remote> <branch>... | alarm <remote> [<RSL tip>]" >&2; exit 2 ;;
 esac

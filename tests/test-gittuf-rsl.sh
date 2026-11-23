@@ -119,6 +119,22 @@ expect 1 'the tag did not reach the remote' on_origin refs/tags/v1
 
 commit change/other nosign
 expect 0 'a branch outside agents/* is pushed without a check' push change/other
+git -C "$agent" branch -f agents/from-other change/other
+expect 1 'an unsigned commit that another remote branch holds stops the push' push agents/from-other
+expect 1 'that branch did not reach the remote' on_origin refs/heads/agents/from-other
+
+# One run at a time: a push waits while another run holds the lock.
+lock="${agent}/.git/gittuf-rsl.lock"
+commit agents/waits sign
+mkdir "$lock"
+push agents/waits >"${tmp}/waits" 2>&1 &
+waiter=$!
+sleep 3
+expect 1 'a push waits while another run holds the lock' on_origin refs/heads/agents/waits
+rmdir "$lock"
+wait "$waiter" || sed 's/^/    /' "${tmp}/waits"
+expect 0 'the push goes once the lock is free' on_origin refs/heads/agents/waits
+expect 1 'the run leaves no lock behind' test -d "$lock"
 
 before=$(git -C "$agent" rev-parse refs/gittuf/reference-state-log)
 plan() { (cd "$agent" && bash .githooks/gittuf-rsl jj-precheck); }
@@ -152,9 +168,43 @@ check="${tmp}/check"
 git clone -q "$origin" "$check"
 alarm() { (cd "$check" && bash "${ROOT}/.githooks/gittuf-rsl" alarm origin "$@"); }
 expect 0 'the alarm passes on the remote as the hooks left it' alarm
+
+# git has no hook after a push, so the log goes first. A branch update that the
+# remote then refuses leaves the log ahead of it, until catch-up records what
+# the remote holds.
+cat > "${origin}/hooks/pre-receive" <<'EOF'
+#!/bin/sh
+while read -r old new ref; do [ "$ref" != refs/heads/agents/signed ] || exit 1; done
+EOF
+chmod +x "${origin}/hooks/pre-receive"
+git -C "$agent" checkout -q agents/signed
+echo more >> "${agent}/file"
+git -C "$agent" commit -q -S -am 'more work on agents/signed'
+expect 1 'a push that the remote refuses fails' push agents/signed
+if grep -q 'catch-up origin agents/signed' "${tmp}/out"; then
+    pass 'the refused push names the catch-up command'
+else
+    fail 'the refused push names the catch-up command'
+fi
+expect 1 'the alarm fails while the log is ahead of the remote' alarm
+command rm "${origin}/hooks/pre-receive"
+expect 0 'catch-up records what the remote holds' \
+    bash -c "cd '$agent' && bash .githooks/gittuf-rsl catch-up origin agents/signed"
+expect 0 'the alarm passes after catch-up' alarm
+
 tip=$(git -C "$check" rev-parse refs/gittuf/reference-state-log)
 expect 1 'the alarm fails when the log lost the tip it saw before' \
     alarm "$(git -C "$check" rev-parse origin/main)"
+# The clone saw $tip. A remote log rewound below it must not pass because the
+# clone still holds the later entries.
+git -C "$origin" update-ref refs/gittuf/reference-state-log "${tip}~1"
+expect 1 'the alarm fails when the remote log was rewound' alarm "$tip"
+if grep -q 'is no longer under its tip' "${tmp}/out"; then
+    pass 'the alarm names the rewound log'
+else
+    fail 'the alarm names the rewound log'
+fi
+git -C "$origin" update-ref refs/gittuf/reference-state-log "$tip"
 git -C "$agent" push -q --no-verify origin v1
 expect 1 'the alarm fails on a tag pushed past the hook' alarm "$tip"
 
