@@ -62,3 +62,23 @@ acknowledged:
     sha256: 54bbcf5b0943d6421ecb2ceb966d1955189132fbbe57d0127a8897dbfbb9087b
     commit: 30735e8ad8c9f1c3b9d34c597598a9d6088f4a21
     reason: local proxy hostname under a private TLD, in the last commit before it moved to the private values
+  # Exposure scan of 2026-11-23: the cliproxy test's fixture values, hash-checked
+  # against the matched values.
+  - rule: secret-assigned-value
+    sha256: 0a2fb13945eed6b0da9b257a55f98e2e1ccd90727ec9776c35ae285f828d411b
+    commit: 38e23ef4c9487245ed7089f8ffc87f6d63fb89b2
+    reason: the synthetic fixture value parent-key in tests/test-cliproxy-zsh.sh, not a credential
+  - rule: secret-assigned-value
+    sha256: 2a4b0d91816498968f1eb6b68692d417ed1a8ab2cdf28706ce35cc87315bf901
+    commit: 38e23ef4c9487245ed7089f8ffc87f6d63fb89b2
+    reason: the synthetic fixture value synthetic-claude-key that the stub secretspec in tests/test-cliproxy-zsh.sh prints, not a credential
+  - rule: secret-assigned-value
+    sha256: 59ef9760f648c7a372137424174591ad7eed538ccf5064fea0d630497598de08
+    commit: 38e23ef4c9487245ed7089f8ffc87f6d63fb89b2
+    reason: the synthetic fixture value own-token in tests/test-cliproxy-zsh.sh, not a credential
+  # The same scan: the owner's Mac by its local network name, which #55 took out of the
+  # tree. This item covers every copy in history up to that merge.
+  - rule: host-private-tld
+    sha256: e93bf387ac9d1719793a8c150a4edd040e4c1299f3d19f90d2e5e41ed13c1603
+    commit: c6b0563ce00ede8946d082a8ea57a3eab4a560ef
+    reason: the owner's Mac by its local network name, in history before #55 took it out of the tree

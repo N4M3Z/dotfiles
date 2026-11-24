@@ -1,3 +1,6 @@
+{{- if eq .chezmoi.os "windows" -}}
+{{ template "harness/windows-modify" "harness/windows/grok-config" }}
+{{- else -}}
 #!/bin/bash
 # chezmoi modify_ script for ~/.grok/config.toml.
 #
@@ -36,3 +39,4 @@ FORGE_POLICY
 yq -p=toml -o=json '.' - \
     | jq --slurpfile policy "$policy" '((. // {}) * $policy[0]) | .permission = $policy[0].permission | del(.mcp_servers.gbrain) | del(.cli.telemetry)' \
     | yq -p=json -o=toml '.' -
+{{ end -}}

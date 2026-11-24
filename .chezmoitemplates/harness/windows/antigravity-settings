@@ -1,0 +1,10 @@
+{{- /*
+  ~/.gemini/antigravity-cli/settings.json on Windows: the policy, with ~/ and
+  the private folder filled in as dot_gemini/antigravity-cli/modify_private_settings.json.tmpl
+  fills them, deep-merges over the live file.
+*/ -}}
+{{- $dotfilesPrivate := glob "Developer/*/dotfiles-private" | first | default "dotfiles-private" -}}
+{{- $policy := .harness.antigravity | toJson | replace "(~/" (printf "(%s/" .chezmoi.homeDir) | replace "@DOTFILES_PRIVATE@" $dotfilesPrivate -}}
+{{- $policy = includeTemplate "harness/windows/paths" (dict "text" $policy "data" .) | fromJson -}}
+{{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "json")) -}}
+{{ fromJson (includeTemplate "harness/deep-merge" (dict "a" $live "b" $policy)) | toPrettyJson }}

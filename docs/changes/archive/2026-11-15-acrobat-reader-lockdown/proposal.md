@@ -15,7 +15,7 @@ background updater, Adobe cloud services, an AI assistant, trial offers, and a h
 promoted "PDF Spaces". The owner wants the signing tool and nothing else.
 
 Adobe documents an admin lockdown that Reader reads at launch. On 2026-11-15 it was installed by
-hand on Nexus.local and cleared the home screen on the next start. Without a home in the dotfiles,
+hand on Nexus and cleared the home screen on the next start. Without a home in the dotfiles,
 the next Mac or the next Reader installer loses it.
 
 ## What Changes
@@ -43,6 +43,6 @@ None.
 ## Impact
 
 - New: `run_after_acrobat-lockdown.sh.tmpl`, `tests/test-acrobat-lockdown.sh`.
-- Live: no change on Nexus.local, where the installed file already matches. A fresh Mac asks for the
+- Live: no change on Nexus, where the installed file already matches. A fresh Mac asks for the
   admin password once during its first apply.
 - Reader gets no automatic security updates. The owner updates it by hand.

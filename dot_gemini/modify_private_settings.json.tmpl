@@ -1,3 +1,6 @@
+{{- if eq .chezmoi.os "windows" -}}
+{{ template "harness/windows-modify" "harness/windows/gemini-settings" }}
+{{- else -}}
 #!/bin/bash
 # chezmoi modify_ script for ~/.gemini/settings.json, Gemini CLI's user settings.
 #
@@ -23,3 +26,4 @@ POLICY
 # --slurp reads an absent live file as an empty list. A live file that does not
 # parse stops jq, so the apply fails and the file stays as it is.
 jq --slurp --slurpfile policy "$policy" '(.[0] // {}) * $policy[0]'
+{{ end -}}

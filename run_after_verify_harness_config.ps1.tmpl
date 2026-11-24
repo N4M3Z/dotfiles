@@ -1,0 +1,89 @@
+{{ if eq .chezmoi.os "windows" -}}
+# The Windows twin of run_after_verify_harness_config.sh.tmpl, which explains
+# each probe. chezmoi runs a .ps1 script with Windows PowerShell 5.1, so this
+# file stays ASCII and uses nothing newer. Each probe is skipped when its
+# binary is absent. The differences from the sh script:
+# - grok: Grok 1.0.92 documents privacy.privacy_banner_acked in its config
+#   reference and writes it itself, yet `grok inspect` lists the privacy table
+#   as an unrecognized key. That one warning is not a problem here.
+# - muse: Windows has no gpg-agent socket rule to skip; the Windows merge
+#   leaves socket rules out (.chezmoitemplates/harness/windows/muse-settings).
+# Source: https://github.com/N4M3Z/dotfiles
+$ErrorActionPreference = 'Continue'
+$status = 0
+
+function Test-Tool([string]$Name) { [bool](Get-Command $Name -ErrorAction SilentlyContinue) }
+function Write-Fail([string]$Message, [string]$Detail) {
+    [Console]::Error.WriteLine("fail:harness-config ($Message)")
+    if ($Detail) { [Console]::Error.WriteLine($Detail.TrimEnd()) }
+}
+
+if (Test-Tool 'codex') {
+    $output = (& codex mcp list 2>&1 | Out-String)
+    if ($LASTEXITCODE -ne 0) {
+        $cause = ($output -split "`r?`n" | Select-String -Pattern 'Caused by' -Context 0, 2 | Out-String)
+        Write-Fail 'codex config does not load' $cause
+        $status = 1
+    }
+}
+
+if (Test-Tool 'claude') {
+    & claude doctor *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail 'claude doctor reports a problem; run it for detail' ''
+        $status = 1
+    }
+}
+
+if (Test-Tool 'grok') {
+    $env:GROK_SANDBOX = 'off'
+    $output = (& grok inspect --json 2> $null | Out-String)
+    $code = $LASTEXITCODE
+    Remove-Item Env:GROK_SANDBOX
+    if ($code -ne 0) {
+        Write-Fail 'grok inspect fails; run it for detail' ''
+        $status = 1
+    } else {
+        try {
+            $inspect = $output | ConvertFrom-Json
+            $problems = @()
+            foreach ($layer in @($inspect.configSources.layers)) {
+                if ($layer -and $layer.note -eq 'parse error') { $problems += "$($layer.path): parse error" }
+            }
+            foreach ($warning in @($inspect.configWarnings)) {
+                if ($warning -and $warning.path -ne 'privacy') { $problems += "$($warning.path): $($warning.reason)" }
+            }
+            if ($problems.Count -gt 0) {
+                Write-Fail 'grok config has problems' ($problems -join "`n")
+                $status = 1
+            }
+        } catch {
+            Write-Fail 'cannot parse grok inspect output' ''
+            $status = 1
+        }
+    }
+}
+
+if (Test-Tool 'muse') {
+    $probe = Join-Path ([IO.Path]::GetTempPath()) ("muse-verify-" + [Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $probe | Out-Null
+    Push-Location $probe
+    $output = (& muse exec --provider echo --no-session-log --disable-reminders probe 2>&1 | Out-String)
+    $code = $LASTEXITCODE
+    Pop-Location
+    # Muse Code's processes can hold the folder for a moment after the probe returns.
+    foreach ($try in 1..5) {
+        Remove-Item -LiteralPath $probe -Recurse -Force -ErrorAction SilentlyContinue
+        if (-not (Test-Path -LiteralPath $probe)) { break }
+        Start-Sleep -Milliseconds 500
+    }
+    $problems = ($output -split "`r?`n" | Where-Object { $_ -match 'ermission profile|unknown (key|field)|refusing run|Hooks: .*warning|UnsupportedEvent|MalformedConfig' })
+    if ($code -ne 0 -or $problems) {
+        $detail = if ($problems) { $problems -join "`n" } else { ($output -split "`r?`n" | Select-Object -Last 5) -join "`n" }
+        Write-Fail 'muse does not load its settings' $detail
+        $status = 1
+    }
+}
+
+exit $status
+{{ end -}}

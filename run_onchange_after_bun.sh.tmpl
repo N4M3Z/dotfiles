@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # Runs on chezmoi apply whenever this file changes, making `chezmoi apply` the
 # one converge command for global Bun packages. Bun owns every npm-distributed
@@ -38,3 +39,4 @@ for package in "${packages[@]}"; do
     bun install -g "${package}"
 done
 {{- end }}
+{{ end -}}

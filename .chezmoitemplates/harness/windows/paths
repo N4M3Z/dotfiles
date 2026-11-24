@@ -1,0 +1,15 @@
+{{- /*
+  Windows only: .text (policy JSON) with the repository paths moved to where
+  they are on this machine. The policy data names them for the Macs, as
+  ~/Developer and as the private folder found under the home folder (which
+  falls back to ~/dotfiles-private when there is none). On Windows both live
+  under devRoot, outside the home folder, so each spelling of them, ~/ and the
+  absolute home path, points there instead. Only the whole folder name moves,
+  so a devRoot such as <home>/Developer-work is not renamed twice. Muse Code is
+  left out: it refuses a selector outside the home folder on Windows.
+*/ -}}
+{{- $devRoot := includeTemplate "dev-root" .data -}}
+{{- $home := regexQuoteMeta .data.chezmoi.homeDir -}}
+{{- $private := glob (printf "%s/*/dotfiles-private" $devRoot) | first | default (printf "%s/N4M3Z/dotfiles-private" $devRoot) -}}
+{{- $text := regexReplaceAll (printf `(~|%s)/dotfiles-private([^A-Za-z0-9_.-]|$)` $home) .text (printf "%s${2}" $private) -}}
+{{- regexReplaceAll (printf `(~|%s)/Developer([^A-Za-z0-9_-]|$)` $home) $text (printf "%s${2}" $devRoot) -}}

@@ -1,3 +1,6 @@
+{{- if eq .chezmoi.os "windows" -}}
+{{ template "harness/windows-modify" "harness/windows/muse-settings" }}
+{{- else -}}
 #!/bin/bash
 # chezmoi modify_ script for ~/.config/muse/settings.json (Muse Code).
 #
@@ -35,149 +38,8 @@
 # fails when a copy here and the Claude source differ. The Read(...) deny rules
 # come from .chezmoidata/harness/claude.json at render time.
 # Source: https://github.com/N4M3Z/dotfiles
-{{- $home := .chezmoi.homeDir }}
-{{- $muse := .harness.muse }}
-{{- /* This repository is public, so it does not record where the private folder lives. It is found at render time. */}}
-{{- $dotfilesPrivate := glob "Developer/*/dotfiles-private" | first | default "dotfiles-private" }}
-{{- $claudeDenyRead := list
-      "~/.claude.json"
-      "~/.ssh"
-      (printf "~/%s" $dotfilesPrivate)
-      "~/.aws"
-      "~/.azure"
-      "~/.gnupg"
-      "~/.kube"
-      "~/.config/gh"
-      "~/.config/gcloud"
-      "~/.git-credentials"
-      "~/Library/Keychains"
-      "~/.npmrc"
-      "~/.npm"
-      "~/.pypirc"
-      "~/.gem/credentials"
-      "~/.cargo/credentials.toml"
-      "~/.config/containers"
-      "~/.docker/config.json"
-      "~/.netrc"
-      "~/.config/op"
-      "~/.password-store"
-      "~/Library/Application Support/mkcert/rootCA-key.pem"
-      "/Volumes/Keyvault"
-      "/Volumes/.timemachine"
-      "/Volumes/com.apple.TimeMachine.localsnapshots"
-}}
-{{- $claudeAllowedDomains := list
-      "github.com"
-      "*.github.com"
-      "raw.githubusercontent.com"
-      "objects.githubusercontent.com"
-      "pkg-containers.githubusercontent.com"
-      "registry.npmjs.org"
-      "crates.io"
-      "static.crates.io"
-      "index.crates.io"
-      "formulae.brew.sh"
-      "ghcr.io"
-      "pypi.org"
-      "*.pypi.org"
-      "files.pythonhosted.org"
-      "semgrep.dev"
-      "*.semgrep.dev"
-      "browserbase.com"
-      "*.browserbase.com"
-      .private.gitlab_host
-      "localhost"
-      "127.0.0.1"
-      .private.proxy_host
-      "lumo.proton.me"
-      "models.opencode.ai"
-}}
-{{- $claudeUnixSockets := list
-      "/tmp/.s.PGSQL.5432"
-      "~/.obsidian-cli.sock"
-      "~/.gnupg/S.gpg-agent"
-      "~/.gnupg/S.dirmngr"
-}}
-{{- /*
-  Claude's paths use ~/ for the home, // for an absolute path and ./ for the
-  workspace. A trailing /** on a literal path means the path itself.
-*/}}
-{{- $claudePaths := concat $claudeDenyRead $muse.profile.deny }}
-{{- range .harness.claude.permissions.deny }}
-  {{- if and (hasPrefix "Read(" .) (hasSuffix ")" .) }}
-    {{- $claudePaths = append $claudePaths (trimSuffix ")" (trimPrefix "Read(" .)) }}
-  {{- end }}
-{{- end }}
-{{- $filesystem := dict }}
-{{- $workspace := dict }}
-{{- range uniq $claudePaths }}
-  {{- $path := . }}
-  {{- $relative := hasPrefix "./" $path }}
-  {{- if hasPrefix "~/" $path }}
-    {{- $path = printf "%s/%s" $home (trimPrefix "~/" $path) }}
-  {{- else if hasPrefix "//" $path }}
-    {{- $path = trimPrefix "/" $path }}
-  {{- else if $relative }}
-    {{- $path = trimPrefix "./" $path }}
-  {{- end }}
-  {{- /* The folder above this glob is the home folder, so the widening below would deny all of it. */}}
-  {{- if hasSuffix "/**/dotfiles-private/**" $path }}
-    {{- $path = printf "%s/%s" $home $dotfilesPrivate }}
-  {{- end }}
-  {{- $literal := trimSuffix "/**" $path }}
-  {{- if not (regexMatch `[*?\[]` $literal) }}
-    {{- $path = $literal }}
-  {{- end }}
-  {{- if $relative }}
-    {{- $_ := set $workspace $path "deny" }}
-  {{- else if regexMatch `[*?\[]` $path }}
-    {{- /*
-      Muse refuses a glob outside the workspace, and a glob expanded at apply
-      time misses a folder created later, such as a second ProtonDrive-*
-      folder. So deny the literal folder above the first glob. It covers
-      every match, now and later, and is wider than the glob.
-    */}}
-    {{- $_ := set $filesystem (regexReplaceAll `/[^/]*[*?\[].*$` $path "") "deny" }}
-  {{- else }}
-    {{- $_ := set $filesystem $path "deny" }}
-  {{- end }}
-{{- end }}
-{{- $_ := set $filesystem ":workspace_roots" $workspace }}
-{{- $targets := dict }}
-{{- range $claudeAllowedDomains }}
-  {{- if not (has . (list "localhost" "127.0.0.1")) }}
-    {{- $_ := set $targets . "allow" }}
-  {{- end }}
-{{- end }}
-{{- $sockets := dict }}
-{{- range $claudeUnixSockets }}
-  {{- $_ := set $sockets (regexReplaceAll "^~/" . (printf "%s/" $home)) "allow" }}
-{{- end }}
-{{- $network := dict
-      "mode" $muse.profile.network.mode
-      "targets" $targets
-      "local_ports" $muse.profile.network.local_ports
-      "unix_sockets" $sockets
-}}
-{{- $profile := dict
-      "extends" $muse.profile.extends
-      "description" $muse.profile.description
-      "filesystem" $filesystem
-      "network" $network
-}}
-{{- $gate := printf "%s/.local/bin/harness-command-gate" $home }}
-{{- $dcg := printf "%s/.local/bin/dcg" $home }}
-{{- $hooks := list
-      (dict "matcher" "bash" "hooks" (list (dict "type" "command" "command" $dcg)))
-      (dict "matcher" "bash" "hooks" (list (dict "type" "command" "command" $gate)))
-}}
-{{- $policy := dict
-      "settings" $muse.settings
-      "profile_id" $muse.profile.id
-      "profile" $profile
-      "hooks" $hooks
-      "managed_commands" (list $dcg $gate)
-}}
+{{- /* The policy is shared with Windows: .chezmoitemplates/harness/muse-policy. */}}
+{{- $policy := includeTemplate "harness/muse-policy" . | fromJson }}
 set -o pipefail
 umask 022
 
@@ -205,3 +67,4 @@ jq -n --slurpfile policy "$policy" '
             | select(any(.hooks[]?.command; IN($p.managed_commands[])) | not)]
         + $p.hooks)
 '
+{{ end -}}

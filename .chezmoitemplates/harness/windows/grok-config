@@ -1,0 +1,16 @@
+{{- /*
+  ~/.grok/config.toml on Windows: the merge that dot_grok/modify_private_config.toml.tmpl
+  runs with yq and jq elsewhere. The policy deep-merges over the live file, owns
+  the permission map outright, and drops a stale gbrain server and cli.telemetry.
+*/ -}}
+{{- $policy := includeTemplate "harness/windows/paths" (dict "text" (.harness.grok | toJson) "data" .) | fromJson -}}
+{{- /* Rules for every folder in the home folder also name devRoot; Grok takes absolute-path patterns as written, not //. */ -}}
+{{- with dig "permission" "deny" nil $policy -}}
+{{-   $_ := set $policy.permission "deny" (includeTemplate "harness/windows/home-wide" (dict "rules" . "home" "~" "root" (includeTemplate "dev-root" $)) | fromJson) -}}
+{{- end -}}
+{{- $live := fromJson (includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "toml")) -}}
+{{- $config := fromJson (includeTemplate "harness/deep-merge" (dict "a" $live "b" $policy)) -}}
+{{- $_ := set $config "permission" (get $policy "permission") -}}
+{{- with get $config "mcp_servers" }}{{ if kindIs "map" . }}{{ $_ := unset . "gbrain" }}{{ end }}{{ end -}}
+{{- with get $config "cli" }}{{ if kindIs "map" . }}{{ $_ := unset . "telemetry" }}{{ end }}{{ end -}}
+{{ toToml $config }}

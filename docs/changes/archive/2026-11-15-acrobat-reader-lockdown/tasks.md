@@ -10,7 +10,7 @@
 ## 2. Verification
 
 - [x] 2.1 `tests/test-acrobat-lockdown.sh` passes
-- [x] 2.2 The rendered script, run with a stub `sudo` against the live file on Nexus.local, makes no
+- [x] 2.2 The rendered script, run with a stub `sudo` against the live file on Nexus, makes no
   `sudo` call, so the embedded plist matches the installed one byte for byte
 - [x] 2.3 `tests/validate-templates.sh` passes
 
@@ -20,5 +20,5 @@
 
 ## 4. Live application
 
-- [x] 4.1 The lockdown file was installed by hand on Nexus.local (2026-11-15). Acrobat Reader
+- [x] 4.1 The lockdown file was installed by hand on Nexus (2026-11-15). Acrobat Reader
   26.002.21931 restarted without PDF Spaces, trial, sign-in, or notification controls
