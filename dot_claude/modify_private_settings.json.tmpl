@@ -13,6 +13,9 @@
 # `sh ~/.config/just/hook <Event>`, the dispatcher in the just tree.
 # `model` and `outputStyle` are also kept from the live file: /model and
 # /output-style write them per machine, and the template sets neither.
+# So are the `<name>@synced` keys of `enabledPlugins`: `claude plugin
+# disable <name>@synced` writes them for plugins synced from the claude.ai
+# account, and the template names no synced plugin.
 set -eu
 live=$(cat)
 [ -n "$live" ] || live='{}'
@@ -27,5 +30,7 @@ DESIRED
 printf '%s\n' "$desired" | jq --argjson live "$live" '
     . + {hooks: (($live.hooks // {})
         | walk(if type == "string" then sub("/\\.sd/hook "; "/.config/just/hook ") else . end))}
-    + ($live | {model, outputStyle} | with_entries(select(.value != null)))'
+    + ($live | {model, outputStyle} | with_entries(select(.value != null)))
+    + {enabledPlugins: ((.enabledPlugins // {})
+        + (($live.enabledPlugins // {}) | with_entries(select(.key | endswith("@synced")))))}'
 {{ end -}}
