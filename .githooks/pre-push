@@ -1,6 +1,6 @@
 #!/bin/sh
 # Push gate: block unfinished or unattributed harness commits, then hand off
-# to Entire's own pre-push stage.
+# to gittuf's reference state log.
 #
 # Git calls this hook with one line per ref being pushed on stdin:
 #     <local ref> <local sha> <remote ref> <remote sha>
@@ -64,10 +64,6 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 done < "$refs_file"
 
 [ "$failures" -eq 0 ] || exit 1
-
-if command -v entire >/dev/null 2>&1; then
-    entire hooks git pre-push "$remote_name" < "$refs_file" || exit $?
-fi
 
 # gittuf runs last, because it publishes. Where the repository keeps a
 # reference state log, it records each agents/* branch and tag this push sends

@@ -66,20 +66,11 @@
     helper =
     helper = !{{ $glabCmd }} auth git-credential
 
-{{- if ne .chezmoi.os "windows" }}
+{{- if eq .chezmoi.os "windows" }}
 
-; git-ai streams git's trace2 events to its daemon socket so it can attribute
-; commits to the agent session that produced them. The installer appends this
-; block itself; declaring it here keeps chezmoi apply from removing it.
-[trace2]
-    eventTarget = af_unix:stream:{{ .chezmoi.homeDir }}/.git-ai/internal/daemon/trace2.sock
-    eventNesting = 0
-{{- else }}
-
-; Windows: git-ai does not run here, so there is no trace2 socket. The
-; settings a machine adds itself (on Apex: provision's line endings, symlinks,
-; long paths and the agents' signing key) live in their own file. It comes
-; last, so its values win over the identity's signing above.
+; Windows: the settings a machine adds itself (on Apex: provision's line
+; endings, symlinks, long paths and the agents' signing key) live in their own
+; file. It comes last, so its values win over the identity's signing above.
 [include]
     path = ~/.config/git/provision.gitconfig
 {{- end }}

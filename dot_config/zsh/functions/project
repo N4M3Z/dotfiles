@@ -85,10 +85,6 @@ _proj_init() {
     if [[ -n $githooks && -d $githooks && ! -d .githooks ]]; then
         command cp -R -- "$githooks" .githooks && git config core.hooksPath .githooks
     fi
-    if (( $+commands[entire] )) && [[ ! -d .entire ]]; then
-        entire enable --agent claude-code --no-github >/dev/null 2>&1
-        entire agent add codex >/dev/null 2>&1
-    fi
 
     [[ -f .gitignore ]] || print -l -- 'dist/' '.DS_Store' '.specstory/history/' > .gitignore
     local d
@@ -116,10 +112,10 @@ CLEAR:
 
 > Brief: TODO
 
-Workshop spine (git, jj, and entire live here). Flow: \`private/\` holds unpublished
+Workshop spine (git and jj live here). Flow: \`private/\` holds unpublished
 inputs and work in progress, \`public/\` the deliverables, \`assets/\` publishable media;
 \`.tlp\` maps the TLP levels. Knowledge graduates to Atlas, deliverables to ~/Documents.
-Never delete this folder — that orphans the git/jj/entire history and resumable sessions."
+Never delete this folder: that orphans the git/jj history and resumable sessions."
     [[ -f CLAUDE.md ]] || print -r -- "$brief" > CLAUDE.md
     [[ -f AGENTS.md ]] || print -r -- "$brief" > AGENTS.md
 
