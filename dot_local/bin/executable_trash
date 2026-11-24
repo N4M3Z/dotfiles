@@ -1,18 +1,21 @@
 #!/bin/sh
-# trash: move files and directories to the trash, recoverable, on macOS and
-# Linux, without Finder, Apple Events, or a desktop session.
+# trash: move files and directories to the system Trash, recoverable, so the
+# desktop shows them and emptying the Trash frees their space.
 #
-# Layout is the FreeDesktop trash specification on both systems: the item
-# goes to $TRASH/files/<name> and $TRASH/info/<name>.trashinfo records the
-# original path and the deletion time. `gio trash` is used when present, so
-# a Linux desktop sees the item in its own Trash. On macOS the same layout
-# under ~/.local/share/Trash keeps the item out of Finder's Trash window but
-# recoverable by path; Finder's Trash needs Apple Events, which a sandboxed
-# command cannot send.
+# macOS: /usr/bin/trash, which ships with macOS, moves each item to the Trash
+# that Finder shows, with Put Back. A macOS without it gets a plain move into
+# ~/.Trash. A sandboxed agent needs ~/.Trash in its write list.
+# Linux: `gio trash` when present, otherwise the FreeDesktop layout under
+# $XDG_DATA_HOME/Trash, which is the desktop Trash there: files/<name> holds
+# the item and info/<name>.trashinfo its original path and deletion time.
+#
+# TRASH_PLATFORM, TRASH_MACOS_TOOL, and TRASH_GIO override the platform, the
+# macOS tool path, and the gio command, so tests never touch a real Trash.
 #
 # Exit 0 when every path was trashed, 1 on a missing path or a failed move,
 # 64 with no argument. Reference: https://www.freedesktop.org/wiki/Specifications/trash-spec/
-# Source: https://github.com/N4M3Z/dotfiles
+# Source: runedeck/skeleton templates/base/scripts/trash; the same bytes ship in the
+# owner dotfiles as ~/.local/bin/trash.
 set -u
 
 if [ $# -eq 0 ]; then
@@ -20,12 +23,25 @@ if [ $# -eq 0 ]; then
     exit 64
 fi
 
-if command -v gio >/dev/null 2>&1 && [ "$(uname -s)" = Linux ]; then
-    exec gio trash -- "$@"
+platform=${TRASH_PLATFORM:-$(uname -s)}
+macos_tool=${TRASH_MACOS_TOOL:-/usr/bin/trash}
+gio=${TRASH_GIO:-gio}
+if [ "$platform" = Darwin ] && [ -x "$macos_tool" ]; then
+    exec "$macos_tool" "$@"
+fi
+if [ "$platform" = Linux ] && command -v "$gio" >/dev/null 2>&1; then
+    exec "$gio" trash -- "$@"
 fi
 
-trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash"
-mkdir -p "$trash/files" "$trash/info" || exit 1
+if [ "$platform" = Darwin ]; then
+    trash="$HOME/.Trash"
+    info=""
+else
+    trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash"
+    info="$trash/info"
+    trash="$trash/files"
+fi
+mkdir -p "$trash" ${info:+"$info"} || exit 1
 status=0
 for path in "$@"; do
     if [ ! -e "$path" ] && [ ! -L "$path" ]; then
@@ -39,19 +55,19 @@ for path in "$@"; do
     esac
     absolute=${absolute%/}
     name=$(basename "$absolute")
-    target="$trash/files/$name"
+    target="$trash/$name"
     n=1
-    while [ -e "$target" ] || [ -L "$target" ] || [ -e "$trash/info/$(basename "$target").trashinfo" ]; do
+    while [ -e "$target" ] || [ -L "$target" ] || { [ -n "$info" ] && [ -e "$info/$(basename "$target").trashinfo" ]; }; do
         n=$((n + 1))
-        target="$trash/files/$name.$n"
+        target="$trash/$name.$n"
     done
-    # The info file first, so a crash between the two steps leaves a record
-    # and never an orphan in files/.
-    printf '[Trash Info]\nPath=%s\nDeletionDate=%s\n' "$absolute" "$(date +%Y-%m-%dT%H:%M:%S)" > "$trash/info/$(basename "$target").trashinfo" || { status=1; continue; }
-    if mv -n -- "$absolute" "$target"; then
-        :
-    else
-        rm -f "$trash/info/$(basename "$target").trashinfo"
+    # On Linux the info file comes first, so a crash between the two steps
+    # leaves a record and never an orphan in files/.
+    if [ -n "$info" ]; then
+        printf '[Trash Info]\nPath=%s\nDeletionDate=%s\n' "$absolute" "$(date +%Y-%m-%dT%H:%M:%S)" > "$info/$(basename "$target").trashinfo" || { status=1; continue; }
+    fi
+    if ! mv -n -- "$absolute" "$target"; then
+        [ -z "$info" ] || rm -f "$info/$(basename "$target").trashinfo"
         echo "trash: could not move $path" >&2
         status=1
     fi
