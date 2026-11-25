@@ -4,3 +4,4 @@
 private:
     gitlab_host: "@GITLAB_HOST@"
     proxy_host: "@PROXY_HOST@"
+    tailnet_host: "@TAILNET_HOST@"

@@ -20,6 +20,7 @@ $config = Join-Path $work 'chezmoi.toml'
 [data.private]
     gitlab_host = "gitlab.example.test"
     proxy_host = "proxy.example.test"
+    tailnet_host = "tailnet.example.test"
 
 [interpreters.ps1]
     command = "powershell"

@@ -94,7 +94,7 @@ gh repo clone N4M3Z/dotfiles C:\Developer\N4M3Z\dotfiles
 # One-time: the same link as on a Mac (Developer Mode allows it without admin).
 New-Item -ItemType SymbolicLink -Path $HOME\.local\share\chezmoi -Target C:\Developer\N4M3Z\dotfiles
 
-chezmoi init    # choose secretspec; it reads GITLAB_HOST and PROXY_HOST from Credential Manager
+chezmoi init    # choose secretspec; it reads GITLAB_HOST, PROXY_HOST and TAILNET_HOST from Credential Manager
 chezmoi diff
 chezmoi apply
 ```
@@ -107,7 +107,7 @@ Sensitive SSH host configuration lives in a separate `dotfiles-private` repo at 
 
 ## Private values
 
-Values that must not be public, such as the work GitLab host and the local AI proxy host, live in [pass][PASS] (encrypted to the GPG key on the YubiKey) or in [Proton Pass][PPCLI]. The first `chezmoi init` asks which store the machine uses and keeps the answer. It renders `.chezmoi.toml.tmpl`, which reads each value with chezmoi's [`pass`][CZPASS] or [`protonPass`][CZPP] function into the `[data.private]` section of `~/.config/chezmoi/chezmoi.toml`. That config holds the values in plain text, as the deployed files do. `chezmoi apply` never reads a store, so it needs no YubiKey touch or Proton Pass session, and agent sandboxes, which deny `~/.password-store`, still render the real values.
+Values that must not be public, such as the work GitLab host, the local AI proxy host, and the tailnet name, live in [pass][PASS] (encrypted to the GPG key on the YubiKey) or in [Proton Pass][PPCLI]. The first `chezmoi init` asks which store the machine uses and keeps the answer. It renders `.chezmoi.toml.tmpl`, which reads each value with chezmoi's [`pass`][CZPASS] or [`protonPass`][CZPP] function into the `[data.private]` section of `~/.config/chezmoi/chezmoi.toml`. That config holds the values in plain text, as the deployed files do. `chezmoi apply` never reads a store, so it needs no YubiKey touch or Proton Pass session, and agent sandboxes, which deny `~/.password-store`, still render the real values.
 
 Templates read a value as data, for example `{{ .private.gitlab_host }}`. `.chezmoidata/private.yaml` holds a public placeholder for each value, such as `@GITLAB_HOST@`, so CI and a machine without the config render the placeholders. Data in `.chezmoidata` cannot be a template, so a data file uses the placeholder, and the template that renders the data replaces it with the value.
 
