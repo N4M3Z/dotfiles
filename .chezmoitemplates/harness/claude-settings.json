@@ -155,6 +155,11 @@
         "localhost",
         "127.0.0.1",
         "{{ .private.proxy_host }}",
+        {{- /*
+        The machines on the owner's tailnet, such as the agent host. The
+        tailnet name is private, so it comes from the private values.
+        */}}
+        "*.{{ .private.tailnet_host }}",
         "lumo.proton.me",
         "models.opencode.ai"
       ],

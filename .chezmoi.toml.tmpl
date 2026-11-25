@@ -4,7 +4,7 @@
 {{- /* NAME is the lowercase key in upper case: GITLAB_HOST sets gitlab_host. Blank lines and # comments are skipped. */ -}}
 {{- /* With the third store choice, the SecretSpec CLI reads each NAME that its manifest declares, from the provider the user configured. The manifest has one profile, default, named on the call: a machine whose global SecretSpec profile is another one (owner, on Apex) would ask for that and fail. */ -}}
 {{- /* Every key here overrides its placeholder in .chezmoidata/private.yaml. */ -}}
-{{- $keys := list "gitlab_host" "proxy_host" -}}
+{{- $keys := list "gitlab_host" "proxy_host" "tailnet_host" -}}
 {{- $store := promptChoiceOnce . "privateStore" "Store for private values" (list "pass" "proton-pass" "secretspec") "pass" -}}
 {{- $values := dict -}}
 {{- if eq $store "secretspec" -}}
