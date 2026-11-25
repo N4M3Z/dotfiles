@@ -1,12 +1,12 @@
 # dotfiles
 
-macOS dotfiles for one user, one machine (Apple Silicon, with a planned second). Managed by [chezmoi][CM] using its native source-state convention.
+macOS dotfiles for one user, one machine (Apple Silicon, with a planned second). [chezmoi][CM] manages them with its native source-state convention.
 
 ## Layout
 
-Each source path encodes its target via chezmoi prefixes. `dot_` becomes a leading dot; `private_` sets mode 600 on files and 700 on directories. The directory shape mirrors `$HOME`.
+Each source path encodes its target via chezmoi prefixes. `dot_` becomes a leading dot. `private_` sets mode 600 on files and 700 on directories. The directory shape mirrors `$HOME`.
 
-```
+```text
 dotfiles/
 ├── .chezmoi.toml.tmpl            → ~/.config/chezmoi/chezmoi.toml (private values, via chezmoi init)
 ├── .chezmoidata/private.yaml     public placeholders for the private values
@@ -103,7 +103,7 @@ On Windows the harness templates merge through chezmoi templates instead of jq (
 
 ## Private host blocks
 
-Sensitive SSH host configuration lives in a separate `dotfiles-private` repo at `~/Developer/N4M3Z/dotfiles-private/ssh/{hosts,vendor}`. The two `symlink_*.tmpl` files under `private_dot_ssh/` create `~/.ssh/hosts` and `~/.ssh/vendor` symlinks pointing into that repo. OpenSSH's `Include` directive silently skips broken symlinks, so a Mac without `dotfiles-private` cloned just loses the private hosts; everything else still works.
+Sensitive SSH host configuration lives in a separate `dotfiles-private` repo at `~/Developer/N4M3Z/dotfiles-private/ssh/{hosts,vendor}`. The two `symlink_*.tmpl` files under `private_dot_ssh/` create `~/.ssh/hosts` and `~/.ssh/vendor` symlinks pointing into that repo. OpenSSH's `Include` directive silently skips broken symlinks, so a Mac without `dotfiles-private` cloned loses only the private hosts. Everything else still works.
 
 ## Private values
 
@@ -138,7 +138,7 @@ With the store choice `secretspec`, `chezmoi init` reads each private value with
 
 | Command | Purpose |
 | ------- | ------- |
-| `chezmoi managed` | List managed target paths. Should match the layout table above. |
+| `chezmoi managed` | List managed target paths. The list must match the layout above. |
 | `chezmoi diff` | Preview pending changes as a unified diff. |
 | `chezmoi target-path <source>` | Debug source-to-target mapping for one file. |
 | `ghostty +validate-config` | Lint the Ghostty config. |
@@ -148,9 +148,9 @@ With the store choice `secretspec`, `chezmoi init` reads each private value with
 ## Cautions
 
 - **`dotfiles-private/`** holds sensitive host blocks. Never `cat` those files into chat or pastebins.
-- **`p10k.zsh` is seeded only on first apply** (via the `create_` prefix). After initial deploy, `p10k configure` is allowed to rewrite the deployed copy; chezmoi never overwrites it. The source-of-truth for fresh Macs is the version committed here.
-- **Don't switch fonts without coordinating the Ghostty config.** `font-meslo-lg-nerd-font` is the canonical Nerd Font (matches p10k's wizard output); Ghostty's `font-family = MesloLGS Nerd Font Mono` must agree.
-- **`zoxide` is wired via the Prezto module path** (`'zoxide'` in `zpreztorc`). Do not add a direct `eval "$(zoxide init ...)"` to `zshrc`; the `--cmd cd` flavor caused subtle Claude Code Bash issues. `z <query>` is the jump command; `cd` is the unmodified zsh builtin.
+- **`p10k.zsh` is seeded only on first apply** (via the `create_` prefix). After initial deploy, `p10k configure` is allowed to rewrite the deployed copy, and chezmoi never overwrites it. The source-of-truth for fresh Macs is the version committed here.
+- **Do not switch fonts without coordinating the Ghostty config.** `font-meslo-lg-nerd-font` is the canonical Nerd Font (matches p10k's wizard output). Ghostty's `font-family = MesloLGS Nerd Font Mono` must agree.
+- **`zoxide` is wired via the Prezto module path** (`'zoxide'` in `zpreztorc`). Do not add a direct `eval "$(zoxide init ...)"` to `zshrc`, because the `--cmd cd` flavor caused subtle Claude Code Bash issues. `z <query>` is the jump command, and `cd` is the unmodified zsh builtin.
 
 ## Workflow: Claude Code + tmux + agent teams
 
@@ -166,9 +166,10 @@ claude() {
 }
 ```
 
-Typing `claude` from a plain shell auto-enters a tmux session named `claude`. From inside Claude, asking it to spin up an agent team triggers `TeamCreate` + `Agent(team_name=...)`, which uses `tmux split-window` to create one pane per teammate. Detach with `prefix d`, reattach with `tmux attach -t claude` to survive Ghostty restarts.
+Typing `claude` from a plain shell auto-enters a tmux session named `claude`. From inside Claude, asking it to start an agent team triggers `TeamCreate` + `Agent(team_name=...)`, which uses `tmux split-window` to create one pane per teammate. Detach with `prefix d`, reattach with `tmux attach -t claude` to survive Ghostty restarts.
 
 Required settings (already in `dot_claude/private_settings.json`):
+
 - Top-level `"teammateMode": "tmux"`
 - `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"`
 
