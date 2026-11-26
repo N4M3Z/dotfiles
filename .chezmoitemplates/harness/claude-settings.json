@@ -20,7 +20,16 @@
     "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
     "OTEL_METRICS_EXPORTER": "otlp",
     "OTEL_LOGS_EXPORTER": "otlp",
-    "OTEL_TRACES_EXPORTER": "none",
+    "OTEL_TRACES_EXPORTER": "otlp",
+    {{- /*
+    Spans go to the local collector like the logs and metrics. otel.zsh
+    always said otlp, but the value here wins over the shell's, and T3 Code
+    starts Claude Code without a shell. With "none" Nexus sent no Claude Code
+    span in seven days, and the box 41,360 (2026-11-26). A span holds what
+    the events lack: the time to the first token, and how long a tool ran
+    apart from how long it waited for approval. About 5 spans for each model
+    request (the box, 24 hours: 8,433 for 1,681).
+    */}}
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
     "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative",
