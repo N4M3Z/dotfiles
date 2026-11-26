@@ -1,0 +1,18 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+  ~/.gemini/config/mcp_config.json, Antigravity's MCP servers. Tools add their
+  own servers to the live file: cua's installer adds cua and cua-driver, and
+  runedeck/provision's executor step adds executor, which starts Executor's
+  stdio bridge. A plain file here replaced those entries at every apply, so
+  this modify-template keeps the live servers. It only makes sure that
+  mcpServers exists and drops gbrain, which is retired, as the Codex and Grok
+  policies do. chezmoi runs it as a template with the live file in
+  .chezmoi.stdin, so it needs no shell and runs on Windows too.
+  Source: https://github.com/N4M3Z/dotfiles
+*/ -}}
+{{- $live := includeTemplate "harness/live" (dict "text" .chezmoi.stdin "format" "json") | fromJson -}}
+{{- $servers := dict -}}
+{{- if kindIs "map" (get $live "mcpServers") }}{{ $servers = get $live "mcpServers" }}{{ end -}}
+{{- $_ := unset $servers "gbrain" -}}
+{{- $_ := set $live "mcpServers" $servers -}}
+{{ toPrettyJson $live }}
