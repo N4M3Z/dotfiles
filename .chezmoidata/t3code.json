@@ -1,0 +1,23 @@
+{
+  "t3code": {
+    "policy": {
+      "schemaVersion": 1,
+      "organization": "N4M3Z",
+      "settings": {
+        "agentFeedback": { "value": { "mode": "off" }, "locked": true },
+        "cloudSpeechCredentials": {
+          "value": { "openai": "", "xai": "", "openrouter": "" },
+          "locked": true
+        },
+        "enableProviderUpdateChecks": { "value": false, "locked": true },
+        "guestSharingEnabled": { "value": false, "locked": true }
+      },
+      "limits": {
+        "browserCookieImport": false,
+        "connect": false,
+        "telemetry": false,
+        "webhookTasks": false
+      }
+    }
+  }
+}

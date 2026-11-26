@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Keeps the T3 Code managed policy in place on every Mac and Linux machine. Runs after every
+# apply, and asks for the admin password only when the installed file differs.
+# The T3 Code server reads the policy at start. With "telemetry": false, the server and the
+# desktop app send no product events (ingest.t3.codes) and no relay traces (Axiom). An
+# environment variable cannot turn them back on. With "connect": false, T3 Connect stays off.
+# The policy also turns off webhook tasks and browser cookie import. It locks T3 agent feedback,
+# guest sharing and provider update checks off, and keeps the cloud speech keys empty. It does
+# not control the feedback channels of the harnesses that T3 Code starts.
+# The file on disk does not prove what a running server loaded: restart T3 Code, then run
+# `t3 policy show`.
+# Policy data: .chezmoidata/t3code.json. Windows machines: docs/decisions/DOT-0009.
+# Format: https://github.com/pingdotgg/t3code/blob/main/docs/user/managed-policy.md
+# Undo: delete this script and the data file, then remove the installed policy and restart T3.
+{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
+set -euo pipefail
+
+{{ if eq .chezmoi.os "darwin" -}}
+target="${T3CODE_POLICY_FILE:-/Library/Application Support/T3Code/policy.json}"
+owner="root:wheel"
+{{- else -}}
+target="${T3CODE_POLICY_FILE:-/etc/t3code/policy.json}"
+owner="root:root"
+{{- end }}
+policy=$(mktemp "${TMPDIR:-/tmp}/t3code-policy.XXXXXX")
+trap 'command rm -f "$policy"' EXIT
+
+cat >| "$policy" <<'POLICY'
+{{ .t3code.policy | toPrettyJson }}
+POLICY
+
+# T3 Code refuses to start with a policy it cannot enforce, so a bad file must never land.
+# Every T3 build that this account can start must accept it: the `t3` on PATH and each version
+# under ~/.t3/runtime/versions, where the background service and its rollback live (T3 0.1.11
+# refused a key that 0.1.13 accepts). This account owns those files, so starting them runs no
+# code of another account. Without any build the file cannot be checked: the script then
+# installs nothing and stops with an error, unless the installed file is already identical.
+checked=0
+for build in "$(command -v t3 2>/dev/null || true)" "${HOME}"/.t3/runtime/versions/*/t3; do
+    [[ -n "${build}" && -f "${build}" && -x "${build}" ]] || continue
+    if ! "${build}" policy check "$policy" >/dev/null 2>&1; then
+        echo "t3code-policy: ${build} refuses the policy, so nothing was installed" >&2
+        exit 1
+    fi
+    checked=$((checked + 1))
+done
+if (( checked == 0 )); then
+    cmp -s "$policy" "$target" && exit 0
+    echo "t3code-policy: no t3 command is available, so the policy cannot be checked; nothing was installed" >&2
+    exit 1
+fi
+
+# An identical installed file needs no root, so apply stays silent until something changes it.
+if cmp -s "$policy" "$target"; then
+    exit 0
+fi
+
+# An account without administrator rights, such as an agent account, cannot install the file.
+# Its apply reports that and goes on, so the rest of the apply still runs.
+if ! id -Gn | tr ' ' '\n' | grep -qxE 'admin|wheel|sudo'; then
+    echo "t3code-policy: $(id -un) is not an administrator, so ${target} was not installed. Run chezmoi apply as an administrator of this machine." >&2
+    exit 0
+fi
+
+echo "t3code-policy: installing ${target}, sudo asks for the admin password"
+sudo install -d -m 755 -o "${owner%%:*}" -g "${owner##*:}" "$(dirname "$target")"
+sudo install -m 644 -o "${owner%%:*}" -g "${owner##*:}" "$policy" "$target"
+echo "t3code-policy: restart T3 Code, then run 't3 policy show' to confirm the server loaded it"
+{{- end }}

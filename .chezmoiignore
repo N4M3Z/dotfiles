@@ -16,6 +16,12 @@ module.yaml
 # The SecretSpec manifest names the secrets this repository expects.
 secretspec.toml
 
+# Little Snitch reads a remote rule group from a URL, not from the home folder.
+littlesnitch
+
+# Scripts that the owner runs by hand on a Windows machine (DOT-0009).
+windows
+
 {{ if ne .chezmoi.os "windows" -}}
 # Targets only Windows takes (docs/changes/windows-home): jj on Windows reads
 # ~/.jjconfig.toml instead of ~/.config/jj, and Claude Code's raw API bodies
