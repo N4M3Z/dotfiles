@@ -83,6 +83,9 @@ jobs:
             - name: Test SSH config
               run: bash tests/test-ssh-config.sh
 
+            - name: Test Claude settings
+              run: bash tests/test-claude-settings.sh
+
             - name: Validate just tree
               run: bash tests/validate-just-tree.sh
 

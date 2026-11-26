@@ -110,6 +110,7 @@ foreach ($present in '.jjconfig.toml', '.gitconfig', '.local/state/claude-code/a
 $claudePath = Join-Path $scratch '.claude/settings.json'
 $claude = if (Test-Path -LiteralPath $claudePath) { Get-Content -LiteralPath $claudePath -Raw | ConvertFrom-Json } else { $null }
 Write-Result ($claude -and $claude.extraKnownMarketplaces.runedeck.source.path -eq 'C:/Developer/runedeck/mods') "Claude Code's plugin marketplaces sit under devRoot"
+Write-Result ($claude -and $claude.syncClaudeAiPlugins -eq $false) "Claude Code does not sync the claude.ai plugins"
 Write-Result ($claude -and $claude.permissions.deny -contains 'Read(//c/Developer/**/dotfiles-private/**)') "Claude Code's home-wide denies also name devRoot (//c/Developer)"
 # Claude Code exits at startup on native Windows when the sandbox it cannot run is required.
 Write-Result ($claude -and $claude.sandbox.enabled -eq $false -and $claude.sandbox.failIfUnavailable -eq $false) "Claude Code's sandbox is off on Windows"
