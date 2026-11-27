@@ -1,0 +1,7 @@
+# rumdl configuration. A repository config replaces the user-level one, so
+# this file repeats what dot_config/rumdl/rumdl.toml turns off. MD013 is off
+# here as in the runedeck skeleton, because prose lines wrap at the editor,
+# not at a column count. MD025 and MD041 misread frontmatter. MD076 forbids
+# spaced lists.
+[global]
+disable = ["MD013", "MD025", "MD041", "MD076"]
