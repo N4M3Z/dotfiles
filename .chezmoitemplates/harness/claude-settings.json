@@ -87,7 +87,24 @@
     "flightdeck@runedeck": true,
     "vale-lsp@runedeck": true,
     "blast-radius@runedeck": true,
-    "cc-plugin-you-should-know@builtin": true
+    "cc-plugin-you-should-know@builtin": true,
+    {{- /*
+    The plugins that claude.ai syncs into every session. Each one adds MCP
+    servers that ask for a sign-in, so they stay off. `claude plugin disable`
+    writes the same keys into the live file, but an apply replaces this whole
+    block, so the switches live here.
+    */}}
+    "canva@synced": false,
+    "productivity@synced": false,
+    "product-management@synced": false,
+    "marketing@synced": false,
+    "legal@synced": false,
+    "engineering@synced": false,
+    "data@synced": false,
+    "design@synced": false,
+    "operations@synced": false,
+    "human-resources@synced": false,
+    "finance@synced": false
   },
   "extraKnownMarketplaces": {
     "claude-code-warp": {
