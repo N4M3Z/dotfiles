@@ -1,3 +1,4 @@
+{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
 #!/usr/bin/env bash
 # Keeps the T3 Code managed policy in place on every Mac and Linux machine. Runs after every
 # apply, and asks for the admin password only when the installed file differs.
@@ -12,7 +13,7 @@
 # Policy data: .chezmoidata/t3code.json. Windows machines: docs/decisions/DOT-0009.
 # Format: https://github.com/pingdotgg/t3code/blob/main/docs/user/managed-policy.md
 # Undo: delete this script and the data file, then remove the installed policy and restart T3.
-{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
+# On any other OS the template renders empty, so chezmoi does not try to run it (Windows: DOT-0009).
 set -euo pipefail
 
 {{ if eq .chezmoi.os "darwin" -}}
