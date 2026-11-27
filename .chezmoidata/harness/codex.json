@@ -26,14 +26,19 @@
       "model_providers": {
         "cliproxyapi": {
           "name": "cliproxyapi",
-          "base_url": "http://127.0.0.1:8317/v1",
+          "base_url": "https://@PROXY_HOST@/v1",
           "wire_api": "responses",
           "auth": {
-            "command": "/usr/bin/sed",
+            "command": "@SECRETSPEC@",
             "args": [
-              "-n",
-              "s/^CLIPROXY_API_KEY_CODEX=//p",
-              "~/.env"
+              "get",
+              "CLIPROXY_API_KEY_CODEX",
+              "--file",
+              "~/.config/provision/secretspec.toml",
+              "--profile",
+              "owner",
+              "--reason",
+              "Codex hub key"
             ]
           }
         }

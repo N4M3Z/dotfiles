@@ -240,7 +240,7 @@ launch:
                     - "--sandbox"
                     - "workspace-local"
                 env:
-                    GROK_MODELS_BASE_URL: "http://127.0.0.1:8317/v1"
+                    GROK_MODELS_BASE_URL: "https://{{ .private.proxy_host }}/v1"
                     GROK_CODE_XAI_API_KEY:
                         from_env: CLIPROXY_API_KEY
 # Harness hooks, declared once (DOT-0007, cli one-dispatcher-runs-every-hook):

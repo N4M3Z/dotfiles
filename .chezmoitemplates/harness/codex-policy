@@ -31,4 +31,6 @@
 {{- range $name, $value := $environment -}}
 {{-   if hasPrefix "~/" $value }}{{ $_ := set $environment $name (printf "%s/%s" $home (trimPrefix "~/" $value)) }}{{ end -}}
 {{- end -}}
-{{- $codex | toJson | replace "@GITLAB_HOST@" .private.gitlab_host | replace "@DOTFILES_PRIVATE@" $dotfilesPrivate -}}
+{{- /* The proxy provider reaches the model hub at the private proxy_host (Cortex's hub on every box, docs/changes/fleet-hub in runedeck/provision) with the key from secretspec, found on PATH at render time because the Codex app starts with a short PATH. */ -}}
+{{- $secretspec := lookPath "secretspec" | default "secretspec" -}}
+{{- $codex | toJson | replace "@GITLAB_HOST@" .private.gitlab_host | replace "@DOTFILES_PRIVATE@" $dotfilesPrivate | replace "@PROXY_HOST@" .private.proxy_host | replace "@SECRETSPEC@" ($secretspec | replace "\\" "/") -}}
