@@ -25,7 +25,7 @@ refuse() { # <label> <output> <text>: the text must not appear
 command -v zsh >/dev/null 2>&1 || { echo "FAIL: these tests need zsh"; exit 1; }
 # Each case sets what the shell inherits, so nothing comes from this one.
 unset CLIPROXY_API_KEY CLIPROXY_API_KEY_CODEX CLIPROXY_API_KEY_GEMINI ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN \
-    GROK_MODELS_BASE_URL GROK_CODE_XAI_API_KEY GROK_CLI_CHAT_PROXY_BASE_URL
+    GROK_MODELS_BASE_URL GROK_CODE_XAI_API_KEY GROK_CLI_CHAT_PROXY_BASE_URL CLIPROXY_URL CLIPROXY_HOST_FILE
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/cliproxy-zsh.XXXXXX")"
 trap 'rm -rf "${tmp}"' EXIT
 mkdir -p "${tmp}/home/.config/zsh" "${tmp}/stub" "${tmp}/bare"
@@ -130,6 +130,19 @@ grep -q -- "--file ${tmp}/home/.config/provision/secretspec.toml" "${STUB_LOG}" 
 out="$(CLIPROXY_API_KEY=parent-key shell "${tmp}/stub" "${routes}; cliproxy status")"
 expect 'a nested shell routes with the keys it inherited' "${out}" 'token=parent-key' 'keys     inherited from the parent process'
 [[ ! -s "${STUB_LOG}" ]] && pass 'a nested shell does not read the store again' || fail 'a nested shell does not read the store again'
+
+# The hub from ~/.config/zsh/cliproxy.host, which chezmoi renders from proxy_host.
+printf 'cliproxy.example.test\n' > "${tmp}/home/.config/zsh/cliproxy.host"
+out="$(shell "${tmp}/stub" "${routes}; cliproxy status")"
+expect 'the host file routes to the hub over HTTPS' "${out}" \
+    'base=https://cliproxy.example.test token=synthetic-claude-key grok=https://cliproxy.example.test/v1' \
+    'cliproxy: ON  (https://cliproxy.example.test)'
+out="$(CLIPROXY_URL=http://127.0.0.1:9999 shell "${tmp}/stub" "${routes}")"
+expect 'an inherited CLIPROXY_URL wins over the host file' "${out}" 'base=http://127.0.0.1:9999'
+printf 'https://evil.example/x\n' > "${tmp}/home/.config/zsh/cliproxy.host"
+out="$(shell "${tmp}/stub" "${routes}")"
+expect 'a host file with more than a host name keeps the loopback route' "${out}" 'base=http://127.0.0.1:8317'
+rm -f "${tmp}/home/.config/zsh/cliproxy.host"
 
 if [[ ${failures} -gt 0 ]]; then
     echo "${failures} test(s) failed"

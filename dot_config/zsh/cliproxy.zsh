@@ -1,5 +1,8 @@
-# Route supported CLI harnesses through CLIProxyAPI at 127.0.0.1:8317.
-# CPA-Manager-Plus records requests that pass through this endpoint.
+# Route supported CLI harnesses through the model hub: CLIProxyAPI at
+# https://<proxy_host>, Cortex's hub on every box (runedeck/provision,
+# docs/changes/fleet-hub). chezmoi writes the private value proxy_host into
+# ~/.config/zsh/cliproxy.host; without that file the route is the loopback
+# hub at 127.0.0.1:8317. A CLIPROXY_URL from the parent process wins.
 #
 # Plain `codex` and Codex Desktop connect directly to OpenAI.
 # `codex-proxy` selects CLIProxyAPI for one command with `--config`.
@@ -10,7 +13,6 @@
 #   cliproxy status   show routes, keys and proxy health
 #   noproxy <cmd>     run one command against vendor endpoints
 #
-# Harnesses use loopback, so they do not depend on Caddy or dnsmasq.
 # Claude Code reads ANTHROPIC_BASE_URL from this shell.
 # Grok reads GROK_MODELS_BASE_URL and GROK_CODE_XAI_API_KEY from this shell.
 # The Codex proxy launcher reads the off flag and overrides model_provider.
@@ -24,7 +26,17 @@
 # says why. After a secretspec upgrade, macOS asks once to let the new build
 # read the Keychain.
 
-export CLIPROXY_URL="http://127.0.0.1:8317"
+CLIPROXY_HOST_FILE="${CLIPROXY_HOST_FILE:-${HOME}/.config/zsh/cliproxy.host}"
+if [[ -z "${CLIPROXY_URL:-}" && -r "${CLIPROXY_HOST_FILE}" ]]; then
+    CLIPROXY_URL="$(<"${CLIPROXY_HOST_FILE}")"
+    # A bare host name only: anything else leaves the loopback route.
+    if [[ -n "${CLIPROXY_URL}" && "${CLIPROXY_URL}" != *[^A-Za-z0-9.-]* ]]; then
+        CLIPROXY_URL="https://${CLIPROXY_URL}"
+    else
+        CLIPROXY_URL=""
+    fi
+fi
+export CLIPROXY_URL="${CLIPROXY_URL:-http://127.0.0.1:8317}"
 CLIPROXY_OFF_FLAG="${HOME}/.config/zsh/cliproxy.off"
 
 # The copy of the manifest that runedeck/provision publishes: it stays put
