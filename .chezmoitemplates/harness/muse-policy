@@ -57,6 +57,7 @@
       "localhost"
       "127.0.0.1"
       .private.proxy_host
+      (printf "*.%s" .private.tailnet_host)
       "lumo.proton.me"
       "models.opencode.ai"
 }}
