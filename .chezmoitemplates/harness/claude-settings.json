@@ -72,6 +72,18 @@
     "pr": ""
   },
   "enableAllProjectMcpServers": false,
+  {{- /*
+  Claude Code downloads the plugins enabled on the claude.ai account into
+  ~/.claude/plugins/synced and loads them in every session. Those are the
+  Anthropic directory plugins, whose MCP servers ask for a sign-in at every
+  start. A plugin removed on the machine comes back at the next launch, and
+  a setting made by hand in settings.json is gone after the next apply.
+  With false, Claude Code downloads nothing more, hides the synced plugins,
+  and moves them to ~/.claude/plugins/.trash at the next launch (setting
+  description in Claude Code 2.1.332). A needed plugin goes in
+  enabledPlugins below, from its own marketplace.
+  */}}
+  "syncClaudeAiPlugins": false,
   "statusLine": {
     "type": "command",
     "command": "{{ .chezmoi.homeDir }}/.bun/bin/ccline",
