@@ -1,0 +1,19 @@
+{
+  "name": "T3 Code telemetry (proposal)",
+  "description": "Source proposal, not deployed. Denies the T3 Code product, relay, account and hosted-app hosts, the Axiom trace hosts, and the Clerk and Statsig telemetry hosts in the T3 Code app bundle. forge-provision PROV-0013 rejects hand-written deny rules, so the owner must decide before any Mac subscribes. Decision: docs/decisions/DOT-0009 in github.com/N4M3Z/dotfiles.",
+  "denied-remote-hosts": [
+    "ingest.t3.codes",
+    "relay.t3.codes",
+    "clerk.t3.codes",
+    "app.t3.codes",
+    "nightly.app.t3.codes",
+    "us-east-1.aws.edge.axiom.co",
+    "api.axiom.co",
+    "clerk-telemetry.com",
+    "statsigapi.net",
+    "api.statsigcdn.com",
+    "featureassets.org",
+    "prodregistryv2.org"
+  ],
+  "denied-remote-notes": "T3 Code telemetry block: %REMOTE%. Evidence: the T3 Code Nightly 0.1.13 app bundle on 2026-11-26, and for api.axiom.co the T3 Code source, where it is the default trace endpoint of the mobile app."
+}

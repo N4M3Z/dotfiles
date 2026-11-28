@@ -48,6 +48,15 @@
     "OTEL_LOG_RAW_API_BODIES": "file:{{ .chezmoi.homeDir }}/Data/Claude/telemetry",
     "OTEL_METRICS_INCLUDE_SESSION_ID": "true",
     {{- /*
+    The T3 Code desktop app takes only T3CODE_TELEMETRY_ENABLED and
+    DO_NOT_TRACK from the login shell (privacy.zsh), so its Claude threads get
+    these three switches from this block. They turn off /feedback, the session
+    survey, and error reports. Decision: DOT-0009.
+    */}}
+    "DISABLE_FEEDBACK_COMMAND": "1",
+    "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    {{- /*
     The Seatbelt sandbox blocks the keychain lookup (trustd), so a sandboxed
     harness cannot verify the mkcert certificate that the local AI proxy
     serves (probed 2026-10-20). This file is the mkcert trust root: with it,

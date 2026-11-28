@@ -54,6 +54,9 @@ export PATH="${BUN_INSTALL}/bin:${PATH}"
 # meters their spend. Reads keys from secretspec; `noproxy <cmd>` bypasses it.
 [ -r "${HOME}/.config/zsh/cliproxy.zsh" ] && source "${HOME}/.config/zsh/cliproxy.zsh"
 
+# Vendor channels that can upload conversation content stay off. See privacy.zsh.
+[ -r "${HOME}/.config/zsh/privacy.zsh" ] && source "${HOME}/.config/zsh/privacy.zsh"
+
 # Browserbase key for the `browse` CLI. Reads one value from secretspec.
 [ -r "${HOME}/.config/zsh/browserbase.zsh" ] && source "${HOME}/.config/zsh/browserbase.zsh"
 

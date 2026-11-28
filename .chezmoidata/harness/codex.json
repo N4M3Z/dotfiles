@@ -10,6 +10,9 @@
       "analytics": {
         "enabled": false
       },
+      "feedback": {
+        "enabled": false
+      },
       "tui": {
         "status_line": [
           "model-with-reasoning",
