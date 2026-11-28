@@ -140,8 +140,29 @@
       (dict "matcher" "bash" "hooks" (list (dict "type" "command" "command" $dcg)))
       (dict "matcher" "bash" "hooks" (list (dict "type" "command" "command" $gate)))
 }}
+{{- /*
+  The model hub (Muse Code 1.4.25, hub 8.1.1): every Muse on a Mac, T3's Muse
+  provider too, sends its requests to the hub at <proxy_host>/v1 with the
+  Codex hub key. Muse runs bearer_command at start and reads the key from its
+  stdout. It takes a bearer_command only from this user file (-c refuses one),
+  and a key only from here, META_API_KEY or its Meta login. Windows reads its
+  secretspec manifest from the provision checkout, so Apex keeps the Meta
+  login until that manifest is at the path below.
+*/}}
+{{- $settings := deepCopy $muse.settings }}
+{{- if ne .chezmoi.os "windows" }}
+  {{- $_ := set $settings "endpoint_transport" (dict
+        "base_url" (printf "https://%s/v1" .private.proxy_host)
+        "auth" "command"
+        "bearer_command" (list
+          (lookPath "secretspec" | default "secretspec")
+          "get" "CLIPROXY_API_KEY_CODEX"
+          "--file" (printf "%s/.config/provision/secretspec.toml" $home)
+          "--profile" "owner"
+          "--reason" "Muse hub key")) }}
+{{- end }}
 {{- $policy := dict
-      "settings" $muse.settings
+      "settings" $settings
       "profile_id" $muse.profile.id
       "profile" $profile
       "hooks" $hooks

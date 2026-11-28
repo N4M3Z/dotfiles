@@ -1,7 +1,7 @@
 #!/bin/bash
 # Muse Code must start in a custom auto-review profile that closes every path
 # Claude Code closes and allows the hosts Claude allows, and each apply must
-# put that profile back as the default.
+# put that profile back as the default. On a Mac, Muse goes to the model hub.
 #
 # Claude turns its sandbox denyRead list and its Read(...) deny rules into
 # kernel denies. Muse turns a profile's filesystem deny rules into kernel
@@ -171,6 +171,24 @@ if jq -e --arg id "${profile_id}" --slurpfile rendered "${WORKDIR}/muse.json" '
     echo "ok muse apply resets a saved :unrestricted default and keeps muse's own keys"
 else
     fail "muse apply keeps a saved :unrestricted default, drops muse's keys, or stacks hooks"
+fi
+
+# Muse goes to the model hub at <proxy_host>/v1, and its key comes from the
+# Codex hub key in secretspec's owner profile. No key sits in the file.
+proxy_host=$(chezmoi execute-template --source "${SOURCE_DIR}" '{{ .private.proxy_host }}')
+if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
+    echo "skip the hub route is for the Macs"
+elif jq -e --arg url "https://${proxy_host}/v1" '
+        .endpoint_transport.base_url == $url
+        and .endpoint_transport.auth == "command"
+        and (.endpoint_transport.bearer_command[0] | endswith("secretspec"))
+        and .endpoint_transport.bearer_command[1:3] == ["get", "CLIPROXY_API_KEY_CODEX"]
+        and (.endpoint_transport.bearer_command | .[(index("--profile") + 1)] == "owner")
+        and (.endpoint_transport | has("api_key") | not)
+    ' "${WORKDIR}/muse.json" > /dev/null; then
+    echo "ok muse goes to the hub with the Codex hub key from secretspec"
+else
+    fail "muse settings do not send muse to the hub with the key from secretspec"
 fi
 
 # The reset must not become a lock: `--yolo` stays available. Only Muse's
